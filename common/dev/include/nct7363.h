@@ -85,6 +85,27 @@ typedef struct _nct7363_init_arg {
 	// According to the pin position on the right side of the component, from top to bottom, there are 16 pins in total.
 	uint8_t pin_type[16];
 	uint8_t fan_poles[16];
+	union {
+		struct {
+			uint8_t gpio_00 : 1;
+			uint8_t gpio_01 : 1;
+			uint8_t gpio_02 : 1;
+			uint8_t gpio_03 : 1;
+			uint8_t gpio_04 : 1;
+			uint8_t gpio_05 : 1;
+			uint8_t gpio_06 : 1;
+			uint8_t gpio_07 : 1;
+			uint8_t gpio_10 : 1;
+			uint8_t gpio_11 : 1;
+			uint8_t gpio_12 : 1;
+			uint8_t gpio_13 : 1;
+			uint8_t gpio_14 : 1;
+			uint8_t gpio_15 : 1;
+			uint8_t gpio_16 : 1;
+			uint8_t gpio_17 : 1;
+		};
+		uint16_t gpio_out_default_val;
+	};
 	float fan_frequency[16];
 	uint8_t duty;
 	uint16_t threshold[16];
