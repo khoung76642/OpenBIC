@@ -304,13 +304,12 @@ bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(reading, false);
-	ARG_UNUSED(args);
-
-	if (reading == NULL) {
+	
+	if (reading == NULL) 
 		return check_reading_pointer_null_is_allowed(cfg);
-	}
 
+	ARG_UNUSED(args);
+	
 	sensor_val *sval = (sensor_val *)reading;
 	if (cfg->offset == PMBUS_READ_IOUT || cfg->offset == PMBUS_READ_IIN) {
 		// Adjust negative current value to zero according to power team suggestion
