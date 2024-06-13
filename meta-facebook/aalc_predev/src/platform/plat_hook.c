@@ -881,8 +881,6 @@ bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 	if (reading == NULL)
 		return check_reading_pointer_null_is_allowed(cfg);
 
-	
-
 	sensor_val *oval = (sensor_val *)reading;
 	double rawValue = ((float)oval->integer + (oval->fraction / 1000.0));
 
