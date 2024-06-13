@@ -35,6 +35,12 @@ struct k_mutex i2c_7_PCA9546a_mutex;
 struct k_mutex i2c_8_PCA9546a_mutex;
 struct k_mutex i2c_9_PCA9546a_mutex;
 
+#define BUS_1_MUX_ADDR 0xE0 >> 1
+#define BUS_2_MUX_ADDR 0xE2 >> 1
+#define BUS_6_MUX_ADDR 0xE4 >> 1
+#define BUS_7_MUX_ADDR 0xE6 >> 1
+#define BUS_8_MUX_ADDR 0xE8 >> 1
+#define BUS_9_MUX_ADDR 0xE8 >> 1
 /**************************************************************************************************
  * INIT ARGS
 **************************************************************************************************/
@@ -723,37 +729,37 @@ hdc1080_init_arg hdc1080_init_args[] = {
  *  PRE-HOOK/POST-HOOK ARGS
  **************************************************************************************************/
 mux_config bus_1_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE0, .channel = PCA9546A_CHANNEL_0 },
-	[1] = { .target_addr = 0xE0, .channel = PCA9546A_CHANNEL_1 },
-	[2] = { .target_addr = 0xE0, .channel = PCA9546A_CHANNEL_2 },
-	[3] = { .target_addr = 0xE0, .channel = PCA9546A_CHANNEL_3 },
+	[0] = { .target_addr = BUS_1_MUX_ADDR, .channel = PCA9546A_CHANNEL_0 },
+	[1] = { .target_addr = BUS_1_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 },
+	[2] = { .target_addr = BUS_1_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 },
+	[3] = { .target_addr = BUS_1_MUX_ADDR, .channel = PCA9546A_CHANNEL_3 },
 };
 mux_config bus_2_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE2, .channel = PCA9546A_CHANNEL_0 },
-	[1] = { .target_addr = 0xE2, .channel = PCA9546A_CHANNEL_1 },
-	[2] = { .target_addr = 0xE2, .channel = PCA9546A_CHANNEL_2 },
-	[3] = { .target_addr = 0xE2, .channel = PCA9546A_CHANNEL_3 },
+	[0] = { .target_addr = BUS_2_MUX_ADDR, .channel = PCA9546A_CHANNEL_0 },
+	[1] = { .target_addr = BUS_2_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 },
+	[2] = { .target_addr = BUS_2_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 },
+	[3] = { .target_addr = BUS_2_MUX_ADDR, .channel = PCA9546A_CHANNEL_3 },
 };
 mux_config bus_6_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE4, .channel = PCA9546A_CHANNEL_0 },
-	[1] = { .target_addr = 0xE4, .channel = PCA9546A_CHANNEL_1 },
-	[2] = { .target_addr = 0xE4, .channel = PCA9546A_CHANNEL_2 },
-	[3] = { .target_addr = 0xE4, .channel = PCA9546A_CHANNEL_3 },
+	[0] = { .target_addr = BUS_6_MUX_ADDR, .channel = PCA9546A_CHANNEL_0 },
+	[1] = { .target_addr = BUS_6_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 },
+	[2] = { .target_addr = BUS_6_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 },
+	[3] = { .target_addr = BUS_6_MUX_ADDR, .channel = PCA9546A_CHANNEL_3 },
 };
 mux_config bus_7_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE6, .channel = PCA9546A_CHANNEL_0 },
-	[1] = { .target_addr = 0xE6, .channel = PCA9546A_CHANNEL_1 },
-	[2] = { .target_addr = 0xE6, .channel = PCA9546A_CHANNEL_2 },
-	[3] = { .target_addr = 0xE6, .channel = PCA9546A_CHANNEL_3 },
+	[0] = { .target_addr = BUS_7_MUX_ADDR, .channel = PCA9546A_CHANNEL_0 },
+	[1] = { .target_addr = BUS_7_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 },
+	[2] = { .target_addr = BUS_7_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 },
+	[3] = { .target_addr = BUS_7_MUX_ADDR, .channel = PCA9546A_CHANNEL_3 },
 };
 mux_config bus_8_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE8, .channel = PCA9546A_CHANNEL_0 },
-	[1] = { .target_addr = 0xE8, .channel = PCA9546A_CHANNEL_1 },
-	[2] = { .target_addr = 0xE8, .channel = PCA9546A_CHANNEL_2 },
+	[0] = { .target_addr = BUS_8_MUX_ADDR, .channel = PCA9546A_CHANNEL_0 },
+	[1] = { .target_addr = BUS_8_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 },
+	[2] = { .target_addr = BUS_8_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 },
 };
 mux_config bus_9_PCA9546A_configs[] = {
-	[0] = { .target_addr = 0xE8, .channel = PCA9546A_CHANNEL_1 }, // sensor box
-	[1] = { .target_addr = 0xE8, .channel = PCA9546A_CHANNEL_2 }, // PDB
+	[0] = { .target_addr = BUS_9_MUX_ADDR, .channel = PCA9546A_CHANNEL_1 }, // sensor box
+	[1] = { .target_addr = BUS_9_MUX_ADDR, .channel = PCA9546A_CHANNEL_2 }, // PDB
 };
 /**************************************************************************************************
  *  PRE-HOOK/POST-HOOK FUNC
@@ -788,6 +794,7 @@ struct k_mutex *get_i2c_mux_mutex(uint8_t i2c_bus)
 
 	return mutex;
 }
+
 bool pre_PCA9546A_read(sensor_cfg *cfg, void *args)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -814,6 +821,7 @@ bool pre_PCA9546A_read(sensor_cfg *cfg, void *args)
 
 	return ret;
 }
+
 bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -836,15 +844,16 @@ bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 
 	return true;
 }
+
 bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	
-	if (reading == NULL) 
-		return check_reading_pointer_null_is_allowed(cfg);
 
-	ARG_UNUSED(args);
+	if (reading == NULL)
+		return check_reading_pointer_null_is_allowed(cfg);
 	
+	ARG_UNUSED(args);
+
 	sensor_val *sval = (sensor_val *)reading;
 	if (cfg->offset == PMBUS_READ_IOUT || cfg->offset == PMBUS_READ_IIN) {
 		// Adjust negative current value to zero according to power team suggestion
@@ -868,7 +877,9 @@ bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(reading, false);
+
+	if (reading == NULL)
+		return check_reading_pointer_null_is_allowed(cfg);
 
 	sensor_val *oval = (sensor_val *)reading;
 	double rawValue = ((float)oval->integer + (oval->fraction / 1000.0));
@@ -903,8 +914,10 @@ bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (int)val & 0xFFFF;
 	sval->fraction = (val - sval->integer) * 1000;
+	
 	//according to pre_sensor_read_fn(pre_PCA9546A_read), determinies if apply post_PCA9546A_read
 	if (cfg->pre_sensor_read_hook != NULL) {
+		printf("ads112c in post read post");
 		post_PCA9546A_read(cfg, args, reading);
 	}
 
