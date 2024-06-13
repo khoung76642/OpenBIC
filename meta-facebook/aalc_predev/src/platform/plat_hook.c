@@ -623,8 +623,16 @@ adc_asd_init_arg adc_asd_init_args[] = {
 };
 
 ina238_init_arg ina238_init_args[] = {
-	// PDB board
+	// PDB board positive
 	[0] = { 
+		.is_init = false, 
+		.r_shunt = 0.1, // TO DO wait to check
+		.adc_range = INA238_ADC_RANGE_PN_163, // TO DO wait to check
+		.alert_latch = INA238_ALERT_LATCH_ENABLE,
+		.i_max = 0.1, // TO DO wait to check
+	},
+	// PDB board negative
+	[1] = { 
 		.is_init = false, 
 		.r_shunt = 0.1, // TO DO wait to check
 		.adc_range = INA238_ADC_RANGE_PN_163, // TO DO wait to check
@@ -798,6 +806,8 @@ bool pre_PCA9546A_read(sensor_cfg *cfg, void *args)
 	pre_args->bus = cfg->port;
 
 	struct k_mutex *mutex = get_i2c_mux_mutex(pre_args->bus);
+	//LOG_INF("sensor_num:0x%02x", cfg->num);
+	//LOG_INF("pre_args->bus: %d, addr: 0x%02x, channel: 0x%02x", pre_args->bus, pre_args->target_addr, pre_args->channel);
 	CHECK_NULL_ARG_WITH_RETURN(mutex, false);
 	mutex_status = k_mutex_lock(mutex, K_MSEC(MUTEX_LOCK_INTERVAL_MS));
 	if (mutex_status != 0) {
@@ -807,6 +817,7 @@ bool pre_PCA9546A_read(sensor_cfg *cfg, void *args)
 
 	ret = set_mux_channel(*pre_args, MUTEX_LOCK_ENABLE);
 	if (ret != true) {
+		LOG_INF("change channel ok, unlock mutex");
 		k_mutex_unlock(mutex);
 	}
 
@@ -837,12 +848,11 @@ bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(reading, false);
-	ARG_UNUSED(args);
 
-	if (reading == NULL) {
+	if (reading == NULL)
 		return check_reading_pointer_null_is_allowed(cfg);
-	}
+	
+	ARG_UNUSED(args);
 
 	sensor_val *sval = (sensor_val *)reading;
 	if (cfg->offset == PMBUS_READ_IOUT || cfg->offset == PMBUS_READ_IIN) {
@@ -867,7 +877,11 @@ bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(reading, false);
+
+	if (reading == NULL)
+		return check_reading_pointer_null_is_allowed(cfg);
+
+	
 
 	sensor_val *oval = (sensor_val *)reading;
 	double rawValue = ((float)oval->integer + (oval->fraction / 1000.0));
@@ -902,8 +916,10 @@ bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 	sensor_val *sval = (sensor_val *)reading;
 	sval->integer = (int)val & 0xFFFF;
 	sval->fraction = (val - sval->integer) * 1000;
+	
 	//according to pre_sensor_read_fn(pre_PCA9546A_read), determinies if apply post_PCA9546A_read
 	if (cfg->pre_sensor_read_hook != NULL) {
+		printf("ads112c in post read post");
 		post_PCA9546A_read(cfg, args, reading);
 	}
 
