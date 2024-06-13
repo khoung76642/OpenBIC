@@ -617,8 +617,16 @@ adc_asd_init_arg adc_asd_init_args[] = {
 };
 
 ina238_init_arg ina238_init_args[] = {
-	// PDB board
+	// PDB board positive
 	[0] = { 
+		.is_init = false, 
+		.r_shunt = 0.1, // TO DO wait to check
+		.adc_range = INA238_ADC_RANGE_PN_163, // TO DO wait to check
+		.alert_latch = INA238_ALERT_LATCH_ENABLE,
+		.i_max = 0.1, // TO DO wait to check
+	},
+	// PDB board negative
+	[1] = { 
 		.is_init = false, 
 		.r_shunt = 0.1, // TO DO wait to check
 		.adc_range = INA238_ADC_RANGE_PN_163, // TO DO wait to check
@@ -831,13 +839,12 @@ bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(reading, false);
-	ARG_UNUSED(args);
-
-	if (reading == NULL) {
+	
+	if (reading == NULL) 
 		return check_reading_pointer_null_is_allowed(cfg);
-	}
 
+	ARG_UNUSED(args);
+	
 	sensor_val *sval = (sensor_val *)reading;
 	if (cfg->offset == PMBUS_READ_IOUT || cfg->offset == PMBUS_READ_IIN) {
 		// Adjust negative current value to zero according to power team suggestion
