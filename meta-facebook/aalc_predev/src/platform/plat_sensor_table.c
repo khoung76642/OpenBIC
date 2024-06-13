@@ -379,11 +379,11 @@ sensor_cfg plat_sensor_config[] = {
 	{ SENSOR_NUM_PDB_48V_SENSE_DIFF_POS_VOLT_V, sensor_dev_ina238, I2C_BUS9,
 	  PDB_INA238_U14_ADDR, INA238_VSHUNT_OFFSET, stby_access, 0, 0, SAMPLE_COUNT_DEFAULT,
 	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_PCA9546A_read,
-	  &bus_9_PCA9546A_configs[1], post_PCA9546A_read, NULL, NULL },
+	  &bus_9_PCA9546A_configs[1], post_PCA9546A_read, NULL, &ina238_init_args[0] },
 	{ SENSOR_NUM_PDB_48V_SENSE_DIFF_NEG_VOLT_V, sensor_dev_ina238, I2C_BUS9,
 	  PDB_INA238_U15_ADDR, INA238_VSHUNT_OFFSET, stby_access, 0, 0, SAMPLE_COUNT_DEFAULT,
 	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_PCA9546A_read,
-	  &bus_9_PCA9546A_configs[1], post_PCA9546A_read, NULL, NULL },
+	  &bus_9_PCA9546A_configs[1], post_PCA9546A_read, NULL, &ina238_init_args[1] },
 };
 
 sensor_cfg hsc_sensor_config_table[] = {
