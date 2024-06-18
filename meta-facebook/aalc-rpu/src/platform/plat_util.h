@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-bool modbus_i2c_master_write_read(const uint16_t *modbus_data, uint8_t data_len);
+bool modbus_i2c_master_write_read(const const uint16_t *modbus_data, uint8_t data_len);
 void modbus_i2c_master_write_read_response(uint16_t *modbus_data);
 void regs_reverse(uint16_t reg_len, uint16_t *data);
 uint8_t modbus_sensor_poll_en(modbus_command_mapping *cmd);
