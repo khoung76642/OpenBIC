@@ -35,6 +35,14 @@ sensor_cfg plat_sensor_config[] = {
 	/* number,                  type,       port,      address,      offset,
 	   access check, arg0, arg1, sample_count, cache, cache_status, mux_address, mux_offset,
 	   pre_sensor_read_fn, pre_sensor_read_args, post_sensor_read_fn, post_sensor_read_args  */
+	{ SENSOR_NUM_BPB_RACK_LEVEL_1, sensor_dev_nct7363, I2C_BUS5, BPB_NCT7363_ADDR,
+	  NCT7363_GPIO_READ_OFFSET, stby_access, NCT7363_5_PORT, 0, SAMPLE_COUNT_DEFAULT,
+	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
+	  &nct7363_init_args[17] },
+	{ SENSOR_NUM_BPB_RACK_LEVEL_2, sensor_dev_nct7363, I2C_BUS5, BPB_NCT7363_ADDR,
+	  NCT7363_GPIO_READ_OFFSET, stby_access, NCT7363_6_PORT, 0, SAMPLE_COUNT_DEFAULT,
+	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
+	  &nct7363_init_args[17] },
 	{ SENSOR_NUM_FB_1_FAN_TACH_RPM, sensor_dev_nct7363, I2C_BUS1, FB_NCT7363_ADDR,
 	  NCT7363_FAN_SPEED_OFFSET, stby_access, NCT7363_15_PORT, 0, SAMPLE_COUNT_DEFAULT,
 	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, pre_PCA9546A_read,
@@ -133,14 +141,6 @@ sensor_cfg plat_sensor_config[] = {
 	{ SENSOR_NUM_MB_FAN2_TACH_RPM, sensor_dev_ast_tach, TACH_PORT1, NONE, AST_TACH_RPM,
 	  stby_access, 0, 0, SAMPLE_COUNT_DEFAULT, POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0,
 	  SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL, NULL },
-	{ SENSOR_NUM_BPB_RACK_LEVEL_1, sensor_dev_nct7363, I2C_BUS5, BPB_NCT7363_ADDR,
-	  NCT7363_GPIO_READ_OFFSET, stby_access, NCT7363_5_PORT, 0, SAMPLE_COUNT_DEFAULT,
-	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	  &nct7363_init_args[17] },
-	{ SENSOR_NUM_BPB_RACK_LEVEL_2, sensor_dev_nct7363, I2C_BUS5, BPB_NCT7363_ADDR,
-	  NCT7363_GPIO_READ_OFFSET, stby_access, NCT7363_6_PORT, 0, SAMPLE_COUNT_DEFAULT,
-	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL, NULL, NULL,
-	  &nct7363_init_args[17] },
 	{ SENSOR_NUM_BPB_RPU_COOLANT_INLET_P_KPA, sensor_dev_ads112c, I2C_BUS9, BPB_ADS112C_4_ADDR,
 	  ADS112C_PRESS_OFFSET, stby_access, ADS112C_MUX_1_CON, 0, SAMPLE_COUNT_DEFAULT,
 	  POLL_TIME_DEFAULT, ENABLE_SENSOR_POLLING, 0, SENSOR_INIT_STATUS, NULL, NULL,
@@ -747,7 +747,7 @@ sensor_cfg plat_def_sensor_config[] = {
 // total config size = plat_sensor_config + sensor(main/second sensor) config table
 const int SENSOR_CONFIG_SIZE = ARRAY_SIZE(plat_sensor_config) +
 			       ARRAY_SIZE(hsc_sensor_config_table) +
-			       ARRAY_SIZE(tmp461_config_table) + ARRAY_SIZE(plat_def_sensor_config);
+			       ARRAY_SIZE(tmp461_config_table); //+ ARRAY_SIZE(plat_def_sensor_config);
 
 static uint8_t get_temp_sensor_mfr_id(uint8_t bus, uint8_t addr, uint8_t mfr_id_offset)
 {
@@ -911,7 +911,7 @@ static void hsc_config(uint8_t type)
 		LOG_ERR("Unknown HSC module type(%d)", type);
 		return;
 	}
-	LOG_INF("sen_nums = %d", sen_nums);
+	//LOG_INF("sen_nums = %d", sen_nums);
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(hsc_sensor_config_table); i++) {
 		sensor_cfg *p = hsc_sensor_config_table + i;
@@ -922,7 +922,7 @@ static void hsc_config(uint8_t type)
 
 			// use default address to identify the HSC module
 			const uint32_t mfr_id = get_pmbus_mfr_id(p->port, p->target_addr);
-			LOG_INF("Sensor %x's HSC module MFR_ID: 0x%06x", p->num, mfr_id);
+			//LOG_INF("Sensor %x's HSC module MFR_ID: 0x%06x", p->num, mfr_id);
 
 			switch (mfr_id) {
 			case 0:
@@ -1015,7 +1015,7 @@ void load_sensor_config(void)
 
 	load_hsc_sensor_config();
 	load_sb_temp_sensor_config();
-	load_plat_def_sensor_config();
+	//load_plat_def_sensor_config();
 }
 
 uint16_t get_sensor_reading_to_modbus_val(uint8_t sensor_num, int8_t exp, int8_t scale)
