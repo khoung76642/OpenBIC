@@ -1148,8 +1148,8 @@ static void drive_init(void)
 	uint16_t table_index = 0;
 	uint8_t sensor_index = 0;
 	uint16_t current_drive = 0;
-
 	for (table_index = 0; table_index < sensor_monitor_count; ++table_index) {
+		k_msleep(10);
 		sensor_monitor_table_info *table_info = &sensor_monitor_table[table_index];
 
 		if (table_info->access_checker != NULL) {
