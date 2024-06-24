@@ -285,6 +285,7 @@ static uint8_t modbus_to_do(modbus_command_mapping *cmd)
 	return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 }
 
+
 modbus_command_mapping modbus_command_table[] = {
 	// addr, write_fn, read_fn, arg0, arg1, arg2, size
 	{ MODBUS_BPB_RPU_COOLANT_FLOW_RATE_LPM_ADDR, NULL, modbus_get_senser_reading,
