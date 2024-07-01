@@ -42,7 +42,7 @@ bool modbus_i2c_master_write_read(const uint16_t *modbus_data, uint8_t data_len)
 		return false;
 
 	const uint8_t target_bus = modbus_data[0] & BIT_MASK(8); // get 7:0 bit data
-	const uint8_t target_addr = modbus_data[1] & BIT_MASK(8);
+	const uint8_t target_addr = (modbus_data[1] & BIT_MASK(8)) >> 1; //8-bit to 7-bit
 	const uint8_t target_read_length = modbus_data[2] & BIT_MASK(8);
 	I2C_MSG msg = { 0 };
 	uint8_t retry = 5;
@@ -120,7 +120,6 @@ void set_rpu_ready()
 	gpio_set(BIC_RPU_READY1, 1);
 	gpio_set(BIC_RPU_READY2, 1);
 	gpio_set(BIC_RPU_READY3, 1);
-	gpio_set(FM_BIC_READY_R_N, 0);
 }
 
 float pow_of_10(int8_t exp)
