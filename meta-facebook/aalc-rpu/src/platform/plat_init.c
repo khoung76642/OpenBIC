@@ -35,8 +35,7 @@ LOG_MODULE_REGISTER(plat_init);
 
 #define DEF_PROJ_GPIO_PRIORITY 78
 
-static void pump_board_init(struct k_work *work);
-K_WORK_DELAYABLE_DEFINE(up_15sec_handler, pump_board_init);
+
 
 SCU_CFG scu_cfg[] = {
 	//register    value
@@ -100,6 +99,8 @@ void pump_board_init(struct k_work *work)
 		}
 	}
 }
+
+K_WORK_DELAYABLE_DEFINE(up_15sec_handler, pump_board_init);
 
 void pal_pre_init()
 {
