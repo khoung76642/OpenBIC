@@ -71,7 +71,7 @@ uint8_t pump_board_init_tbl[] = {
 	SENSOR_NUM_PB_3_HSC_P48V_PIN_PWR_W
 };
 
-void pump_board_init(struct k_work *work)
+static const void pump_board_init(struct k_work *work)
 {
 	if (work == NULL) {
 		LOG_ERR("pump_board_init get NULL work handler!");
