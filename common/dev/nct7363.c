@@ -36,6 +36,49 @@ LOG_MODULE_REGISTER(dev_nct7363);
 #define NCT7363_FAN_LSB_MASK BIT_MASK(5)
 #define NCT7363_GPIO_LSB_MASK BIT_MASK(8)
 #define MAX_THRESHOLD_VAL 0x1FFF
+#define READ_ERROR -1
+
+uint8_t nct7363_read_back_data(sensor_cfg *cfg, uint8_t reading_offset)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, READ_ERROR);
+
+	I2C_MSG msg = { 0 };
+	uint8_t retry = 5;
+	uint8_t return_data = 0;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.tx_len = 1;
+	msg.rx_len = 1;
+	msg.data[0] = reading_offset;
+	if ((cfg->pre_sensor_read_hook))
+	{
+		if ((cfg->pre_sensor_read_hook)(cfg, cfg->pre_sensor_read_args) == false)
+		{
+			//LOG_ERR("read value pre lock mutex fail !");
+			return_data = READ_ERROR;
+		}
+	}
+	
+	int ret = i2c_master_read(&msg, retry);
+	if (ret != 0) 
+	{
+		//LOG_ERR("Fail to access device, bus: 0x%x, addr: 0x%x, ret: %d", cfg->port, cfg->target_addr, ret);
+		return_data = READ_ERROR;
+	}
+
+	return_data = msg.data[0];
+
+	if ((cfg->post_sensor_read_hook))
+	{
+		if ((cfg->post_sensor_read_hook)(cfg, cfg->post_sensor_read_args, 0) == false)
+		{
+			//LOG_ERR("read value post lock mutex fail !");
+			return_data = READ_ERROR;
+		}
+	}
+	
+	return return_data;
+}
 
 bool nct7363_set_threshold(sensor_cfg *cfg, uint16_t threshold)
 {
@@ -118,7 +161,7 @@ bool nct7363_set_duty(sensor_cfg *cfg, uint8_t duty, uint8_t port)
 	return true;
 }
 
-static bool nct7363_write(sensor_cfg *cfg, uint8_t offset, uint8_t val)
+bool nct7363_write(sensor_cfg *cfg, uint8_t offset, uint8_t val)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
 	I2C_MSG msg = { 0 };
@@ -126,14 +169,35 @@ static bool nct7363_write(sensor_cfg *cfg, uint8_t offset, uint8_t val)
 	msg.bus = cfg->port;
 	msg.target_addr = cfg->target_addr;
 	msg.tx_len = 2;
-
+	uint8_t return_data;
 	msg.data[0] = offset;
 	msg.data[1] = val;
 
-	if (i2c_master_write(&msg, retry) != 0) {
-		LOG_ERR("nct7363 write offset 0x%02x, val 0x%02x fail", offset, val);
-		return false;
+	if ((cfg->pre_sensor_read_hook))
+	{
+		if ((cfg->pre_sensor_read_hook)(cfg, cfg->pre_sensor_read_args) == false)
+		{
+			//LOG_ERR("read value pre lock mutex fail !");
+			return_data = READ_ERROR;
+		}
 	}
+
+	if (i2c_master_write(&msg, retry) != 0) {
+		//LOG_ERR("nct7363 write offset 0x%02x, val 0x%02x fail", offset, val);
+		return_data = READ_ERROR;
+	}
+
+	if ((cfg->post_sensor_read_hook))
+	{
+		if ((cfg->post_sensor_read_hook)(cfg, cfg->post_sensor_read_args, 0) == false)
+		{
+			//LOG_ERR("read value post lock mutex fail !");
+			return_data = READ_ERROR;
+		}
+	}
+	
+	if (return_data == READ_ERROR)
+		return false;
 
 	return true;
 }
