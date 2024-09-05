@@ -768,115 +768,106 @@ static bool set_threshold_status(sensor_threshold *threshold_tbl, float val)
 	threshold_tbl->last_status = status;
 	return true;
 }
-
-void threshold_poll_handler(void *arug0, void *arug1, void *arug2)
-{
-	ARG_UNUSED(arug0);
-	ARG_UNUSED(arug1);
-	ARG_UNUSED(arug2);
-
-	int threshold_poll_interval_ms = 1000; // interval 1s
-
-	k_msleep(20000); // wait 20s for sensor ready
-	ctl_all_pwm_dev(60);
-	// default set coolant led on
-	led_ctrl(LED_IDX_E_COOLANT, LED_TURN_ON);
-	k_msleep(2000); // wait 2s for pump run
-	LOG_ERR("threshold thread start!");
-
-	while (1) {
-		if (!get_sensor_init_done_flag()) {
-			k_msleep(threshold_poll_interval_ms);
-			continue;
-		}
-
-		if (!get_sensor_poll_enable_flag()) {
-			k_msleep(threshold_poll_interval_ms);
-			continue;
-		}
-
-		if (!get_threshold_poll_enable_flag()) {
-			k_msleep(threshold_poll_interval_ms);
-			continue;
-		}
-
-		for (uint8_t i = 0; i < ARRAY_SIZE(threshold_tbl); i++) {
-			float val = 0;
-
-			if (threshold_tbl[i].type == THRESHOLD_ENABLE_DISCRETE) {
-				/* check the discrete sensor has value changed */
-				/* do not need to convert the sensor reading value */
-
-				int reading = 0;
-				uint8_t status =
-					get_sensor_reading(sensor_config, sensor_config_count,
-							   threshold_tbl[i].sensor_num, &reading,
-							   GET_FROM_CACHE);
-
-				if (status != SENSOR_READ_4BYTE_ACUR_SUCCESS) {
-					LOG_ERR("0x%02x get sensor cache fail",
-						threshold_tbl[i].sensor_num);
-					continue;
-				}
-
-				if (threshold_tbl[i].last_value == reading)
-					continue;
-
-				LOG_ERR("threshold_tbl[i].last_value = %x, reading = %x",
-					threshold_tbl[i].last_value, reading);
-
-				/* use the last_status to carry change bits */
-				threshold_tbl[i].last_status =
-					threshold_tbl[i].last_value ^ reading;
-				threshold_tbl[i].last_value = reading;
-
-			} else {
-				if (get_sensor_reading_to_real_val(threshold_tbl[i].sensor_num,
-								   &val) !=
-				    SENSOR_READ_4BYTE_ACUR_SUCCESS)
-					threshold_tbl[i].last_status = THRESHOLD_STATUS_NOT_ACCESS;
-				/* check whether the status has changed */
-				else if (!set_threshold_status(&threshold_tbl[i], val))
-					continue;
-			}
-
-			if (threshold_tbl[i].fn) {
-				uint32_t arg0 = threshold_tbl[i].arg0;
-				if (threshold_tbl[i].arg0 == THRESHOLD_ARG0_TABLE_INDEX)
-					arg0 = i;
-
-				threshold_tbl[i].fn(arg0, threshold_tbl[i].last_status);
-			}
-		}
-
-		// control fault led
-		fault_led_control();
-
-		// when the button is pressed
-		if (gpio_get(CDU_PWR_BTN)) {
-			// system failure recovery
-			if (system_failure_recovery())
-				ctl_all_pwm_dev(60);
-
-			// rpu ready pin setting
-			if (rpu_ready_recovery())
-				set_all_rpu_ready_pin_normal();
-			else
-				deassert_all_rpu_ready_pin();
-		}
-
-		k_msleep(threshold_poll_interval_ms);
-	}
-
-	return;
-}
-
 void threshold_poll_init()
 {
-	k_thread_create(&threshold_poll, threshold_poll_stack,
-			K_THREAD_STACK_SIZEOF(threshold_poll_stack), threshold_poll_handler, NULL,
-			NULL, NULL, CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&threshold_poll, "threshold_poll");
+	static uint8_t is_init = 0;
+
+	if (!is_init) {
+		ctl_all_pwm_dev(60);
+		// default set coolant led on
+		led_ctrl(LED_IDX_E_COOLANT, LED_TURN_ON);
+		k_msleep(2000); // wait 2s for pump run
+		LOG_WRN("threshold thread start!");
+		is_init = 1;
+	}
+}
+
+void plat_sensor_poll_post()
+{
+	int64_t current_time = k_uptime_get();
+	// if current time less than 20s, do not poll threshold
+	if (current_time < 20000) {
+		return;
+	}
+
+	threshold_poll_init();
+
+	if (!get_sensor_init_done_flag()) {
+		LOG_ERR("threshold sensor not ready");
+		return;
+	}
+
+	if (!get_sensor_poll_enable_flag()) {
+		LOG_ERR("threshold sensor polling not enable");
+		return;
+	}
+
+	if (!get_threshold_poll_enable_flag()) {
+		LOG_ERR("threshold sensor polling not enable");
+		return;
+	}
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(threshold_tbl); i++) {
+		float val = 0;
+
+		if (threshold_tbl[i].type == THRESHOLD_ENABLE_DISCRETE) {
+			/* check the discrete sensor has value changed */
+			/* do not need to convert the sensor reading value */
+
+			int reading = 0;
+			uint8_t status = get_sensor_reading(sensor_config, sensor_config_count,
+							    threshold_tbl[i].sensor_num, &reading,
+							    GET_FROM_CACHE);
+
+			if (status != SENSOR_READ_4BYTE_ACUR_SUCCESS) {
+				LOG_ERR("0x%02x get sensor cache fail",
+					threshold_tbl[i].sensor_num);
+				continue;
+			}
+
+			if (threshold_tbl[i].last_value == reading)
+				continue;
+
+			LOG_ERR("threshold_tbl[i].last_value = %x, reading = %x",
+				threshold_tbl[i].last_value, reading);
+
+			/* use the last_status to carry change bits */
+			threshold_tbl[i].last_status = threshold_tbl[i].last_value ^ reading;
+			threshold_tbl[i].last_value = reading;
+
+		} else {
+			if (get_sensor_reading_to_real_val(threshold_tbl[i].sensor_num, &val) !=
+			    SENSOR_READ_4BYTE_ACUR_SUCCESS)
+				threshold_tbl[i].last_status = THRESHOLD_STATUS_NOT_ACCESS;
+			/* check whether the status has changed */
+			else if (!set_threshold_status(&threshold_tbl[i], val))
+				continue;
+		}
+
+		if (threshold_tbl[i].fn) {
+			uint32_t arg0 = threshold_tbl[i].arg0;
+			if (threshold_tbl[i].arg0 == THRESHOLD_ARG0_TABLE_INDEX)
+				arg0 = i;
+
+			threshold_tbl[i].fn(arg0, threshold_tbl[i].last_status);
+		}
+	}
+
+	// control fault led
+	fault_led_control();
+
+	// when the button is pressed
+	if (gpio_get(CDU_PWR_BTN)) {
+		// system failure recovery
+		if (system_failure_recovery())
+			ctl_all_pwm_dev(60);
+
+		// rpu ready pin setting
+		if (rpu_ready_recovery())
+			set_all_rpu_ready_pin_normal();
+		else
+			deassert_all_rpu_ready_pin();
+	}
 	return;
 }
 
