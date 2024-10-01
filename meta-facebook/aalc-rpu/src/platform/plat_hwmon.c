@@ -31,8 +31,18 @@
 #include "plat_pwm.h"
 #include "plat_status.h"
 #include "plat_isr.h"
+#include "plat_fru.h"
 
 LOG_MODULE_REGISTER(plat_hwmon);
+
+
+static uint32_t pump1_last_switch_time = 0;
+static uint32_t pump2_last_switch_time = 0;
+static uint32_t pump3_last_switch_time = 0;
+static uint32_t pump1_current_boot_unrunning_time = 0;
+static uint32_t pump2_current_boot_unrunning_time = 0;
+static uint32_t pump3_current_boot_unrunning_time = 0;
+static uint32_t last_auto_tune_flag = 0;
 
 bool modbus_pump_setting_unsupport_function(pump_reset_struct *data, uint8_t bit_val)
 {
@@ -354,4 +364,139 @@ uint8_t pwm_control(uint8_t group, uint8_t duty)
 		return 0;
 
 	return 1;
+}
+
+uint32_t get_pump_last_switch_time(uint8_t pump_num)
+{
+	switch (pump_num)
+	{
+	case PUMP_1_UPTIME:
+		return pump1_last_switch_time;
+		break;
+	case PUMP_2_UPTIME:
+		return pump2_last_switch_time;
+		break;
+	case PUMP_3_UPTIME:
+		return pump3_last_switch_time;
+		break;
+	default:
+		LOG_ERR("unknow pump_num %d", pump_num);
+		return 0;
+		break;
+	}
+}
+
+uint32_t get_pump_current_boot_unrunning_time(uint8_t pump_num)
+{
+	switch (pump_num)
+	{
+	case PUMP_1_UPTIME:
+		return pump1_current_boot_unrunning_time;
+		break;
+	case PUMP_2_UPTIME:
+		return pump2_current_boot_unrunning_time;
+		break;
+	case PUMP_3_UPTIME:
+		return pump3_current_boot_unrunning_time;
+		break;
+	default:
+		LOG_ERR("unknow pump_num %d", pump_num);
+		return 0;
+		break;
+	}
+}
+
+pump_running_time pump_running_time_info[] = {
+	{ PUMP_1_UPTIME, EEPROM_PUMP1_UPTIME_SIZE, EEPROM_PUMP1_UPTIME_OFFSET },
+	{ PUMP_2_UPTIME, EEPROM_PUMP2_UPTIME_SIZE, EEPROM_PUMP2_UPTIME_OFFSET },
+	{ PUMP_3_UPTIME, EEPROM_PUMP3_UPTIME_SIZE, EEPROM_PUMP3_UPTIME_OFFSET },
+};
+
+uint32_t read_pump_running_time_data_from_eeprom(uint8_t pump_num)
+{
+	// read from eeprom
+	uint8_t tmp_read_data[4] = { 0 }; // 4 bytes
+	uint16_t offset = 0;
+	for (uint8_t i = 0; i < PUMP_MAX_NUM; i++){
+		if (pump_num == i)
+		{
+			offset = pump_running_time_info->eeprom_offset;
+		}
+		else
+		{
+			LOG_ERR("Can not find pump_num: %d, i: %d", pump_num, i);
+			return 0;
+		}
+	}
+
+	if (!plat_eeprom_read(offset, tmp_read_data, pump_running_time_info->size))
+		LOG_ERR("read %d uptime fail!, ", pump_num);
+
+	uint32_t return_data =
+		(tmp_read_data[0] << 24) | (tmp_read_data[1] << 16) | (tmp_read_data[2] << 8) | tmp_read_data[3];
+	LOG_DBG("combine uptime: %d\n", return_data);
+
+	return return_data;
+}
+
+bool get_pump_uptime_secs(uint8_t pump_num, uint32_t *return_uptime)
+{
+	CHECK_NULL_ARG_WITH_RETURN(return_uptime, false);
+
+	if (pump_num > PUMP_MAX_NUM)
+	{
+		LOG_ERR("unknow pump_num %d", pump_num);
+		return false;
+	}
+
+	// get pump running time from eeprom
+	uint32_t tmp_uptime = read_pump_running_time_data_from_eeprom(pump_num);
+	uint32_t tmp_last_switch_time = get_pump_last_switch_time(pump_num);
+	uint32_t tmp_current_boot_unrunning_time = get_pump_current_boot_unrunning_time(pump_num);
+	printf("tmp_uptime: %d, tmp_last_switch_time: %d, tmp_current_boot_unrunning_time: %d\n", tmp_uptime, tmp_last_switch_time, tmp_current_boot_unrunning_time);
+	// if auto tune is on 
+	if (get_status_flag(STATUS_FLAG_AUTO_TUNE))
+		*return_uptime = tmp_uptime + (k_uptime_get_32()/1000) - tmp_current_boot_unrunning_time;
+	else
+		*return_uptime = tmp_uptime + (tmp_last_switch_time - tmp_current_boot_unrunning_time);
+	printf("return_uptime: %d\n", *return_uptime);
+	return true;
+}
+
+bool set_pump_uptime_secs(uint8_t pump_num)
+{
+	bool auto_tune_flag = get_status_flag(STATUS_FLAG_AUTO_TUNE);		
+	
+	if (auto_tune_flag == last_auto_tune_flag)
+		return true;
+
+	switch (pump_num)
+	{
+	case PUMP_1_UPTIME:
+		if (auto_tune_flag) 
+			pump1_current_boot_unrunning_time += (k_uptime_get_32()/1000 - pump1_last_switch_time);
+		
+		pump1_last_switch_time = k_uptime_get_32()/1000;
+		break;
+	case PUMP_2_UPTIME:
+		if (auto_tune_flag) 
+			pump2_current_boot_unrunning_time += (k_uptime_get_32()/1000 - pump2_last_switch_time);
+		
+		pump2_last_switch_time = k_uptime_get_32()/1000;
+		break;
+	case PUMP_3_UPTIME:
+		if (auto_tune_flag) 
+			pump3_current_boot_unrunning_time += (k_uptime_get_32()/1000 - pump3_last_switch_time);
+		
+		pump3_last_switch_time = k_uptime_get_32()/1000;
+		break;
+	default:
+		LOG_ERR("unknow pump_num %d", pump_num);
+		return false;
+		break;
+	}
+
+	last_auto_tune_flag = auto_tune_flag;
+
+	return true;
 }

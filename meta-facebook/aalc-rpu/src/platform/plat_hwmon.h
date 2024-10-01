@@ -36,6 +36,19 @@ typedef struct _pump_reset_struct {
 	uint8_t senser_num;
 } pump_reset_struct;
 
+enum PUMP_NUM {
+	PUMP_1_UPTIME,
+	PUMP_2_UPTIME,
+	PUMP_3_UPTIME,
+	PUMP_MAX_NUM,
+};
+
+typedef struct _pump_running_time_struct {
+	uint8_t pump_num;
+	uint8_t size;
+	uint16_t eeprom_offset;
+} pump_running_time;
+
 bool clear_log_for_modbus_pump_setting(pump_reset_struct *data, uint8_t bit_val);
 bool pump_setting_pump1_reset(pump_reset_struct *data, uint8_t bit_val);
 bool pump_setting_pump2_reset(pump_reset_struct *data, uint8_t bit_val);
@@ -47,3 +60,7 @@ bool modbus_pump_setting_unsupport_function(pump_reset_struct *data, uint8_t bit
 bool set_all_pump_power(bool switch_val);
 bool rpu_remote_power_cycle_function(pump_reset_struct *data, uint8_t bit_val);
 uint8_t pwm_control(uint8_t group, uint8_t duty);
+bool get_pump_uptime_secs(uint8_t pump_num, uint32_t *return_uptime);
+bool set_pump_uptime_secs(uint8_t pump_num);
+uint32_t get_pump_last_switch_time(uint8_t pump_num);
+uint32_t get_pump_current_boot_unrunning_time(uint8_t pump_num);

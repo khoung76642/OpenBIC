@@ -659,6 +659,24 @@ uint8_t modbus_read_time_since_last_on(modbus_command_mapping *cmd)
 	return MODBUS_EXC_NONE;
 }
 
+uint8_t modbus_read_pump_running_time(modbus_command_mapping *cmd)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
+	uint32_t pump_uptime_sec = 0;
+	if (get_pump_uptime_secs(cmd->arg0, &pump_uptime_sec))
+	{
+		cmd->data[0] = pump_uptime_sec >> 16;
+		cmd->data[1] = pump_uptime_sec & 0xffff;
+	}
+	else 
+	{
+		LOG_ERR("read pump running time fail!");
+		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
+	}
+	printf("pump_uptime_sec = %d\n", pump_uptime_sec);
+	return MODBUS_EXC_NONE;
+}
+
 modbus_command_mapping modbus_command_table[] = {
 	// addr, write_fn, read_fn, arg0, arg1, arg2, size
 	{ MODBUS_BPB_RPU_COOLANT_FLOW_RATE_LPM_ADDR, NULL, modbus_get_senser_reading,
@@ -751,9 +769,9 @@ modbus_command_mapping modbus_command_table[] = {
 	  SENSOR_NUM_PB_3_HSC_P48V_IOUT_CURR_A, 1, -1, 1 },
 	{ MODBUS_BB_HSC_P48V_PIN_PWR_W_ADDR, NULL, modbus_get_senser_reading,
 	  SENSOR_NUM_BB_HSC_P48V_PIN_PWR_W, 1, -1, 1 },
-	{ MODBUS_PUMP_1_RUNNING_ADDR, NULL, modbus_to_do_get, 0, 0, 0, 2 },
-	{ MODBUS_PUMP_2_RUNNING_ADDR, NULL, modbus_to_do_get, 0, 0, 0, 2 },
-	{ MODBUS_PUMP_3_RUNNING_ADDR, NULL, modbus_to_do_get, 0, 0, 0, 2 },
+	{ MODBUS_PUMP_1_RUNNING_ADDR, NULL, modbus_read_pump_running_time, PUMP_1_UPTIME, 0, 0, 2 },
+	{ MODBUS_PUMP_2_RUNNING_ADDR, NULL, modbus_read_pump_running_time, PUMP_2_UPTIME, 0, 0, 2 },
+	{ MODBUS_PUMP_3_RUNNING_ADDR, NULL, modbus_read_pump_running_time, PUMP_3_UPTIME, 0, 0, 2 },
 	{ MODBUS_BPB_HSC_P48V_PIN_PWR_W_ADDR, NULL, modbus_get_senser_reading,
 	  SENSOR_NUM_BPB_HSC_P48V_PIN_PWR_W, 1, -1, 1 },
 	{ MODBUS_PB_1_HSC_P48V_PIN_PWR_W_ADDR, NULL, modbus_get_senser_reading,
