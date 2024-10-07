@@ -143,7 +143,10 @@ bool pump_setting_set_auto_tune_flag(pump_reset_struct *data, uint8_t bit_val)
 	CHECK_NULL_ARG_WITH_RETURN(data, false);
 
 	set_status_flag(STATUS_FLAG_AUTO_TUNE, 0, bit_val);
-
+	if (bit_val != last_auto_tune_flag) {
+		set_pump_uptime_secs(PUMP_1_UPTIME);
+		last_auto_tune_flag = bit_val;
+	}
 	return true;
 }
 
@@ -366,44 +369,52 @@ uint8_t pwm_control(uint8_t group, uint8_t duty)
 	return 1;
 }
 
-uint32_t get_pump_last_switch_time(uint8_t pump_num)
+bool get_pump_last_switch_time(uint8_t pump_num, uint32_t *return_uptime)
 {
 	switch (pump_num)
 	{
 	case PUMP_1_UPTIME:
-		return pump1_last_switch_time;
+		*return_uptime = pump1_last_switch_time;
+
 		break;
 	case PUMP_2_UPTIME:
-		return pump2_last_switch_time;
+		*return_uptime = pump2_last_switch_time;
+
 		break;
 	case PUMP_3_UPTIME:
-		return pump3_last_switch_time;
+		*return_uptime = pump3_last_switch_time;
+
 		break;
 	default:
 		LOG_ERR("unknow pump_num %d", pump_num);
-		return 0;
-		break;
+		return false;
 	}
+
+	return true;
 }
 
-uint32_t get_pump_current_boot_unrunning_time(uint8_t pump_num)
+bool get_pump_current_boot_unrunning_time(uint8_t pump_num, uint32_t *return_uptime)
 {
 	switch (pump_num)
 	{
 	case PUMP_1_UPTIME:
-		return pump1_current_boot_unrunning_time;
+		*return_uptime = pump1_current_boot_unrunning_time;
+
 		break;
 	case PUMP_2_UPTIME:
-		return pump2_current_boot_unrunning_time;
+		*return_uptime = pump2_current_boot_unrunning_time;
+
 		break;
 	case PUMP_3_UPTIME:
-		return pump3_current_boot_unrunning_time;
+		*return_uptime = pump3_current_boot_unrunning_time;
+
 		break;
 	default:
 		LOG_ERR("unknow pump_num %d", pump_num);
-		return 0;
-		break;
+		return false;
 	}
+
+	return true;
 }
 
 pump_running_time pump_running_time_info[] = {
@@ -412,31 +423,34 @@ pump_running_time pump_running_time_info[] = {
 	{ PUMP_3_UPTIME, EEPROM_PUMP3_UPTIME_SIZE, EEPROM_PUMP3_UPTIME_OFFSET },
 };
 
-uint32_t read_pump_running_time_data_from_eeprom(uint8_t pump_num)
+bool read_pump_running_time_data_from_eeprom(uint8_t pump_num, uint32_t *return_data)
 {
+	if (pump_num > PUMP_MAX_NUM || pump_num < 0)
+	{
+		LOG_ERR("unknow pump_num %d", pump_num);
+		return false;
+	}
+
 	// read from eeprom
 	uint8_t tmp_read_data[4] = { 0 }; // 4 bytes
 	uint16_t offset = 0;
 	for (uint8_t i = 0; i < PUMP_MAX_NUM; i++){
 		if (pump_num == i)
-		{
 			offset = pump_running_time_info->eeprom_offset;
-		}
-		else
-		{
-			LOG_ERR("Can not find pump_num: %d, i: %d", pump_num, i);
-			return 0;
-		}
 	}
 
 	if (!plat_eeprom_read(offset, tmp_read_data, pump_running_time_info->size))
+	{
 		LOG_ERR("read %d uptime fail!, ", pump_num);
+		return false;
+	}
 
-	uint32_t return_data =
+	*return_data =
 		(tmp_read_data[0] << 24) | (tmp_read_data[1] << 16) | (tmp_read_data[2] << 8) | tmp_read_data[3];
-	LOG_DBG("combine uptime: %d\n", return_data);
 
-	return return_data;
+	LOG_INF("read %d uptime: %d", pump_num, *return_data);
+
+	return true;
 }
 
 bool get_pump_uptime_secs(uint8_t pump_num, uint32_t *return_uptime)
@@ -450,16 +464,25 @@ bool get_pump_uptime_secs(uint8_t pump_num, uint32_t *return_uptime)
 	}
 
 	// get pump running time from eeprom
-	uint32_t tmp_uptime = read_pump_running_time_data_from_eeprom(pump_num);
-	uint32_t tmp_last_switch_time = get_pump_last_switch_time(pump_num);
-	uint32_t tmp_current_boot_unrunning_time = get_pump_current_boot_unrunning_time(pump_num);
+	uint32_t tmp_uptime = 0;
+	if (!read_pump_running_time_data_from_eeprom(pump_num, &tmp_uptime))
+		return false;
+
+	uint32_t tmp_last_switch_time = 0;
+	if (!get_pump_last_switch_time(pump_num, &tmp_last_switch_time))
+		return false;
+
+	uint32_t tmp_current_boot_unrunning_time = 0;
+	if (!get_pump_current_boot_unrunning_time(pump_num, &tmp_current_boot_unrunning_time))
+		return false;
+
 	printf("tmp_uptime: %d, tmp_last_switch_time: %d, tmp_current_boot_unrunning_time: %d\n", tmp_uptime, tmp_last_switch_time, tmp_current_boot_unrunning_time);
 	// if auto tune is on 
 	if (get_status_flag(STATUS_FLAG_AUTO_TUNE))
 		*return_uptime = tmp_uptime + (k_uptime_get_32()/1000) - tmp_current_boot_unrunning_time;
 	else
 		*return_uptime = tmp_uptime + (tmp_last_switch_time - tmp_current_boot_unrunning_time);
-	printf("return_uptime: %d\n", *return_uptime);
+	printf("get pump running time: %d\n", *return_uptime);
 	return true;
 }
 

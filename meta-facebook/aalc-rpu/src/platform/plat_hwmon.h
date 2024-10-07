@@ -62,5 +62,5 @@ bool rpu_remote_power_cycle_function(pump_reset_struct *data, uint8_t bit_val);
 uint8_t pwm_control(uint8_t group, uint8_t duty);
 bool get_pump_uptime_secs(uint8_t pump_num, uint32_t *return_uptime);
 bool set_pump_uptime_secs(uint8_t pump_num);
-uint32_t get_pump_last_switch_time(uint8_t pump_num);
-uint32_t get_pump_current_boot_unrunning_time(uint8_t pump_num);
+bool get_pump_last_switch_time(uint8_t pump_num, uint32_t *return_uptime);
+bool get_pump_current_boot_unrunning_time(uint8_t pump_num, uint32_t *return_uptime);
