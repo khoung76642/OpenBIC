@@ -28,6 +28,26 @@ LOG_MODULE_REGISTER(dev_hdc1080);
 
 #define HDC1080_DELAY 10
 
+uint16_t raw_val = 0;
+uint16_t read_tr_val = 0;
+
+bool save_hdc1080_val(uint16_t raw_data, uint16_t val)
+{
+	raw_val = raw_data;
+	read_tr_val = val;
+	return true;
+}
+
+uint16_t get_hdc1080_val(void)
+{
+	return read_tr_val;
+}
+
+uint16_t get_hdc1080_raw_val(void)
+{
+	return raw_val;
+}
+
 static bool hdc1080_read_val(sensor_cfg *cfg, float *val)
 {
 	uint8_t retry = 5;
@@ -63,7 +83,8 @@ static bool hdc1080_read_val(sensor_cfg *cfg, float *val)
 		LOG_ERR("0x%02x offset %d read fail", cfg->num, cfg->offset);
 		break;
 	}
-
+	if (cfg->num == 0x84)
+		save_hdc1080_val(msg.data[0] << 8 | msg.data[1], RAW2TEMP((msg.data[0] << 8 | msg.data[1])));
 	return true;
 }
 

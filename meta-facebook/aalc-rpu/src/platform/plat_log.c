@@ -26,6 +26,7 @@
 #include "plat_sensor_table.h"
 #include "fru.h"
 #include "plat_fru.h"
+#include "hdc1080.h"
 
 LOG_MODULE_REGISTER(plat_log);
 
@@ -131,6 +132,35 @@ void error_log_event(uint8_t sensor_num, bool val_normal)
 {
 	bool log_todo = false;
 	uint16_t err_code = 0;
+	if (sensor_num == SENSOR_NUM_MB_RPU_AIR_INLET_TEMP_C)
+	{
+		uint16_t newest_count = get_log_position_by_time_order(1);
+		uint16_t fru_count = (err_log_data[newest_count].index == 0xFFFF) ?
+					     newest_count :
+					     ((newest_count + 1) % LOG_MAX_NUM);
+
+		err_log_data[fru_count].index =
+			(err_log_data[newest_count].index == LOG_MAX_INDEX ||
+			 err_log_data[newest_count].index == 0xFFFF) ?
+				1 :
+				(err_log_data[newest_count].index + 1);
+		err_log_data[fru_count].err_code = 0xFF;
+		err_log_data[fru_count].sys_time = get_uptime_secs();
+		err_log_data[fru_count].pump_duty = get_hdc1080_raw_val();
+		err_log_data[fru_count].fan_duty = get_hdc1080_val();
+		err_log_data[fru_count].outlet_temp = get_sensor_reading_to_modbus_val(
+			SENSOR_NUM_MB_RPU_AIR_INLET_TEMP_C, -1, 1);
+		err_log_data[fru_count].outlet_press = 0;
+		err_log_data[fru_count].flow_rate = 0;
+		err_log_data[fru_count].volt = 0;
+
+		if (!plat_eeprom_write(
+			    (AALC_FRU_LOG_START + fru_count * sizeof(modbus_err_log_mapping)),
+			    (uint8_t *)&err_log_data[fru_count], sizeof(modbus_err_log_mapping)))
+			LOG_ERR("Write Log failed with Error code: %02x", err_code);
+		else
+			k_msleep(5000); // wait 5ms write eeprom
+	}
 
 	if (val_normal) {
 		for (uint8_t i = 0; i < ARRAY_SIZE(err_sensor_caches); i++) {

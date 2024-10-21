@@ -25,4 +25,10 @@ typedef struct _hdc1080_init_arg {
 	bool is_init;
 } hdc1080_init_arg;
 
+bool save_hdc1080_val(uint16_t raw_data, uint16_t val);
+
+uint16_t get_hdc1080_val(void);
+
+uint16_t get_hdc1080_raw_val(void);
+
 #endif //HDC1080_H

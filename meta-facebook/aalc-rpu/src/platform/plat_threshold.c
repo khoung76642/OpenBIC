@@ -824,6 +824,9 @@ static bool set_threshold_status(sensor_threshold *threshold_tbl, float val)
 	LOG_ERR("0x%02x status change: last_status: %d, status: %d, val: %d\n",
 		threshold_tbl->sensor_num, threshold_tbl->last_status, status, (int)val);
 
+	if (threshold_tbl->sensor_num == SENSOR_NUM_MB_RPU_AIR_INLET_TEMP_C)
+		error_log_event(threshold_tbl->sensor_num, IS_ABNORMAL_VAL);
+
 	threshold_tbl->last_status = status;
 	return true;
 }
