@@ -855,7 +855,7 @@ static uint8_t get_temp_sensor_mfr_id(uint8_t bus, uint8_t addr, uint8_t mfr_id_
 	msg.tx_len = 1;
 	msg.data[0] = mfr_id_offset;
 	if (i2c_master_read(&msg, I2C_MAX_RETRY)) {
-		LOG_ERR("Failed to read TEMP 0x%x module MFR_ID", addr);
+		LOG_DBG("Failed to read TEMP 0x%x module MFR_ID", addr);
 		return 0;
 	}
 
@@ -871,7 +871,7 @@ static uint32_t get_pmbus_mfr_id(uint8_t bus, uint8_t addr)
 	msg.tx_len = 1;
 	msg.data[0] = PMBUS_MFR_ID;
 	if (i2c_master_read(&msg, I2C_MAX_RETRY)) {
-		LOG_ERR("Failed to read HSC module MFR_ID");
+		LOG_DBG("Failed to read HSC module MFR_ID");
 		return 0;
 	}
 
@@ -1005,7 +1005,7 @@ static void hsc_config(uint8_t type)
 		xdp_init_arr = &xdp710_init_args[2];
 		break;
 	default:
-		LOG_ERR("Unknown HSC module type(%d)", type);
+		LOG_DBG("Unknown HSC module type(%d)", type);
 		return;
 	}
 	LOG_INF("sen_nums = %d", sen_nums);
@@ -1017,14 +1017,14 @@ static void hsc_config(uint8_t type)
 			if (p->num != *(sen_tbl + j))
 				continue;
 			if (!pre_PCA9546A_read(p, p->pre_sensor_read_args))
-				LOG_ERR("pre lock mutex fail !");
+				LOG_DBG("pre lock mutex fail !");
 
 			// use default address to identify the HSC module
 			const uint32_t mfr_id = get_pmbus_mfr_id(p->port, p->target_addr);
 			LOG_INF("Sensor %x's HSC module MFR_ID: 0x%06x", p->num, mfr_id);
 
 			if (!post_PCA9546A_read(p, p->pre_sensor_read_args, 0))
-				LOG_ERR("pro unlock mutex fail !");
+				LOG_DBG("pro unlock mutex fail !");
 
 			switch (mfr_id) {
 			case 0:
@@ -1094,7 +1094,7 @@ void load_sb_temp_sensor_with_main_and_2nd_config()
 			LOG_INF("Add nct214 %d address on sensorboard ok: 0x%x", i,
 				nct214_config_table[i].target_addr);
 		} else {
-			LOG_ERR("Can't read MFR_ID from 0x%x NCT214, load temperature sensor on sensor board failed",
+			LOG_DBG("Can't read MFR_ID from 0x%x NCT214, load temperature sensor on sensor board failed",
 				nct214_config_table[i].target_addr);
 			// still add sensor config to keep SENSOR_CONFIG_SIZE correct
 			add_sensor_config(tmp461_config_table[i]);
@@ -1106,13 +1106,13 @@ void load_sb_temp_sensor_config()
 	uint8_t index = 0;
 
 	if (!pre_PCA9546A_read(&nct214_config_table[0], &bus_9_PCA9546A_configs[0]))
-		LOG_ERR("pre lock mutex fail !");
+		LOG_DBG("pre lock mutex fail !");
 
 	for (index = 0; index < ARRAY_SIZE(nct214_config_table); index++)
 		add_sensor_config(nct214_config_table[index]);
 
 	if (!post_PCA9546A_read(&nct214_config_table[0], &bus_9_PCA9546A_configs[0], 0))
-		LOG_ERR("pro unlock mutex fail !");
+		LOG_DBG("pro unlock mutex fail !");
 }
 void load_plat_def_sensor_config()
 {
@@ -1157,7 +1157,7 @@ uint16_t get_sensor_reading_to_modbus_val(uint8_t sensor_num, int8_t exp, int8_t
 					    &reading, GET_FROM_CACHE);
 
 	if (status != SENSOR_READ_4BYTE_ACUR_SUCCESS) {
-		LOG_ERR("0x%02x get sensor cache fail", sensor_num);
+		LOG_DBG("0x%02x get sensor cache fail", sensor_num);
 		return 0;
 	}
 	sensor_val *sval = (sensor_val *)&reading;
@@ -1179,7 +1179,7 @@ uint8_t get_sensor_reading_to_real_val(uint8_t sensor_num, float *val)
 					    &reading, GET_FROM_CACHE);
 
 	if (status != SENSOR_READ_4BYTE_ACUR_SUCCESS) {
-		LOG_ERR("0x%02x get sensor cache fail", sensor_num);
+		LOG_DBG("0x%02x get sensor cache fail", sensor_num);
 		return status;
 	}
 
@@ -1339,7 +1339,7 @@ static uint8_t plat_def_sensor_read(sensor_cfg *cfg, int *reading)
 		break;
 	}
 	default:
-		LOG_ERR("0x%02x unknow plat sensor type %d", cfg->num, type);
+		LOG_DBG("0x%02x unknow plat sensor type %d", cfg->num, type);
 		return SENSOR_PARAMETER_NOT_VALID;
 	}
 

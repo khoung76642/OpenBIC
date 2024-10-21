@@ -83,8 +83,12 @@ static bool hdc1080_read_val(sensor_cfg *cfg, float *val)
 		LOG_ERR("0x%02x offset %d read fail", cfg->num, cfg->offset);
 		break;
 	}
-	if (cfg->num == 0x84)
-		save_hdc1080_val(msg.data[0] << 8 | msg.data[1], RAW2TEMP((msg.data[0] << 8 | msg.data[1])));
+	if (cfg->num == 0x84){
+		LOG_WRN("0x%02x read 0x%02x 0x%02x", cfg->num, msg.data[0], msg.data[1]);
+		save_hdc1080_val((msg.data[0] << 8 | msg.data[1]), RAW2TEMP((msg.data[0] << 8 | msg.data[1])));
+		LOG_WRN("raw2temp: %d", RAW2TEMP((msg.data[0] << 8 | msg.data[1])));
+	}
+		
 	return true;
 }
 

@@ -71,13 +71,13 @@ static uint8_t nct_pwm_ctl(enum PWM_DEVICE_E dev, uint8_t duty)
 	}
 
 	if (i == ARRAY_SIZE(nct_dev_tbl)) {
-		LOG_ERR("Invalid PWM device %d", dev);
+		LOG_DBG("Invalid PWM device %d", dev);
 		return 1;
 	}
 
 	sensor_cfg *cfg = get_common_sensor_cfg_info(nct_dev_tbl[i].tach_sen_num);
 	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config for PWM device %d", dev);
+		LOG_DBG("Failed to get sensor config for PWM device %d", dev);
 		return 1;
 	}
 
@@ -92,7 +92,7 @@ static uint8_t nct_pwm_ctl(enum PWM_DEVICE_E dev, uint8_t duty)
 	if (cfg->pre_sensor_read_hook) {
 		LOG_DBG("cfg->pre_sensor_read_hook %p", cfg->pre_sensor_read_hook);
 		if (cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args) == false) {
-			LOG_ERR("Failed to do pre sensor read for PWM device %d", dev);
+			LOG_DBG("Failed to do pre sensor read for PWM device %d", dev);
 			return 1;
 		}
 	}
@@ -102,7 +102,7 @@ static uint8_t nct_pwm_ctl(enum PWM_DEVICE_E dev, uint8_t duty)
 	if (cfg->post_sensor_read_hook) {
 		LOG_DBG("cfg->post_sensor_read_hook %p", cfg->post_sensor_read_hook);
 		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
-			LOG_ERR("Failed to do post sensor read for PWM device %d", dev);
+			LOG_DBG("Failed to do post sensor read for PWM device %d", dev);
 			return 1;
 		}
 	}
@@ -115,18 +115,18 @@ uint8_t nct7363_wdt_all_disable()
 		sensor_cfg *cfg = get_common_sensor_cfg_info(nct_dev_tbl[i].tach_sen_num);
 
 		if (cfg == NULL) {
-			LOG_ERR("Failed to get sensor config for wdt disable 0x%x",
+			LOG_DBG("Failed to get sensor config for wdt disable 0x%x",
 				nct_dev_tbl[i].tach_sen_num);
 			continue;
 		}
 
 		if (!pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args))
-			LOG_ERR("pre lock mutex fail !");
+			LOG_DBG("pre lock mutex fail !");
 
 		nct7363_setting_wdt(cfg, WDT_DISABLE);
 
 		if (!post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, 0))
-			LOG_ERR("post unlock mutex fail !");
+			LOG_DBG("post unlock mutex fail !");
 	}
 
 	return true;
@@ -137,25 +137,25 @@ uint8_t nct7363_wdt_all_enable()
 	for (uint8_t i = 0; i < ARRAY_SIZE(nct_dev_tbl); i++) {
 		sensor_cfg *cfg = get_common_sensor_cfg_info(nct_dev_tbl[i].tach_sen_num);
 		if (cfg == NULL) {
-			LOG_ERR("Failed to get sensor config for wdt enable 0x%x",
+			LOG_DBG("Failed to get sensor config for wdt enable 0x%x",
 				nct_dev_tbl[i].tach_sen_num);
 			continue;
 		}
 
 		nct7363_init_arg *init_arg = (nct7363_init_arg *)cfg->init_args;
 		if (init_arg == NULL) {
-			LOG_ERR("Failed to get sensor init_arg for wdt enable 0x%x",
+			LOG_DBG("Failed to get sensor init_arg for wdt enable 0x%x",
 				nct_dev_tbl[i].tach_sen_num);
 			continue;
 		}
 
 		if (!pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args))
-			LOG_ERR("pre lock mutex fail !");
+			LOG_DBG("pre lock mutex fail !");
 
 		nct7363_setting_wdt(cfg, init_arg->wdt_cfg);
 
 		if (!post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, 0))
-			LOG_ERR("post unlock mutex fail !");
+			LOG_DBG("post unlock mutex fail !");
 	}
 
 	return true;
@@ -165,7 +165,7 @@ int ast_pwm_set(int duty)
 {
 	LOG_DBG("Set AST PWM duty %d", duty);
 	if (pwm_dev == NULL) {
-		LOG_ERR("PWM dev not found!");
+		LOG_DBG("PWM dev not found!");
 		return 1;
 	}
 	return pwm_pin_set_usec(pwm_dev, PWM_PORT0, PWM_PERIOD, (PWM_PERIOD * duty / 100), 0);
@@ -174,12 +174,12 @@ int ast_pwm_set(int duty)
 uint8_t plat_pwm_ctrl(enum PWM_DEVICE_E dev, uint8_t duty)
 {
 	if (dev >= PWM_DEVICE_E_MAX) {
-		LOG_ERR("Invalid PWM device %d", dev);
+		LOG_DBG("Invalid PWM device %d", dev);
 		return 1;
 	}
 
 	if (duty > MAX_FAN_DUTY_VALUE) {
-		LOG_ERR("Invalid PWM duty %d", duty);
+		LOG_DBG("Invalid PWM duty %d", duty);
 		return 1;
 	}
 
@@ -226,12 +226,12 @@ uint8_t plat_pwm_ctrl(enum PWM_DEVICE_E dev, uint8_t duty)
 static uint8_t ctl_pwm_dev(uint8_t index_start, uint8_t index_end, uint8_t duty)
 {
 	if (duty > MAX_FAN_DUTY_VALUE) {
-		LOG_ERR("Invalid PWM duty %d", duty);
+		LOG_DBG("Invalid PWM duty %d", duty);
 		return 1;
 	}
 
 	if ((index_start > index_end) || (index_end > PWM_DEVICE_E_MAX)) {
-		LOG_ERR("Invalid PWM Device index");
+		LOG_DBG("Invalid PWM Device index");
 		return 1;
 	}
 
@@ -246,13 +246,13 @@ static uint8_t ctl_pwm_dev(uint8_t index_start, uint8_t index_end, uint8_t duty)
 		if (i == redundant_dev) {
 			// redundant duty 30
 			if (plat_pwm_ctrl(i, (duty ? 30 : 0))) {
-				LOG_ERR("Failed to set PWM device %d redundant duty %d", i, duty);
+				LOG_DBG("Failed to set PWM device %d redundant duty %d", i, duty);
 				ret = 1;
 				//break;
 			}
 		} else {
 			if (plat_pwm_ctrl(i, duty)) {
-				LOG_ERR("Failed to set PWM device %d duty %d", i, duty);
+				LOG_DBG("Failed to set PWM device %d duty %d", i, duty);
 				ret = 1;
 				//break;
 			}
@@ -366,5 +366,5 @@ void init_pwm_dev(void)
 	pwm_dev = device_get_binding("PWM");
 
 	if (pwm_dev == NULL)
-		LOG_ERR("FAN PWM init failed due to device not found");
+		LOG_DBG("FAN PWM init failed due to device not found");
 }
