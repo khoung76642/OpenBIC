@@ -54,7 +54,7 @@ struct k_mutex i2c_mutex[I2C_BUS_MAX_NUM];
 int i2c_freq_set(uint8_t i2c_bus, uint8_t i2c_speed_mode, uint8_t en_slave)
 {
 	if (check_i2c_bus_valid(i2c_bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", i2c_bus);
+		LOG_DBG("i2c bus %d is invalid", i2c_bus);
 		return -1;
 	}
 
@@ -62,7 +62,7 @@ int i2c_freq_set(uint8_t i2c_bus, uint8_t i2c_speed_mode, uint8_t en_slave)
 	dev_config_raw = I2C_MODE_MASTER | I2C_SPEED_SET(i2c_speed_mode);
 
 	if (i2c_configure(dev_i2c[i2c_bus], dev_config_raw)) {
-		LOG_ERR("i2c freq set failed");
+		LOG_DBG("i2c freq set failed");
 		return -1;
 	}
 
@@ -84,7 +84,7 @@ int i2c_freq_set(uint8_t i2c_bus, uint8_t i2c_speed_mode, uint8_t en_slave)
 int i2c_addr_set(uint8_t i2c_bus, uint8_t i2c_addr)
 {
 	if (check_i2c_bus_valid(i2c_bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", i2c_bus);
+		LOG_DBG("i2c bus %d is invalid", i2c_bus);
 		return -1;
 	}
 
@@ -120,24 +120,24 @@ int i2c_master_read(I2C_MSG *msg, uint8_t retry)
 	LOG_HEXDUMP_DBG(msg->data, msg->tx_len, "txbuf");
 
 	if (check_i2c_bus_valid(msg->bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", msg->bus);
+		LOG_DBG("i2c bus %d is invalid", msg->bus);
 		return -1;
 	}
 
 	if (msg->rx_len == 0) {
-		LOG_ERR("rx_len = 0");
+		LOG_DBG("rx_len = 0");
 		return EMSGSIZE;
 	}
 
 	if (msg->tx_len > I2C_BUFF_SIZE) {
-		LOG_ERR("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
+		LOG_DBG("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
 		return -1;
 	}
 
 	int status;
 	status = k_mutex_lock(&i2c_mutex[msg->bus], K_MSEC(1000));
 	if (status) {
-		LOG_ERR("I2C %d master read get mutex timeout with ret %d", msg->bus, status);
+		LOG_DBG("I2C %d master read get mutex timeout with ret %d", msg->bus, status);
 		return ENOLCK;
 	}
 
@@ -145,12 +145,12 @@ int i2c_master_read(I2C_MSG *msg, uint8_t retry)
 	uint8_t *txbuf = NULL, *rxbuf = NULL;
 	txbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!txbuf) {
-		LOG_ERR("Failed to malloc txbuf");
+		LOG_DBG("Failed to malloc txbuf");
 		goto exit;
 	}
 	rxbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!rxbuf) {
-		LOG_ERR("Failed to malloc rxbuf");
+		LOG_DBG("Failed to malloc rxbuf");
 		goto exit;
 	}
 	memcpy(txbuf, &msg->data[0], msg->tx_len);
@@ -171,7 +171,7 @@ int i2c_master_read(I2C_MSG *msg, uint8_t retry)
 	}
 
 	if (i > retry)
-		LOG_ERR("I2C %d master read retry reach max with ret %d", msg->bus, ret);
+		LOG_DBG("I2C %d master read retry reach max with ret %d", msg->bus, ret);
 
 exit:
 	SAFE_FREE(txbuf);
@@ -179,7 +179,7 @@ exit:
 
 	status = k_mutex_unlock(&i2c_mutex[msg->bus]);
 	if (status)
-		LOG_ERR("I2C %d master read release mutex fail with ret %d", msg->bus, status);
+		LOG_DBG("I2C %d master read release mutex fail with ret %d", msg->bus, status);
 
 	return ret;
 }
@@ -192,19 +192,19 @@ int i2c_master_write(I2C_MSG *msg, uint8_t retry)
 	LOG_HEXDUMP_DBG(msg->data, msg->tx_len, "txbuf");
 
 	if (check_i2c_bus_valid(msg->bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", msg->bus);
+		LOG_DBG("i2c bus %d is invalid", msg->bus);
 		return -1;
 	}
 
 	if (msg->tx_len > I2C_BUFF_SIZE) {
-		LOG_ERR("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
+		LOG_DBG("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
 		return -1;
 	}
 
 	int status;
 	status = k_mutex_lock(&i2c_mutex[msg->bus], K_MSEC(1000));
 	if (status) {
-		LOG_ERR("I2C %d master write get mutex timeout with ret %d", msg->bus, status);
+		LOG_DBG("I2C %d master write get mutex timeout with ret %d", msg->bus, status);
 		return ENOLCK;
 	}
 
@@ -212,7 +212,7 @@ int i2c_master_write(I2C_MSG *msg, uint8_t retry)
 	uint8_t *txbuf = NULL;
 	txbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!txbuf) {
-		LOG_ERR("Failed to malloc txbuf");
+		LOG_DBG("Failed to malloc txbuf");
 		goto exit;
 	}
 	memcpy(txbuf, &msg->data[0], msg->tx_len);
@@ -225,14 +225,14 @@ int i2c_master_write(I2C_MSG *msg, uint8_t retry)
 	}
 
 	if (i > retry)
-		LOG_ERR("I2C %d master write retry reach max with ret %d", msg->bus, ret);
+		LOG_DBG("I2C %d master write retry reach max with ret %d", msg->bus, ret);
 
 exit:
 	SAFE_FREE(txbuf);
 
 	status = k_mutex_unlock(&i2c_mutex[msg->bus]);
 	if (status)
-		LOG_ERR("I2C %d master write release mutex fail with ret %d", msg->bus, status);
+		LOG_DBG("I2C %d master write release mutex fail with ret %d", msg->bus, status);
 
 	return ret;
 }
@@ -246,17 +246,17 @@ int i2c_master_read_without_mutex(I2C_MSG *msg, uint8_t retry)
 	LOG_HEXDUMP_DBG(msg->data, msg->tx_len, "txbuf");
 
 	if (check_i2c_bus_valid(msg->bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", msg->bus);
+		LOG_DBG("i2c bus %d is invalid", msg->bus);
 		return -1;
 	}
 
 	if (msg->rx_len == 0) {
-		LOG_ERR("rx_len = 0");
+		LOG_DBG("rx_len = 0");
 		return EMSGSIZE;
 	}
 
 	if (msg->tx_len > I2C_BUFF_SIZE) {
-		LOG_ERR("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
+		LOG_DBG("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
 		return -1;
 	}
 
@@ -264,12 +264,12 @@ int i2c_master_read_without_mutex(I2C_MSG *msg, uint8_t retry)
 	uint8_t *txbuf = NULL, *rxbuf = NULL;
 	txbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!txbuf) {
-		LOG_ERR("Failed to malloc txbuf");
+		LOG_DBG("Failed to malloc txbuf");
 		goto exit;
 	}
 	rxbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!rxbuf) {
-		LOG_ERR("Failed to malloc rxbuf");
+		LOG_DBG("Failed to malloc rxbuf");
 		goto exit;
 	}
 	memcpy(txbuf, &msg->data[0], msg->tx_len);
@@ -290,7 +290,7 @@ int i2c_master_read_without_mutex(I2C_MSG *msg, uint8_t retry)
 	}
 
 	if (i > retry)
-		LOG_ERR("I2C %d master read retry reach max with ret %d", msg->bus, ret);
+		LOG_DBG("I2C %d master read retry reach max with ret %d", msg->bus, ret);
 
 exit:
 	SAFE_FREE(txbuf);
@@ -307,12 +307,12 @@ int i2c_master_write_without_mutex(I2C_MSG *msg, uint8_t retry)
 	LOG_HEXDUMP_DBG(msg->data, msg->tx_len, "txbuf");
 
 	if (check_i2c_bus_valid(msg->bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", msg->bus);
+		LOG_DBG("i2c bus %d is invalid", msg->bus);
 		return -1;
 	}
 
 	if (msg->tx_len > I2C_BUFF_SIZE) {
-		LOG_ERR("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
+		LOG_DBG("tx_len %d is over limit %d", msg->tx_len, I2C_BUFF_SIZE);
 		return -1;
 	}
 
@@ -320,7 +320,7 @@ int i2c_master_write_without_mutex(I2C_MSG *msg, uint8_t retry)
 	uint8_t *txbuf = NULL;
 	txbuf = (uint8_t *)malloc(I2C_BUFF_SIZE * sizeof(uint8_t));
 	if (!txbuf) {
-		LOG_ERR("Failed to malloc txbuf");
+		LOG_DBG("Failed to malloc txbuf");
 		goto exit;
 	}
 	memcpy(txbuf, &msg->data[0], msg->tx_len);
@@ -333,7 +333,7 @@ int i2c_master_write_without_mutex(I2C_MSG *msg, uint8_t retry)
 	}
 
 	if (i > retry)
-		LOG_ERR("I2C %d master write retry reach max with ret %d", msg->bus, ret);
+		LOG_DBG("I2C %d master write retry reach max with ret %d", msg->bus, ret);
 
 exit:
 	SAFE_FREE(txbuf);
@@ -350,7 +350,7 @@ void i2c_scan(uint8_t bus, uint8_t *target_addr, uint8_t *target_addr_len)
 	*target_addr_len = 0;
 
 	if (check_i2c_bus_valid(bus) < 0) {
-		LOG_ERR("i2c bus %d is invalid", bus);
+		LOG_DBG("i2c bus %d is invalid", bus);
 		return;
 	}
 
@@ -383,98 +383,98 @@ void util_init_I2C(void)
 	dev_i2c[0] = device_get_binding("I2C_0");
 	status = k_mutex_init(&i2c_mutex[0]);
 	if (status)
-		LOG_ERR("i2c0 mutex init fail");
+		LOG_DBG("i2c0 mutex init fail");
 #endif
 #ifdef DEV_I2C_1
 	dev_i2c[1] = device_get_binding("I2C_1");
 	status = k_mutex_init(&i2c_mutex[1]);
 	if (status)
-		LOG_ERR("i2c1 mutex init fail");
+		LOG_DBG("i2c1 mutex init fail");
 #endif
 #ifdef DEV_I2C_2
 	dev_i2c[2] = device_get_binding("I2C_2");
 	status = k_mutex_init(&i2c_mutex[2]);
 	if (status)
-		LOG_ERR("i2c2 mutex init fail");
+		LOG_DBG("i2c2 mutex init fail");
 #endif
 #ifdef DEV_I2C_3
 	dev_i2c[3] = device_get_binding("I2C_3");
 	status = k_mutex_init(&i2c_mutex[3]);
 	if (status)
-		LOG_ERR("i2c3 mutex init fail");
+		LOG_DBG("i2c3 mutex init fail");
 #endif
 #ifdef DEV_I2C_4
 	dev_i2c[4] = device_get_binding("I2C_4");
 	status = k_mutex_init(&i2c_mutex[4]);
 	if (status)
-		LOG_ERR("i2c4 mutex init fail");
+		LOG_DBG("i2c4 mutex init fail");
 #endif
 #ifdef DEV_I2C_5
 	dev_i2c[5] = device_get_binding("I2C_5");
 	status = k_mutex_init(&i2c_mutex[5]);
 	if (status)
-		LOG_ERR("i2c5 mutex init fail");
+		LOG_DBG("i2c5 mutex init fail");
 #endif
 #ifdef DEV_I2C_6
 	dev_i2c[6] = device_get_binding("I2C_6");
 	status = k_mutex_init(&i2c_mutex[6]);
 	if (status)
-		LOG_ERR("i2c6 mutex init fail");
+		LOG_DBG("i2c6 mutex init fail");
 #endif
 #ifdef DEV_I2C_7
 	dev_i2c[7] = device_get_binding("I2C_7");
 	status = k_mutex_init(&i2c_mutex[7]);
 	if (status)
-		LOG_ERR("i2c7 mutex init fail");
+		LOG_DBG("i2c7 mutex init fail");
 #endif
 #ifdef DEV_I2C_8
 	dev_i2c[8] = device_get_binding("I2C_8");
 	status = k_mutex_init(&i2c_mutex[8]);
 	if (status)
-		LOG_ERR("i2c8 mutex init fail");
+		LOG_DBG("i2c8 mutex init fail");
 #endif
 #ifdef DEV_I2C_9
 	dev_i2c[9] = device_get_binding("I2C_9");
 	status = k_mutex_init(&i2c_mutex[9]);
 	if (status)
-		LOG_ERR("i2c9 mutex init fail");
+		LOG_DBG("i2c9 mutex init fail");
 #endif
 #ifdef DEV_I2C_10
 	dev_i2c[10] = device_get_binding("I2C_10");
 	status = k_mutex_init(&i2c_mutex[10]);
 	if (status)
-		LOG_ERR("i2c10 mutex init fail");
+		LOG_DBG("i2c10 mutex init fail");
 #endif
 #ifdef DEV_I2C_11
 	dev_i2c[11] = device_get_binding("I2C_11");
 	status = k_mutex_init(&i2c_mutex[11]);
 	if (status)
-		LOG_ERR("i2c11 mutex init fail");
+		LOG_DBG("i2c11 mutex init fail");
 #endif
 #if defined(CONFIG_I2C_ASPEED)
 #ifdef DEV_I2C_12
 	dev_i2c[12] = device_get_binding("I2C_12");
 	status = k_mutex_init(&i2c_mutex[12]);
 	if (status)
-		LOG_ERR("i2c12 mutex init fail");
+		LOG_DBG("i2c12 mutex init fail");
 #endif
 #ifdef DEV_I2C_13
 	dev_i2c[13] = device_get_binding("I2C_13");
 	status = k_mutex_init(&i2c_mutex[13]);
 	if (status)
-		LOG_ERR("i2c13 mutex init fail");
+		LOG_DBG("i2c13 mutex init fail");
 #endif
 #ifdef DEV_I2C_14
 	dev_i2c[14] = device_get_binding("I2C_14");
 	status = k_mutex_init(&i2c_mutex[14]);
 	if (status)
-		LOG_ERR("i2c14 mutex init fail");
+		LOG_DBG("i2c14 mutex init fail");
 #endif
 #ifdef DEV_I2C_15
 	dev_i2c[15] = device_get_binding("I2C_15");
 	status = k_mutex_init(&i2c_mutex[15]);
 	if (status)
-		LOG_ERR("i2c15 mutex init fail");
+		LOG_DBG("i2c15 mutex init fail");
 #endif
 #endif /* CONFIG_I2C_ASPEED */
 }

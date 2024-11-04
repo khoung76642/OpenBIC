@@ -906,7 +906,7 @@ struct k_mutex *get_i2c_mux_mutex(uint8_t i2c_bus)
 		mutex = &i2c_9_PCA9546a_mutex;
 		break;
 	default:
-		LOG_ERR("No support for i2c bus %d mutex", i2c_bus);
+		LOG_DBG("No support for i2c bus %d mutex", i2c_bus);
 		break;
 	}
 
@@ -927,13 +927,13 @@ bool pre_PCA9546A_read(sensor_cfg *cfg, void *args)
 	CHECK_NULL_ARG_WITH_RETURN(mutex, false);
 	mutex_status = k_mutex_lock(mutex, K_MSEC(MUTEX_LOCK_INTERVAL_MS));
 	if (mutex_status != 0) {
-		LOG_ERR("Mutex lock fail, status: %d", mutex_status);
+		LOG_DBG("Mutex lock fail, status: %d", mutex_status);
 		return false;
 	}
 
 	ret = set_mux_channel(*pre_args, MUTEX_LOCK_ENABLE);
 	if (ret != true) {
-		LOG_ERR("change channel fail, unlock mutex");
+		LOG_DBG("change channel fail, unlock mutex");
 		k_mutex_unlock(mutex);
 	}
 
@@ -955,7 +955,7 @@ bool post_PCA9546A_read(sensor_cfg *cfg, void *args, int *reading)
 	}
 
 	if (unlock_status != 0) {
-		LOG_ERR("Mutex unlock fail, status: %d", unlock_status);
+		LOG_DBG("Mutex unlock fail, status: %d", unlock_status);
 		return false;
 	}
 
@@ -969,7 +969,7 @@ bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 		// if pre_sensor_read_hook is not null, unlock PCA9546A mutex
 		if (cfg->pre_sensor_read_hook != NULL) {
 			if (!post_PCA9546A_read(cfg, args, reading)) {
-				LOG_ERR("adm1272 in post read unlock PCA9546A mutex fail");
+				LOG_DBG("adm1272 in post read unlock PCA9546A mutex fail");
 				return false;
 			}
 		}
@@ -998,7 +998,7 @@ bool post_adm1272_read(sensor_cfg *cfg, void *args, int *reading)
 	// if pre_sensor_read_hook is not null, unlock PCA9546A mutex
 	if (cfg->pre_sensor_read_hook != NULL) {
 		if (!post_PCA9546A_read(cfg, args, reading)) {
-			LOG_ERR("adm1272 in post read unlock PCA9546A mutex fail");
+			LOG_DBG("adm1272 in post read unlock PCA9546A mutex fail");
 			return false;
 		}
 	}
@@ -1014,7 +1014,7 @@ bool post_ads112c_read(sensor_cfg *cfg, void *args, int *reading)
 		// if pre_sensor_read_hook is not null, unlock PCA9546A mutex
 		if (cfg->pre_sensor_read_hook != NULL) {
 			if (!post_PCA9546A_read(cfg, args, reading)) {
-				LOG_ERR("adm1272 in post read unlock PCA9546A mutex fail");
+				LOG_DBG("adm1272 in post read unlock PCA9546A mutex fail");
 				return false;
 			}
 		}
@@ -1084,12 +1084,12 @@ static uint16_t get_fb_pwr_prsnt(void)
 	 */
 	sensor_cfg *cfg = get_common_sensor_cfg_info(SENSOR_NUM_PDB_HDC1080DMBR_TEMP_C);
 	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config info in get_fb_pwr_prsnt");
+		LOG_DBG("Failed to get sensor config info in get_fb_pwr_prsnt");
 		return prsnt;
 	}
 
 	if (pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args) == false) {
-		LOG_ERR("Failed to set mux channel in get_fb_pwr_prsnt");
+		LOG_DBG("Failed to set mux channel in get_fb_pwr_prsnt");
 		return prsnt;
 	}
 
@@ -1099,7 +1099,7 @@ static uint16_t get_fb_pwr_prsnt(void)
 	I2C_MSG msg = construct_i2c_message(I2C_BUS9, FB_PWR_PRSNT_ADDR_EVEN >> 1, 1, &input_reg,
 					    1); // read even io expander
 	if (i2c_master_read(&msg, i2c_retry)) {
-		LOG_ERR("Failed to read pdb io expander %x", FB_PWR_PRSNT_ADDR_EVEN);
+		LOG_DBG("Failed to read pdb io expander %x", FB_PWR_PRSNT_ADDR_EVEN);
 		goto exit;
 	}
 
@@ -1109,7 +1109,7 @@ static uint16_t get_fb_pwr_prsnt(void)
 	msg = construct_i2c_message(I2C_BUS9, FB_PWR_PRSNT_ADDR_ODD >> 1, 1, &input_reg,
 				    1); // read odd io expander
 	if (i2c_master_read(&msg, i2c_retry)) {
-		LOG_ERR("Failed to read pdb io expander %x", FB_PWR_PRSNT_ADDR_ODD);
+		LOG_DBG("Failed to read pdb io expander %x", FB_PWR_PRSNT_ADDR_ODD);
 		goto exit;
 	}
 
@@ -1118,7 +1118,7 @@ static uint16_t get_fb_pwr_prsnt(void)
 
 exit:
 	if (post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, NULL) == false)
-		LOG_ERR("Failed to set mux channel in get_fb_pwr_prsnt");
+		LOG_DBG("Failed to set mux channel in get_fb_pwr_prsnt");
 
 	return prsnt;
 }
@@ -1138,7 +1138,7 @@ static uint16_t get_fb_sig_prsnt(void)
 	I2C_MSG msg = construct_i2c_message(I2C_BUS4, FB_SIG_PRSNT_ADDR_EVEN >> 1, 1, &input_reg,
 					    1); // read even io expander
 	if (i2c_master_read(&msg, i2c_retry)) {
-		LOG_ERR("Failed to read backplane io expander %x", FB_SIG_PRSNT_ADDR_EVEN);
+		LOG_DBG("Failed to read backplane io expander %x", FB_SIG_PRSNT_ADDR_EVEN);
 		goto exit;
 	}
 
@@ -1148,7 +1148,7 @@ static uint16_t get_fb_sig_prsnt(void)
 	msg = construct_i2c_message(I2C_BUS4, FB_SIG_PRSNT_ADDR_ODD >> 1, 1, &input_reg,
 				    1); // read odd io expander
 	if (i2c_master_read(&msg, i2c_retry)) {
-		LOG_ERR("Failed to read backplane io expander %x", FB_SIG_PRSNT_ADDR_ODD);
+		LOG_DBG("Failed to read backplane io expander %x", FB_SIG_PRSNT_ADDR_ODD);
 		goto exit;
 	}
 
@@ -1176,7 +1176,7 @@ static uint8_t get_fb_index(uint8_t sen_num)
 {
 	sensor_cfg *cfg = get_common_sensor_cfg_info(sen_num);
 	if (cfg == NULL) {
-		LOG_ERR("Failed to get sensor config info in update_fb_present_status");
+		LOG_DBG("Failed to get sensor config info in update_fb_present_status");
 		return 0xff;
 	}
 
