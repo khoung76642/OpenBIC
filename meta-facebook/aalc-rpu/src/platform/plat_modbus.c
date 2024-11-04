@@ -244,7 +244,7 @@ uint8_t modbus_write_hmi_version(modbus_command_mapping *cmd)
 
 	uint8_t pre_version[EEPROM_HMI_VERSION_SIZE] = { 0 };
 	if (!plat_eeprom_read(EEPROM_HMI_VERSION_OFFSET, pre_version, EEPROM_HMI_VERSION_SIZE)) {
-		LOG_ERR("read hmi version fail!");
+		LOG_DBG("read hmi version fail!");
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
 
@@ -254,7 +254,7 @@ uint8_t modbus_write_hmi_version(modbus_command_mapping *cmd)
 	if (memcmp(pre_version, cmd->data, EEPROM_HMI_VERSION_SIZE)) {
 		if (!plat_eeprom_write(EEPROM_HMI_VERSION_OFFSET, (uint8_t *)cmd->data,
 				       EEPROM_HMI_VERSION_SIZE)) {
-			LOG_ERR("write hmi version fail!");
+			LOG_DBG("write hmi version fail!");
 			return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 		}
 	}
@@ -268,7 +268,7 @@ uint8_t modbus_read_hmi_version(modbus_command_mapping *cmd)
 
 	uint8_t version[EEPROM_HMI_VERSION_SIZE] = { 0 };
 	if (!plat_eeprom_read(EEPROM_HMI_VERSION_OFFSET, version, EEPROM_HMI_VERSION_SIZE)) {
-		LOG_ERR("read hmi version fail!");
+		LOG_DBG("read hmi version fail!");
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
 
@@ -293,7 +293,7 @@ uint8_t modbus_leakage_status_read(modbus_command_mapping *cmd)
 		if (leakage_val == 0 || leakage_val == 1) {
 			WRITE_BIT(state, i, (bool)leakage_val);
 		} else {
-			LOG_ERR("read leakage status fail!");
+			LOG_DBG("read leakage status fail!");
 			return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 		}
 	}
@@ -348,13 +348,13 @@ uint8_t modbus_pump_setting(modbus_command_mapping *cmd)
 		bool result_status = modbus_pump_setting_table[i].fn(&modbus_pump_setting_table[i],
 								     input_bit_value);
 		if (!result_status) {
-			LOG_ERR("modebus 0x9410 setting %d-bit error\n", func_idx);
+			LOG_DBG("modebus 0x9410 setting %d-bit error\n", func_idx);
 			WRITE_BIT(check_error_flag, func_idx, 1);
 		}
 	}
 
 	if (check_error_flag) {
-		LOG_ERR("modebus 0x9410 setting error flag: 0x%x\n", check_error_flag);
+		LOG_DBG("modebus 0x9410 setting error flag: 0x%x\n", check_error_flag);
 		return MODBUS_EXC_ILLEGAL_DATA_VAL;
 	}
 
@@ -439,7 +439,7 @@ uint8_t modbus_get_pwm(modbus_command_mapping *cmd)
 			cmd->data[0] = get_pwm_group_cache(PWM_GROUP_E_PUMP);
 		break;
 	default:
-		LOG_ERR("illegal parameter in modbus_get_pwm");
+		LOG_DBG("illegal parameter in modbus_get_pwm");
 		return MODBUS_EXC_ILLEGAL_DATA_VAL;
 	}
 
@@ -579,14 +579,14 @@ uint8_t modbus_set_rpu_addr(modbus_command_mapping *cmd)
 
 	uint8_t pre_addr = MODBUS_UART_NODE_ADDR;
 	if (!plat_eeprom_read(EEPROM_RPU_ADDR_OFFSET, &pre_addr, EEPROM_RPU_ADDR_VERSION_SIZE)) {
-		LOG_ERR("read rpu addr fail!");
+		LOG_DBG("read rpu addr fail!");
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
 
 	if (memcmp(&pre_addr, &addr, EEPROM_RPU_ADDR_VERSION_SIZE)) {
 		if (!plat_eeprom_write(EEPROM_RPU_ADDR_OFFSET, &addr,
 				       EEPROM_RPU_ADDR_VERSION_SIZE)) {
-			LOG_ERR("write rpu addr fail!");
+			LOG_DBG("write rpu addr fail!");
 			return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 		}
 
@@ -619,7 +619,7 @@ uint8_t modbus_read_uptime(modbus_command_mapping *cmd)
 
 	uint8_t uptime[EEPROM_UPTIME_SIZE] = { 0 };
 	if (!plat_eeprom_read(EEPROM_UPTIME_OFFSET, uptime, EEPROM_UPTIME_SIZE)) {
-		LOG_ERR("read uptime fail!");
+		LOG_DBG("read uptime fail!");
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
 
@@ -652,7 +652,7 @@ uint8_t modbus_read_pump_running_time(modbus_command_mapping *cmd)
 		cmd->data[0] = pump_uptime_sec >> 16;
 		cmd->data[1] = pump_uptime_sec & 0xffff;
 	} else {
-		LOG_ERR("read pump running time fail!");
+		LOG_DBG("read pump running time fail!");
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
 
@@ -1251,7 +1251,7 @@ void init_modbus_command_table(void)
 		modbus_command_table[i].data =
 			(uint16_t *)malloc(modbus_command_table[i].cmd_size * sizeof(uint16_t));
 		if (modbus_command_table[i].data == NULL) {
-			LOG_ERR("modbus_command_mapping[%i] malloc fail", i);
+			LOG_DBG("modbus_command_mapping[%i] malloc fail", i);
 			goto init_fail;
 		}
 	}
@@ -1289,7 +1289,7 @@ static int coil_wr(uint16_t addr, bool state)
 			controlFSC(FSC_DISABLE);
 			pump_redundant_enable(0);
 			if (ctl_all_pwm_dev(100))
-				LOG_ERR("Set full status failed for all pumps.");
+				LOG_DBG("Set full status failed for all pumps.");
 			//return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 
 			disable_sensor_poll();
@@ -1325,12 +1325,12 @@ static int holding_reg_multi_wr(char *iface_name, uint16_t addr, uint16_t *reg, 
 {
 	modbus_command_mapping *ptr = ptr_to_modbus_table(addr);
 	if (!ptr) {
-		LOG_ERR("modbus write command 0x%x not find!\n", addr);
+		LOG_DBG("modbus write command 0x%x not find!\n", addr);
 		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
 	}
 
 	if (!ptr->wr_fn) {
-		LOG_ERR("modbus write function 0x%x not set!\n", addr);
+		LOG_DBG("modbus write function 0x%x not set!\n", addr);
 		return MODBUS_EXC_ILLEGAL_DATA_VAL;
 	}
 
@@ -1347,12 +1347,12 @@ static int holding_reg_multi_rd(char *iface_name, uint16_t addr, uint16_t *reg, 
 
 	modbus_command_mapping *ptr = ptr_to_modbus_table(addr);
 	if (!ptr) {
-		LOG_ERR("modbus read command 0x%x not find!\n", addr);
+		LOG_DBG("modbus read command 0x%x not find!\n", addr);
 		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
 	}
 
 	if (!ptr->rd_fn) {
-		LOG_ERR("modbus read function 0x%x not set!\n", addr);
+		LOG_DBG("modbus read function 0x%x not set!\n", addr);
 		return MODBUS_EXC_ILLEGAL_DATA_VAL;
 	}
 
@@ -1426,7 +1426,7 @@ int init_custom_modbus_server(void)
 		if (i == 0) {
 			if (!plat_eeprom_read(EEPROM_RPU_ADDR_OFFSET, &addr,
 					      EEPROM_HMI_VERSION_SIZE)) {
-				LOG_ERR("read modbus0 addr fail!");
+				LOG_DBG("read modbus0 addr fail!");
 				return -ENODEV;
 			}
 
@@ -1440,7 +1440,7 @@ int init_custom_modbus_server(void)
 		server_iface = modbus_iface_get_by_name(modbus_server_config[i].iface_name);
 
 		if (server_iface < 0) {
-			LOG_ERR("Failed to get iface index for %s",
+			LOG_DBG("Failed to get iface index for %s",
 				modbus_server_config[i].iface_name);
 			return -ENODEV;
 		}
@@ -1448,7 +1448,7 @@ int init_custom_modbus_server(void)
 		int err = modbus_init_server(server_iface, server_param);
 
 		if (err < 0) {
-			LOG_ERR("modbus_init_server fail %d\n", i);
+			LOG_DBG("modbus_init_server fail %d\n", i);
 			return err;
 		}
 
@@ -1472,7 +1472,7 @@ int change_modbus_slave_addr(uint8_t idx, uint8_t addr)
 	modbus_disable(server_iface);
 
 	if (server_iface < 0) {
-		LOG_ERR("Failed to get iface index for %s", modbus_server_config[idx].iface_name);
+		LOG_DBG("Failed to get iface index for %s", modbus_server_config[idx].iface_name);
 		return -ENODEV;
 	}
 
@@ -1480,7 +1480,7 @@ int change_modbus_slave_addr(uint8_t idx, uint8_t addr)
 	int ret = 0;
 
 	if (err < 0) {
-		LOG_ERR("modbus_init_server fail %d\n", idx);
+		LOG_DBG("modbus_init_server fail %d\n", idx);
 		return err;
 	}
 

@@ -790,7 +790,7 @@ uint8_t get_sensor_reading(sensor_cfg *cfg_table, uint8_t cfg_count, uint8_t sen
 	sensor_cfg *cfg = NULL;
 	cfg = find_sensor_cfg_via_sensor_num(cfg_table, cfg_count, sensor_num);
 	if (cfg == NULL) {
-		LOG_ERR("Fail to find sensor info in config table, sensor_num: 0x%x, cfg count: 0x%x",
+		LOG_DBG("Fail to find sensor info in config table, sensor_num: 0x%x, cfg count: 0x%x",
 			sensor_num, cfg_count);
 		return SENSOR_NOT_FOUND;
 	}
@@ -813,7 +813,7 @@ uint8_t get_sensor_reading(sensor_cfg *cfg_table, uint8_t cfg_count, uint8_t sen
 	case GET_FROM_SENSOR:
 		if (cfg->pre_sensor_read_hook) {
 			if (cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args) == false) {
-				LOG_ERR("Failed to do pre sensor read function, sensor number: 0x%x",
+				LOG_DBG("Failed to do pre sensor read function, sensor number: 0x%x",
 					sensor_num);
 				cfg->cache_status = SENSOR_PRE_READ_ERROR;
 				return cfg->cache_status;
@@ -844,7 +844,7 @@ uint8_t get_sensor_reading(sensor_cfg *cfg_table, uint8_t cfg_count, uint8_t sen
 			}
 
 			if (cfg->post_sensor_read_hook && post_ret == false) {
-				LOG_ERR("Failed to do post sensor read function, sensor number: 0x%x",
+				LOG_DBG("Failed to do post sensor read function, sensor number: 0x%x",
 					sensor_num);
 				cfg->cache_status = SENSOR_POST_READ_ERROR;
 				return cfg->cache_status;
@@ -868,7 +868,7 @@ uint8_t get_sensor_reading(sensor_cfg *cfg_table, uint8_t cfg_count, uint8_t sen
 			if (cfg->post_sensor_read_hook) {
 				if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args,
 							       NULL) == false) {
-					LOG_ERR("Sensor number 0x%x reading and post_read fail",
+					LOG_DBG("Sensor number 0x%x reading and post_read fail",
 						sensor_num);
 				}
 			}
@@ -897,13 +897,13 @@ uint8_t get_sensor_reading(sensor_cfg *cfg_table, uint8_t cfg_count, uint8_t sen
 			return cfg->cache_status;
 		default:
 			cfg->cache = SENSOR_FAIL;
-			LOG_ERR("Failed to read sensor value from cache, sensor number: 0x%x, cache status: 0x%x",
+			LOG_DBG("Failed to read sensor value from cache, sensor number: 0x%x, cache status: 0x%x",
 				sensor_num, cfg->cache_status);
 			return cfg->cache_status;
 		}
 		break;
 	default:
-		LOG_ERR("Invalid mbr type during changing sensor mbr");
+		LOG_DBG("Invalid mbr type during changing sensor mbr");
 		break;
 	}
 
@@ -957,7 +957,7 @@ void sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 
 			sensor_cfg *cfg_table = table_info->monitor_sensor_cfg;
 			if (cfg_table == NULL) {
-				LOG_ERR("Table index: 0x%x is NULL, skip to monitor sensor table",
+				LOG_DBG("Table index: 0x%x is NULL, skip to monitor sensor table",
 					table_index);
 				continue;
 			}
@@ -993,7 +993,7 @@ void sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 					ret = table_info->pre_monitor(
 						sensor_num, table_info->pre_post_monitor_arg);
 					if (ret != true) {
-						LOG_ERR("Pre-monitor fail, table index: 0x%x, sensor num: 0x%x",
+						LOG_DBG("Pre-monitor fail, table index: 0x%x, sensor num: 0x%x",
 							table_index, sensor_num);
 						continue;
 					}
@@ -1006,7 +1006,7 @@ void sensor_poll_handler(void *arug0, void *arug1, void *arug2)
 					ret = table_info->post_monitor(
 						sensor_num, table_info->pre_post_monitor_arg);
 					if (ret != true) {
-						LOG_ERR("Post-monitor fail, table index: 0x%x, sensor num: 0x%x",
+						LOG_DBG("Post-monitor fail, table index: 0x%x, sensor num: 0x%x",
 							table_index, sensor_num);
 						continue;
 					}
@@ -1070,9 +1070,9 @@ void check_init_sensor_size()
 
 	if (init_sdr_size != init_sensor_config_size) {
 		enable_sensor_poll_thread = false;
-		LOG_ERR("Init sdr size is not equal to config size, sdr size: 0x%x, config size: 0x%x",
+		LOG_DBG("Init sdr size is not equal to config size, sdr size: 0x%x, config size: 0x%x",
 			init_sdr_size, init_sensor_config_size);
-		LOG_ERR("BIC should not monitor sensors if SDR size and sensor config size is not match, BIC would not start sensor thread");
+		LOG_DBG("BIC should not monitor sensors if SDR size and sensor config size is not match, BIC would not start sensor thread");
 		return;
 	}
 	sensor_config_size = init_sdr_size;
@@ -1152,7 +1152,7 @@ void add_sensor_config(sensor_cfg config)
 	if (sensor_config_count + 1 <= sdr_count) {
 		sensor_config[sensor_config_count++] = config;
 	} else {
-		LOG_ERR("Add config would over config max size");
+		LOG_DBG("Add config would over config max size");
 	}
 }
 
@@ -1166,7 +1166,7 @@ void init_sensor_monitor_table()
 	sensor_monitor_table = (sensor_monitor_table_info *)malloc(
 		sensor_monitor_count * sizeof(sensor_monitor_table_info));
 	if (sensor_monitor_table == NULL) {
-		LOG_ERR("Fail to allocate memory to store sensor monitor table");
+		LOG_DBG("Fail to allocate memory to store sensor monitor table");
 		return;
 	}
 
@@ -1187,7 +1187,7 @@ void init_sensor_monitor_table()
 static inline bool init_drive_type(sensor_cfg *p, uint16_t current_drive)
 {
 	if (p == NULL) {
-		LOG_ERR("p is NULL, current drive: 0x%x", current_drive);
+		LOG_DBG("p is NULL, current drive: 0x%x", current_drive);
 		return false;
 	}
 
@@ -1198,19 +1198,19 @@ static inline bool init_drive_type(sensor_cfg *p, uint16_t current_drive)
 
 	if (p->pre_sensor_read_hook) {
 		if (p->pre_sensor_read_hook(p, p->pre_sensor_read_args) == false) {
-			LOG_ERR("Sensor 0x%x pre sensor read failed!", p->num);
+			LOG_DBG("Sensor 0x%x pre sensor read failed!", p->num);
 			return false;
 		}
 	}
 
 	ret = sensor_drive_tbl[current_drive].init(p);
 	if (ret != SENSOR_INIT_SUCCESS) {
-		LOG_ERR("Sensor num %d initial fail, ret %d", p->num, ret);
+		LOG_DBG("Sensor num %d initial fail, ret %d", p->num, ret);
 	}
 
 	if (p->post_sensor_read_hook) {
 		if (p->post_sensor_read_hook(p, p->post_sensor_read_args, NULL) == false) {
-			LOG_ERR("Sensor 0x%x post sensor read failed!", p->num);
+			LOG_DBG("Sensor 0x%x post sensor read failed!", p->num);
 		}
 	}
 
@@ -1221,7 +1221,7 @@ uint8_t common_tbl_sen_reinit(uint8_t sen_num)
 {
 	sensor_cfg *cfg = get_common_sensor_cfg_info(sen_num);
 	if (!cfg) {
-		LOG_ERR("Fail to get sensor config info, sensor number: 0x%x", sen_num);
+		LOG_DBG("Fail to get sensor config info, sensor number: 0x%x", sen_num);
 		return SENSOR_NOT_FOUND;
 	}
 
@@ -1230,7 +1230,7 @@ uint8_t common_tbl_sen_reinit(uint8_t sen_num)
 			continue;
 
 		if (init_drive_type(cfg, i) == false) {
-			LOG_ERR("reinit drive type fail, sensor num: 0x%x, type: 0x%x", cfg->num,
+			LOG_DBG("reinit drive type fail, sensor num: 0x%x, type: 0x%x", cfg->num,
 				cfg->type);
 			return SENSOR_NOT_FOUND;
 		}
@@ -1264,7 +1264,7 @@ static void drive_init(void)
 
 		sensor_cfg *cfg_table = sensor_monitor_table[table_index].monitor_sensor_cfg;
 		if (cfg_table == NULL) {
-			LOG_ERR("Table index: 0x%x is NULL, skip to initialize drive", table_index);
+			LOG_DBG("Table index: 0x%x is NULL, skip to initialize drive", table_index);
 			continue;
 		}
 		for (sensor_index = 0; sensor_index < sensor_monitor_table[table_index].cfg_count;
@@ -1276,7 +1276,7 @@ static void drive_init(void)
 						ret = table_info->pre_monitor(
 							cfg->num, table_info->pre_post_monitor_arg);
 						if (ret != true) {
-							LOG_ERR("Pre-monitor fail cause drive init fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
+							LOG_DBG("Pre-monitor fail cause drive init fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
 								table_index, cfg->num, cfg->type);
 							break;
 						}
@@ -1284,7 +1284,7 @@ static void drive_init(void)
 
 					ret = init_drive_type(cfg, current_drive);
 					if (ret != true) {
-						LOG_ERR("init drive type fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
+						LOG_DBG("init drive type fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
 							table_index, cfg->num, cfg->type);
 					}
 
@@ -1292,7 +1292,7 @@ static void drive_init(void)
 						ret = table_info->post_monitor(
 							cfg->num, table_info->pre_post_monitor_arg);
 						if (ret != true) {
-							LOG_ERR("Post-monitor fail cause drive init fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
+							LOG_DBG("Post-monitor fail cause drive init fail, table index: 0x%x, sensor num: 0x%x, type: 0x%x",
 								table_index, cfg->num, cfg->type);
 						}
 					}
@@ -1302,7 +1302,7 @@ static void drive_init(void)
 			}
 
 			if (current_drive == max_drive_num) {
-				LOG_ERR("Table index: 0x%x, sensor number: 0x%x, type = 0x%x is not supported!",
+				LOG_DBG("Table index: 0x%x, sensor number: 0x%x, type = 0x%x is not supported!",
 					table_index, cfg->num, cfg->type);
 				cfg->read = NULL;
 			}
@@ -1322,11 +1322,11 @@ bool sensor_init(void)
 		if (full_sdr_table != NULL) {
 			sdr_init();
 		} else {
-			LOG_ERR("Fail to allocate memory to SDR table");
+			LOG_DBG("Fail to allocate memory to SDR table");
 			return false;
 		}
 	} else {
-		LOG_ERR("Init sensor size is zero");
+		LOG_DBG("Init sensor size is zero");
 		return false;
 	}
 
@@ -1336,11 +1336,11 @@ bool sensor_init(void)
 			load_sensor_config();
 		} else {
 			SAFE_FREE(full_sdr_table);
-			LOG_ERR("Fail to allocate memory to config table");
+			LOG_DBG("Fail to allocate memory to config table");
 			return false;
 		}
 	} else {
-		LOG_ERR("SDR number is zero");
+		LOG_DBG("SDR number is zero");
 		return false;
 	}
 
@@ -1351,7 +1351,7 @@ bool sensor_init(void)
 	drive_init();
 
 	if (DEBUG_SENSOR) {
-		LOG_ERR("Sensor name: %s", log_strdup(full_sdr_table[sdr_index_map[1]].ID_str));
+		LOG_DBG("Sensor name: %s", log_strdup(full_sdr_table[sdr_index_map[1]].ID_str));
 	}
 
 	if (enable_sensor_poll_thread) {
@@ -1388,7 +1388,7 @@ void control_sensor_polling(uint8_t sensor_num, uint8_t optional, uint8_t cache_
 	}
 
 	if ((optional != DISABLE_SENSOR_POLLING) && (optional != ENABLE_SENSOR_POLLING)) {
-		LOG_ERR("Input optional is not support, optional: %d", optional);
+		LOG_DBG("Input optional is not support, optional: %d", optional);
 		return;
 	}
 
