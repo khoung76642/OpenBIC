@@ -46,4 +46,6 @@ typedef struct _xdp710_init_arg {
 	float r_sense;
 } xdp710_init_arg;
 
+bool restart_xdp710_hsc(uint8_t bus, uint8_t addr, bool enable_flag);
+
 #endif // XDP710_H

@@ -74,19 +74,32 @@ static bool hsc_reset(uint8_t sensor_num)
 	//uint8_t bus,uint8_t addr, bool enable_flag
 	uint8_t bus = cfg->port;
 	uint8_t addr = cfg->target_addr;
-	// 1 enable, 0 disable, stop pump first
-	if (enable_adm1272_hsc(bus, addr, false)) {
-		// check pump is already enable
-		k_msleep(500);
-		// enable pump
-		if (enable_adm1272_hsc(bus, addr, true)) {
-			return true;
+	// main src or 2nd src
+	if (cfg->type == sensor_dev_xdp710) {
+		if (!restart_xdp710_hsc(bus, addr, true)) {
+			LOG_ERR("Restart xdp710 hsc fail");
+			return false;
+		}
+		// wait for 11 sec
+		return true;
+	} else if (cfg->type == sensor_dev_adm1272) {
+		// 1 enable, 0 disable, stop pump first
+		if (enable_adm1272_hsc(bus, addr, false)) {
+			// check pump is already enable
+			k_msleep(500);
+			// enable pump
+			if (enable_adm1272_hsc(bus, addr, true)) {
+				return true;
+			} else {
+				LOG_ERR("Fail when start the pump.");
+				return false;
+			}
 		} else {
-			LOG_ERR("Fail when start the pump.");
+			LOG_ERR("Fail when stop the pump.");
 			return false;
 		}
 	} else {
-		LOG_ERR("Fail when stop the pump.");
+		LOG_ERR("Fail when getting pump sensor config, 0x%x", sensor_num);
 		return false;
 	}
 }
