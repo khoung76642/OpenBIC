@@ -1335,7 +1335,7 @@ static bool aalc_cooling_capacity(float *val)
 	if (tin_status != SENSOR_READ_4BYTE_ACUR_SUCCESS)
 		return false;
 
-	*val = 0.06721 * flow_rate_val * (tout_val - tin_val);
+	*val = 0.06721 * flow_rate_val * (tout_val - tin_val)* 2.48;
 	if (*val < 0)
 		*val = 0;
 

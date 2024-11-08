@@ -194,7 +194,7 @@ static uint8_t calculatePID(zone_cfg *zone_p, uint8_t *duty)
 		float pterm = p->kp * (float)error;
 		FSC_PRINTF("\t\t\tp->kp = %f, error = %d, pterm = %f\n", p->kp, error, pterm);
 
-		// i term
+		// i term 
 		float iterm = p->integral;
 		iterm += p->ki * (float)error;
 
@@ -350,7 +350,7 @@ static void fsc_thread_handler(void *arug0, void *arug1, void *arug2)
 
 			// set_duty
 			if (zone_p->set_duty)
-				zone_p->set_duty(zone_p->set_duty_arg, 70);
+				zone_p->set_duty(zone_p->set_duty_arg, duty);
 			else
 				LOG_ERR("FSC zone %d set duty function is NULL", i);
 		}
