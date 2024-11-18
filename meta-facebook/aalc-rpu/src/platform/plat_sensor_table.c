@@ -1136,7 +1136,6 @@ static void change_dvt_sensor_config()
 {
 	uint8_t stage = 0;
 	stage = get_board_stage();
-	stage = BOARD_STAGE_DVT;
 	LOG_WRN("stage: %d", stage);
 
 	if (stage == BOARD_STAGE_EVT)
