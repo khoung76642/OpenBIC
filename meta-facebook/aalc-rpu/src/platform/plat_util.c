@@ -28,7 +28,6 @@
 #include "plat_gpio.h"
 #include "plat_pwm.h"
 #include "plat_fsc.h"
-#include <shell/shell.h>
 #include <logging/log_ctrl.h>
 
 #define I2C_MASTER_READ_BACK_MAX_SIZE 16 // 16 registers
