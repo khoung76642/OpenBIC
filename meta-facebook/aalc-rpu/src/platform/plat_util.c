@@ -135,30 +135,18 @@ float pow_of_10(int8_t exp)
 	return ret;
 }
 
-bool set_log_level(int data)
+bool set_log_level(uint16_t data)
 {
-	int level = 0;
-	switch (data) {
-	case LOG_LEVEL_NONE:
-		level = LOG_LEVEL_NONE;
-		break;
-	case LOG_LEVEL_ERR:
-		level = LOG_LEVEL_ERR;
-		break;
-	case LOG_LEVEL_WRN:
-		level = LOG_LEVEL_WRN;
-		break;
-	case LOG_LEVEL_INF:
-		level = LOG_LEVEL_INF;
-		break;
-	case LOG_LEVEL_DBG:
-		level = LOG_LEVEL_DBG;
-		break;
-	default:
+	/*	LOG_LEVEL_NONE 0U
+		LOG_LEVEL_ERR  1U
+		LOG_LEVEL_WRN  2U
+		LOG_LEVEL_INF  3U
+		LOG_LEVEL_DBG  4U
+	*/
+	if (data > 4)
 		return false;
-		break;
-	}
 
+	int level = data;
 	int backend_cnt = log_backend_count_get();
 	for (int i = 0; i < backend_cnt; i++) {
 		const struct log_backend *backend = log_backend_get(i);
