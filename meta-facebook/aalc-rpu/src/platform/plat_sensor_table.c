@@ -1249,12 +1249,40 @@ static void change_brick_sensor_config()
 		}
 	}
 }
+static void change_fan_board_tach_sensor_config()
+{
+	
+	if (get_board_stage() == BOARD_STAGE_EVT)
+		return;
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(plat_sensor_config); i++) {
+		sensor_cfg *p = plat_sensor_config + i;
+		if (p->num == SENSOR_NUM_FB_1_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_2_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_3_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_4_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_5_FAN_TACH_RPM || 
+		    p->num == SENSOR_NUM_FB_6_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_7_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_8_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_9_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_10_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_11_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_12_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_13_FAN_TACH_RPM ||
+		    p->num == SENSOR_NUM_FB_14_FAN_TACH_RPM ) 
+		{
+			p->arg0 = NCT7363_16_PORT;
+		}
+	}
+}
 
 void load_sensor_config(void)
 {
 	change_mb_temp_sensor_config();
 	change_dvt_sensor_config();
 	change_brick_sensor_config();
+	change_fan_board_tach_sensor_config();
 	memcpy(sensor_config, plat_sensor_config, sizeof(plat_sensor_config));
 	sensor_config_count = ARRAY_SIZE(plat_sensor_config);
 
