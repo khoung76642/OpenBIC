@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(dev_xdp710);
 #define VSNS_CFG_RESET_VAL 0x28
 #define ISNS_CFG_RESET_VAL 0xB418
 
+#define RESTART 0xEC
+
 static const uint16_t vin_vtlm_to_m[VTLM_RNG_RESERVED] = { 4653, 9307, 18614 };
 static const uint16_t iout_vsns_to_m[VSNS_CS_MAX] = { 23165, 11582, 5791, 28956 };
 static const uint16_t pin_vtlm_vsns_to_m[VTLM_RNG_RESERVED][VSNS_CS_MAX] = {
@@ -40,6 +42,26 @@ static const uint16_t pin_vtlm_vsns_to_r[VTLM_RNG_RESERVED][VSNS_CS_MAX] = {
 	{ 100, 100, 1000, 1000 },
 	{ 100, 100, 100, 1000 }
 };
+
+bool restart_xdp710_hsc(uint8_t bus, uint8_t addr, bool enable_flag)
+{
+	uint8_t retry = 5;
+	int ret = -1;
+	I2C_MSG msg = { 0 };
+	msg.bus = bus;
+	msg.target_addr = addr;
+	msg.tx_len = 1;
+	msg.data[0] = RESTART;
+
+	ret = i2c_master_write(&msg, retry);
+	if (ret != 0) {
+		LOG_ERR("Set enable hsc fail");
+		return false;
+	}
+
+	LOG_INF("Set enable hsc success");
+	return true;
+}
 
 static uint8_t xdp710_read_vsns_cfg(uint8_t bus, uint8_t addr)
 {

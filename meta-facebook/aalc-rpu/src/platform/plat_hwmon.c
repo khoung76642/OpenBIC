@@ -74,19 +74,34 @@ static bool hsc_reset(uint8_t sensor_num)
 	//uint8_t bus,uint8_t addr, bool enable_flag
 	uint8_t bus = cfg->port;
 	uint8_t addr = cfg->target_addr;
-	// 1 enable, 0 disable, stop pump first
-	if (enable_adm1272_hsc(bus, addr, false)) {
-		// check pump is already enable
-		k_msleep(500);
-		// enable pump
-		if (enable_adm1272_hsc(bus, addr, true)) {
-			return true;
+	printk("bus: %x, addr: %x, type: %x\n", bus, addr, cfg->type);
+	// main src or 2nd src
+	if (cfg->type == sensor_dev_xdp710) {
+		printk("Restart xdp710 hsc");
+		if (!restart_xdp710_hsc(bus, addr, true)) {
+			printk("Restart xdp710 hsc fail");
+			return false;
+		}
+		// wait for 11 sec
+		return true;
+	} else if (cfg->type == sensor_dev_adm1272) {
+		// 1 enable, 0 disable, stop pump first
+		if (enable_adm1272_hsc(bus, addr, false)) {
+			// check pump is already enable
+			k_msleep(500);
+			// enable pump
+			if (enable_adm1272_hsc(bus, addr, true)) {
+				return true;
+			} else {
+				LOG_ERR("Fail when start the pump.");
+				return false;
+			}
 		} else {
-			LOG_ERR("Fail when start the pump.");
+			LOG_ERR("Fail when stop the pump.");
 			return false;
 		}
 	} else {
-		LOG_ERR("Fail when stop the pump.");
+		LOG_ERR("Fail when getting pump sensor config, 0x%x", sensor_num);
 		return false;
 	}
 }
@@ -261,22 +276,37 @@ void rpu_remote_power_cycle()
 		}
 
 		// cycle fan board and pump board
-		if (i < BACKPLANE_BORAD_COUNT_NUM) {
-			LOG_WRN("cycle fan board 0x%x", hsc_pwe_cycle_tbl[i]);
-			hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+		if (i < PUMP_BORAD_COUNT_NUM) {
+			printf("cycle fan/pump board 0x%x, type: %x \n", hsc_pwe_cycle_tbl[i], cfg->type);
+			if (cfg->type == sensor_dev_xdp710)
+				restart_xdp710_hsc(cfg->port, cfg->target_addr, 0);
+			else if (cfg->type == sensor_dev_adm1272)
+				hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+			else
+				LOG_ERR("unknown sensor when HSC restart type 0x%x", cfg->type);
 		}
 
 		// cycle backplane board
 		if (i >= PUMP_BORAD_COUNT_NUM && i < BACKPLANE_BORAD_COUNT_NUM) {
-			LOG_WRN("cycle backplane board 0x%x", hsc_pwe_cycle_tbl[i]);
-			hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+			printf("cycle backplane board 0x%x, type: %x \n", hsc_pwe_cycle_tbl[i], cfg->type);
+			if (cfg->type == sensor_dev_xdp710)
+				restart_xdp710_hsc(cfg->port, cfg->target_addr, 0);
+			else if (cfg->type == sensor_dev_adm1272)
+				hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+			else
+				LOG_ERR("unknown sensor when HSC restart type 0x%x", cfg->type);
 		}
 
 		// cycle bridge board
 		if (i >= BACKPLANE_BORAD_COUNT_NUM && i < BRIDGE_BORAD_COUNT_NUM) {
 			k_msleep(1000);
-			LOG_WRN("cycle bridge board 0x%x", hsc_pwe_cycle_tbl[i]);
-			hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+			printf("cycle bridge board 0x%x, type: %x \n", hsc_pwe_cycle_tbl[i], cfg->type);
+			if (cfg->type == sensor_dev_xdp710)
+				restart_xdp710_hsc(cfg->port, cfg->target_addr, 0);
+			else if (cfg->type == sensor_dev_adm1272)
+				hsc_adm1272_pwr_ctrl(cfg, ADM1272_POWER_CYCLE_REG, 0);
+			else
+				LOG_ERR("unknown sensor when HSC restart type 0x%x", cfg->type);
 		}
 	}
 }
