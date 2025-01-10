@@ -38,9 +38,15 @@ LOG_MODULE_REGISTER(sensor);
 
 #define SENSOR_DRIVE_INIT_DECLARE(name) uint8_t name##_init(sensor_cfg *cfg)
 
-#define SENSOR_DRIVE_TYPE_INIT_MAP(name) { sensor_dev_##name, name##_init }
+#define SENSOR_DRIVE_TYPE_INIT_MAP(name)                                                           \
+	{                                                                                          \
+		sensor_dev_##name, name##_init                                                     \
+	}
 
-#define SENSOR_DRIVE_TYPE_UNUSE(name) { sensor_dev_##name, NULL }
+#define SENSOR_DRIVE_TYPE_UNUSE(name)                                                              \
+	{                                                                                          \
+		sensor_dev_##name, NULL                                                            \
+	}
 
 #define SENSOR_READ_RETRY_MAX 3
 
@@ -144,6 +150,7 @@ const char *const sensor_type_name[] = {
 	sensor_name_to_num(raa228249)
 	sensor_name_to_num(bmr4922302_803)
 	sensor_name_to_num(emc1413)
+	sensor_name_to_num(tmp421)
 };
 // clang-format on
 
@@ -358,6 +365,9 @@ SENSOR_DRIVE_INIT_DECLARE(bmr4922302_803);
 #endif
 #ifdef ENABLE_EMC1413
 SENSOR_DRIVE_INIT_DECLARE(emc1413);
+#endif
+#ifndef DISABLE_TMP421
+SENSOR_DRIVE_INIT_DECLARE(tmp421);
 #endif
 
 // The sequence needs to same with SENSOR_DEV ID
@@ -720,7 +730,11 @@ sensor_drive_api sensor_drive_tbl[] = {
 #else
 	SENSOR_DRIVE_TYPE_UNUSE(emc1413),
 #endif
-
+#ifndef DISABLE_TMP421
+	SENSOR_DRIVE_TYPE_INIT_MAP(tmp421),
+#else
+	SENSOR_DRIVE_TYPE_UNUSE(tmp421),
+#endif
 };
 
 static void init_sensor_num(void)
