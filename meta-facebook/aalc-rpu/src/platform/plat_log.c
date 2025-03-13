@@ -184,7 +184,8 @@ void error_log_event(uint8_t sensor_num, bool val_normal)
 						1 :
 						(err_log_data[newest_count].index + 1);
 	err_log_data[fru_count].err_code = err_code;
-	err_log_data[fru_count].sys_time = get_uptime_secs();
+
+	err_log_data[fru_count].sys_time = get_pn();
 	err_log_data[fru_count].pump_duty =
 		(uint16_t)(get_manual_pwm_flag(MANUAL_PWM_E_PUMP) ?
 				   get_manual_pwm_cache(MANUAL_PWM_E_PUMP) :
@@ -195,13 +196,13 @@ void error_log_event(uint8_t sensor_num, bool val_normal)
 				   get_pwm_group_cache(PWM_GROUP_E_HEX_FAN));
 
 	err_log_data[fru_count].outlet_temp =
-		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_RPU_COOLANT_OUTLET_TEMP_C, -1, 1);
+		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_RACK_PRESSURE_3_P_KPA, -1, 1);
 	err_log_data[fru_count].outlet_press =
-		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_RPU_COOLANT_OUTLET_P_KPA, -1, 1);
+		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_RACK_PRESSURE_4_P_KPA, -1, 1);
 	err_log_data[fru_count].flow_rate =
 		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_RPU_COOLANT_FLOW_RATE_LPM, -1, 1);
 	err_log_data[fru_count].volt =
-		get_sensor_reading_to_modbus_val(SENSOR_NUM_BPB_HSC_P48V_VIN_VOLT_V, -1, 1);
+		get_sensor_reading_to_modbus_val(SENSOR_NUM_HEX_EXTERNAL_Y_FILTER, -1, 1);
 
 	if (!plat_eeprom_write((AALC_FRU_LOG_START + fru_count * sizeof(modbus_err_log_mapping)),
 			       (uint8_t *)&err_log_data[fru_count], sizeof(modbus_err_log_mapping)))

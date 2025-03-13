@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(plat_sensor_table);
 struct k_thread quick_sensor_poll;
 K_KERNEL_STACK_MEMBER(quick_sensor_poll_stack, 1024);
 k_tid_t quick_sensor_tid;
-
+uint32_t _pos_neg = 0;
 uint8_t quick_sensor[] = { SENSOR_NUM_BPB_CDU_COOLANT_LEAKAGE_VOLT_V,
 			   SENSOR_NUM_BPB_RACK_COOLANT_LEAKAGE_VOLT_V };
 
@@ -1334,6 +1334,31 @@ void load_sensor_config(void)
 	load_sb_temp_sensor_config();
 	load_plat_def_sensor_config();
 }
+void set_pn(uint8_t sensor_num, uint8_t value)
+{
+	switch (sensor_num)
+		{
+		case SENSOR_NUM_BPB_RACK_PRESSURE_3_P_KPA:
+			WRITE_BIT(_pos_neg, 3, value);
+			break;
+		case SENSOR_NUM_BPB_RACK_PRESSURE_4_P_KPA:
+			WRITE_BIT(_pos_neg, 2, value);
+			break;
+		case SENSOR_NUM_BPB_RPU_COOLANT_FLOW_RATE_LPM:
+			WRITE_BIT(_pos_neg, 1, value);
+			break;
+		case SENSOR_NUM_HEX_EXTERNAL_Y_FILTER:
+			WRITE_BIT(_pos_neg, 0, value);
+			break;
+		default:
+			break;
+		}
+}
+
+uint32_t get_pn(void)
+{
+	return _pos_neg;
+}
 
 uint16_t get_sensor_reading_to_modbus_val(uint8_t sensor_num, int8_t exp, int8_t scale)
 {
@@ -1347,6 +1372,16 @@ uint16_t get_sensor_reading_to_modbus_val(uint8_t sensor_num, int8_t exp, int8_t
 	}
 	sensor_val *sval = (sensor_val *)&reading;
 	float val = (sval->integer * 1000 + sval->fraction) / 1000;
+	if (val < 0)
+	{
+		set_pn(sensor_num, 1);
+		val *= -1;
+	}
+	else 
+	{
+		set_pn(sensor_num, 0);
+	}
+		
 	float r = pow_of_10(exp);
 	return val / scale / r; // scale
 }
