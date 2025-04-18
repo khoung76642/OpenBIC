@@ -1156,6 +1156,14 @@ void load_plat_def_sensor_config()
 		add_sensor_config(plat_def_sensor_config[index]);
 }
 
+uint8_t fan_sensor_config_array[] = {
+	SENSOR_NUM_FB_1_FAN_TACH_RPM,  SENSOR_NUM_FB_2_FAN_TACH_RPM,  SENSOR_NUM_FB_3_FAN_TACH_RPM,
+	SENSOR_NUM_FB_4_FAN_TACH_RPM,  SENSOR_NUM_FB_5_FAN_TACH_RPM,  SENSOR_NUM_FB_6_FAN_TACH_RPM,
+	SENSOR_NUM_FB_7_FAN_TACH_RPM,  SENSOR_NUM_FB_8_FAN_TACH_RPM,  SENSOR_NUM_FB_9_FAN_TACH_RPM,
+	SENSOR_NUM_FB_10_FAN_TACH_RPM, SENSOR_NUM_FB_11_FAN_TACH_RPM, SENSOR_NUM_FB_12_FAN_TACH_RPM,
+	SENSOR_NUM_FB_13_FAN_TACH_RPM, SENSOR_NUM_FB_14_FAN_TACH_RPM,
+};
+
 static void change_dvt_sensor_config()
 {
 	uint8_t stage = 0;
@@ -1189,6 +1197,9 @@ static void change_dvt_sensor_config()
 		case SENSOR_NUM_FB_13_FAN_TACH_RPM:
 		case SENSOR_NUM_FB_14_FAN_TACH_RPM:
 			p->arg0 = NCT7363_16_PORT;
+			// disable alert blink
+			if (!nct7363_write(p, NCT7363_GPIO03_GPIO07_ALERT_LED_REG_OFFSET, 0))
+				printf("Write fan_board_fault pwm fail\n");
 			break;
 		}
 	}
