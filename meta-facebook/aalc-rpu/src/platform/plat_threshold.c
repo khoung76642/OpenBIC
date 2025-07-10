@@ -826,6 +826,41 @@ static void pump_tach_too_low_behavior()
 	}
 }
 
+static void check_pump_fail_and_redundant()
+{
+	uint32_t pump_redunant_state = get_status_flag(STATUS_FLAG_PUMP_REDUNDANT);
+
+	switch (pump_redunant_state)
+	{
+	case PUMP_REDUNDANT_12:
+		// check 1/2 pump status
+		if (get_threshold_status(SENSOR_NUM_PB_1_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_23);
+		else if (get_threshold_status(SENSOR_NUM_PB_2_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_13);
+		else
+			break;
+	case PUMP_REDUNDANT_13:
+		// check 1/3 pump status
+		if (get_threshold_status(SENSOR_NUM_PB_1_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_23);
+		else if (get_threshold_status(SENSOR_NUM_PB_3_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_12);
+		else
+			break;
+	case PUMP_REDUNDANT_23:
+		// check 2/3 pump status
+		if (get_threshold_status(SENSOR_NUM_PB_2_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_13);
+		else if (get_threshold_status(SENSOR_NUM_PB_3_PUMP_TACH_RPM))
+			set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, PUMP_REDUNDANT_12);
+		else
+			break;
+	default:
+		LOG_ERR("Unexpected pump redundant warning");
+		break;
+	}
+}
 void abnormal_flow_do(uint32_t thres_tbl_idx, uint32_t status)
 {
 	if (thres_tbl_idx >= ARRAY_SIZE(threshold_tbl))
@@ -1223,6 +1258,9 @@ void plat_sensor_poll_post()
 		deassert_all_rpu_ready_pin();
 	else
 		set_all_rpu_ready_pin_normal();
+
+	// pump redundant
+	check_pump_fail_and_redundant();
 
 	return;
 }

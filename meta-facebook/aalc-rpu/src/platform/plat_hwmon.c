@@ -331,10 +331,19 @@ bool rpu_remote_power_cycle_function(pump_reset_struct *data, uint8_t bit_val)
 void pump_redundant_handler(struct k_timer *timer)
 {
 	uint32_t current_state = get_status_flag(STATUS_FLAG_PUMP_REDUNDANT);
+	
+	if (get_threshold_status(SENSOR_NUM_PB_1_PUMP_TACH_RPM))
+		current_state = PUMP_REDUNDANT_23;
+	else if (get_threshold_status(SENSOR_NUM_PB_2_PUMP_TACH_RPM))
+		current_state = PUMP_REDUNDANT_13;
+	else if (get_threshold_status(SENSOR_NUM_PB_3_PUMP_TACH_RPM))
+		current_state = PUMP_REDUNDANT_12;
+	else
+		current_state++;
 
-	current_state++;
 	if (current_state == PUMP_REDUNDANT_MAX)
 		current_state = PUMP_REDUNDANT_12;
+
 	set_status_flag(STATUS_FLAG_PUMP_REDUNDANT, 0xFF, current_state);
 }
 void pump_redundant_handler_disable(struct k_timer *timer)
