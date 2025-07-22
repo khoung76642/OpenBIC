@@ -246,7 +246,7 @@ bool check_rpu_ready()
 		return false;
 
 	const uint8_t rpu_recovery_table[] = {
-		PUMP_FAIL_LOW_LEVEL,	  PUMP_FAIL_LOW_RPU_LEVEL,	PUMP_FAIL_TWO_PUMP_LCR,
+		PUMP_FAIL_LOW_LEVEL,	  PUMP_FAIL_LOW_RPU_LEVEL,	PUMP_FAIL_TWO_PUMP_X,
 		PUMP_FAIL_ABNORMAL_PRESS, PUMP_FAIL_ABNORMAL_FLOW_RATE, GPIO_FAIL_BPB_HSC,
 		PUMP_FAIL_PUMP1_UCR,	  PUMP_FAIL_PUMP2_UCR,		PUMP_FAIL_PUMP3_UCR,
 	};
@@ -757,6 +757,7 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 	if (thres_tbl_idx >= ARRAY_SIZE(threshold_tbl))
 		return;
 
+	static bool is_pump_not_access[3];
 	sensor_threshold const *thres_p = &threshold_tbl[thres_tbl_idx];
 	uint32_t sensor_num = thres_p->sensor_num;
 
@@ -765,17 +766,37 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 			   (sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ? PUMP_FAIL_PUMP3_UCR :
 									   FAILURE_STATUS_MAX;
 
+	uint8_t sensor_num_pump_not_access =
+		(sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ? SENSOR_NUM_PB_1_PUMP_NOT_ACCESS :
+		(sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ? SENSOR_NUM_PB_2_PUMP_NOT_ACCESS :
+		(sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ? SENSOR_NUM_PB_3_PUMP_NOT_ACCESS :
+								0xFF;
+
 	uint8_t sensor_num_pump_ucr =
 		(sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ? SENSOR_NUM_PB_1_PUMP_TACH_RPM_UCR :
 		(sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ? SENSOR_NUM_PB_2_PUMP_TACH_RPM_UCR :
 		(sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ? SENSOR_NUM_PB_3_PUMP_TACH_RPM_UCR :
 								0xFF;
 
+	uint8_t pump_not_access_idx =
+		(sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ? 0 :
+		(sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ? 1 :
+		(sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ? 2 :
+								0xFF;
+
 	switch (status) {
+	case THRESHOLD_STATUS_NOT_ACCESS:
+		if (!is_pump_not_access[pump_not_access_idx]) {
+			error_log_event(sensor_num_pump_not_access, IS_ABNORMAL_VAL);
+			is_pump_not_access[pump_not_access_idx] = true;
+		}
+		if (pump_fail_check())
+			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_TWO_PUMP_X, 1);
+		break;	
 	case THRESHOLD_STATUS_LCR:
 		error_log_event(sensor_num, IS_ABNORMAL_VAL);
 		if (pump_fail_check())
-			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_TWO_PUMP_LCR, 1);
+			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_TWO_PUMP_X, 1);
 		break;
 	case THRESHOLD_STATUS_UCR:
 		set_status_flag(STATUS_FLAG_FAILURE, pump_ucr, 1);
