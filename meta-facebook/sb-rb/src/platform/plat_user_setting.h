@@ -14,37 +14,25 @@
  * limitations under the License.
  */
 
-#ifndef PLAT_CLASS_H
-#define PLAT_CLASS_H
+#ifndef PLAT_USER_SETTING_H
+#define PLAT_USER_SETTING_H
 
-#include "stdint.h"
+#include "sensor.h"
+#include "plat_pldm_sensor.h"
+#include "plat_cpld.h"
 
-enum VR_MODULE {
-	VR_MODULE_MPS,
-	VR_MODULE_RNS,
-	VR_MODULE_UNKNOWN,
+#define VR_MUTEX_LOCK_TIMEOUT_MS 1000
+
+#define THERMALTRIP_USER_SETTINGS_OFFSET 0x8500
+
+#define CPLD_THERMALTRIP_SWITCH_ADDR 0x3A
+enum USER_SETTING_OFFSET_E {
+	THERMALTRIP,
 };
 
-enum UBC_MODULE {
-	UBC_MODULE_DELTA,
-	UBC_MODULE_MPS,
-	UBC_MODULE_FLEX,
-	UBC_MODULE_LUXSHARE,
-	UBC_MODULE_UNKNOWN,
-};
+typedef struct thermaltrip_user_settings_struct {
+	uint8_t thermaltrip_user_setting_value;
+} thermaltrip_user_settings_struct;
 
-enum ASIC_BOARD_ID {
-	ASIC_BOARD_ID_RSVD1,
-	ASIC_BOARD_ID_RSVD2,
-	ASIC_BOARD_ID_RAINBOW,
-	ASIC_BOARD_ID_EVB,
-	ASIC_BOARD_ID_UNKNOWN,
-};
-
-void init_plat_config();
-uint8_t get_vr_module();
-uint8_t get_ubc_module();
-uint8_t get_mmc_slot();
-uint8_t get_asic_board_id();
-
+bool set_thermaltrip_user_settings(bool thermaltrip_enable, bool is_perm);
 #endif

@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef PLAT_CLASS_H
-#define PLAT_CLASS_H
+#ifndef CLOCK_SHELL_H
+#define CLOCK_SHELL_H
 
-#include "stdint.h"
+#include <shell/shell.h>
 
-enum VR_MODULE {
-	VR_MODULE_MPS,
-	VR_MODULE_RNS,
-	VR_MODULE_UNKNOWN,
-};
+enum CLOCK_COMPONENT { CLK_BUF_100M_U85, CLK_BUF_100M_U87, CLK_BUF_100M_U88, CLK_COMPONENT_MAX };
 
-enum UBC_MODULE {
-	UBC_MODULE_DELTA,
-	UBC_MODULE_MPS,
-	UBC_MODULE_FLEX,
-	UBC_MODULE_LUXSHARE,
-	UBC_MODULE_UNKNOWN,
-};
+typedef struct clock_compnt_mapping {
+	uint8_t clock_name_index;
+	uint8_t addr;
+	uint8_t bus;
+	uint8_t *clock_name;
+} clock_compnt_mapping;
 
-enum ASIC_BOARD_ID {
-	ASIC_BOARD_ID_RSVD1,
-	ASIC_BOARD_ID_RSVD2,
-	ASIC_BOARD_ID_RAINBOW,
-	ASIC_BOARD_ID_EVB,
-	ASIC_BOARD_ID_UNKNOWN,
-};
-
-void init_plat_config();
-uint8_t get_vr_module();
-uint8_t get_ubc_module();
-uint8_t get_mmc_slot();
-uint8_t get_asic_board_id();
+void cmd_set_clock(const struct shell *shell, size_t argc, char **argv);
+void cmd_get_clock(const struct shell *shell, size_t argc, char **argv);
+void cmd_get_clock_status(const struct shell *shell, size_t argc, char **argv);
+void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv);
 
 #endif
