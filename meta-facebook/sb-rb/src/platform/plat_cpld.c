@@ -31,7 +31,6 @@ K_WORK_DELAYABLE_DEFINE(check_cpld_work, check_cpld_handler);
 
 void check_ubc_delayed_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(init_ubc_delayed_timer, check_ubc_delayed_timer_handler, NULL);
-void check_ubc_delayed(struct k_work *work);
 K_WORK_DEFINE(check_ubc_delayed_work, check_ubc_delayed);
 void check_ubc_delayed_timer_handler(struct k_timer *timer)
 {
@@ -110,6 +109,11 @@ void check_ubc_delayed(struct k_work *work)
 	if (is_ubc_enabled == true) {
 		k_work_submit(&vr_vout_work);
 	} */
+}
+
+bool is_ubc_enabled_delayed_enabled(void)
+{
+	return ubc_enabled_delayed_status;
 }
 
 void reset_error_log_states(uint8_t err_type)
