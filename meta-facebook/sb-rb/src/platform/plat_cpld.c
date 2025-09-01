@@ -7,9 +7,6 @@
 #include "plat_hook.h"
 #include <logging/log.h>
 
-#define CPLD_ADDR (0x4C >> 1)
-#define I2C_BUS_CPLD I2C_BUS11
-
 #define POLLING_CPLD_STACK_SIZE 2048
 #define CPLD_POLLING_INTERVAL_MS 1000 // 1 second polling interval
 
@@ -112,6 +109,11 @@ void check_ubc_delayed(struct k_work *work)
 	if (is_ubc_enabled == true) {
 		k_work_submit(&vr_vout_work);
 	} */
+}
+
+bool is_ubc_enabled_delayed_enabled(void)
+{
+	return ubc_enabled_delayed_status;
 }
 
 void reset_error_log_states(uint8_t err_type)
@@ -260,6 +262,8 @@ void init_cpld_polling(void)
 {
 	check_cpld_polling_alert_status();
 
+	k_timer_start(&init_ubc_delayed_timer, K_MSEC(1000), K_NO_WAIT);
+	
 	cpld_polling_tid =
 		k_thread_create(&cpld_polling_thread, cpld_polling_stack,
 				K_THREAD_STACK_SIZEOF(cpld_polling_stack), poll_cpld_registers,

@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <zephyr.h>
 
 #define CPLD_OFFSET_VR_VENDER_TYPE 0x15
 #define CPLD_OFFSET_POWER_CLAMP 0x25
 #define CPLD_OFFSET_USERCODE 0x32
-
+#define CPLD_OFFSET_ASIC_BOARD_ID 0x3C
+#define CPLD_ADDR (0x4C >> 1)
+#define I2C_BUS_CPLD I2C_BUS11
 typedef struct _cpld_info_ cpld_info;
 
 typedef struct _cpld_info_ {
@@ -33,6 +37,8 @@ typedef struct _cpld_info_ {
 
 } cpld_info;
 
+void check_ubc_delayed(struct k_work *work);
+bool is_ubc_enabled_delayed_enabled(void);
 bool plat_read_cpld(uint8_t offset, uint8_t *data, uint8_t len);
 bool plat_write_cpld(uint8_t offset, uint8_t *data);
 void init_cpld_polling(void);
