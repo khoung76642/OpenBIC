@@ -31,3 +31,9 @@ void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 
 	check_cpld_polling_alert_status();
 }
+
+
+void ISR_AD4058_GP0_TEST()
+{
+	LOG_INF(":%d", gpio_get(MEDHA1_HBM_CATTRIP_MMC_LVC33_R_ALARM));
+}

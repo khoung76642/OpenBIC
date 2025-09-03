@@ -18,5 +18,6 @@
 #define PLAT_ISR_H
 
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N();
+void ISR_AD4058_GP0_TEST();
 
 #endif

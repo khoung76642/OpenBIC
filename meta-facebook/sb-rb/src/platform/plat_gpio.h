@@ -122,7 +122,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIOA2) \
 	gpio_name_to_num(MEDHA1_CURRENT_SENSE_0_LS_LVC33_R) \
 	gpio_name_to_num(MEDHA1_CURRENT_SENSE_1_LS_LVC33_R) \
-	gpio_name_to_num(Reserve_GPIOA5) \
+	gpio_name_to_num(GPIO_TEST_AD4058) \
 	gpio_name_to_num(Reserve_GPIOA6) \
 	gpio_name_to_num(Reserve_GPIOA7)
 #define name_gpioB	\
