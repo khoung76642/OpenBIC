@@ -208,7 +208,7 @@ static uint8_t pldm_pre_vr_update(void *fw_update_param)
 
 	/* Stop sensor polling */
 	set_plat_sensor_polling_enable_flag(false);
-	k_msleep(100);
+	k_msleep(2000);
 
 	uint8_t sensor_id = 0;
 	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
@@ -232,6 +232,7 @@ static uint8_t pldm_post_vr_update(void *fw_update_param)
 	ARG_UNUSED(fw_update_param);
 
 	/* Start sensor polling */
+	k_msleep(2000);
 	set_plat_sensor_polling_enable_flag(true);
 
 	return 0;
@@ -329,6 +330,9 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	if (cfg->type == sensor_dev_mp2891 || cfg->type == sensor_dev_mp29816a) {
 		*len += bin2hex((uint8_t *)&version, 2, buf_p, 4);
 		buf_p += 4;
+	} else if (cfg->type == sensor_dev_raa228249 || cfg->type == sensor_dev_mp2971) {
+		*len += bin2hex((uint8_t *)&version, 4, buf_p, 8);
+		buf_p += 8;
 	} else {
 		LOG_ERR("Unsupport VR type(%d)", cfg->type);
 	}

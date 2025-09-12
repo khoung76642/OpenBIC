@@ -28,6 +28,7 @@
 #include "plat_class.h"
 #include "plat_cpld.h"
 #include "plat_log.h"
+#include "plat_user_setting.h"
 
 LOG_MODULE_REGISTER(plat_init);
 
@@ -54,12 +55,14 @@ void pal_set_sys_status()
 void pal_post_init()
 {
 	plat_mctp_init();
+	user_settings_init();
 	init_fru_info();
 	uint8_t data = 0;
 	plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data);
 	plat_adc_init();
 	init_load_eeprom_log();
 	init_cpld_polling();
+	plat_telemetry_table_init();
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
