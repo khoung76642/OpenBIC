@@ -36,6 +36,12 @@
 LOG_MODULE_REGISTER(plat_init);
 
 #define DEF_PROJ_GPIO_PRIORITY 78
+#define HOLD_TIME_1_0 0b00
+#define HOLD_TIME_2_1 0b01
+#define HOLD_TIME_3_2 0b10
+#define HOLD_TIME_4_3 0b11
+#define BASE_REG 0x7e7b0000
+#define CLOCK_AND_AC_TIMING_CTRL_REG 0x7e7b0004
 
 static void pump_board_init();
 K_WORK_DELAYABLE_DEFINE(up_15sec_handler, pump_board_init);
@@ -196,7 +202,24 @@ void pal_pre_init()
 
 	k_work_schedule(&up_15sec_handler, K_SECONDS(1));
 }
-
+void set_hold_time(uint16_t bus, uint8_t hold_time) 
+{
+	#define BIC_REG_HOLD_TIME hold_time
+	//tartget address = BASE_REG + bus base + 4(CLOCK_AND_AC_TIMING_CTRL_REG)
+	uint32_t target_addr = BASE_REG + bus + 4;
+	LOG_INF("target address: 0x%x", target_addr);
+	// set hold time in bic reg
+	uint32_t val = 0;
+	val = sys_read32(target_addr);
+	LOG_INF("get bic reg original 0x%x", val);
+	clear_bits(&val, 10, 11); // clear bits 10~11
+	LOG_INF("get bic reg cleared 0x%x", val);
+	//Write hold time to bit[11:10]
+	val = SETBITS(val, BIC_REG_HOLD_TIME , 10);
+	LOG_WRN("set hold time to %d", BIC_REG_HOLD_TIME);
+	sys_write32(val, target_addr);
+	LOG_INF("get bic reg 0x%x", sys_read32(target_addr));
+}
 void pal_post_init()
 {
 	init_load_eeprom_log();
@@ -207,6 +230,12 @@ void pal_post_init()
 	set_manual_pwm_cache_to_default();
 	deassert_all_rpu_ready_pin();
 	fan_pump_pwrgd();
+	set_hold_time(I2C_BUS1_BASE_REG, HOLD_TIME_2_1);
+	set_hold_time(I2C_BUS2_BASE_REG, HOLD_TIME_2_1);
+	set_hold_time(I2C_BUS4_BASE_REG, HOLD_TIME_2_1);
+	set_hold_time(I2C_BUS6_BASE_REG, HOLD_TIME_2_1);
+	set_hold_time(I2C_BUS7_BASE_REG, HOLD_TIME_2_1);
+	set_hold_time(I2C_BUS8_BASE_REG, HOLD_TIME_2_1);
 }
 
 void pal_device_init()
