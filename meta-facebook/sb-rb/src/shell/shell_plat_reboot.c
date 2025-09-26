@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef CLOCK_SHELL_H
-#define CLOCK_SHELL_H
-
 #include <shell/shell.h>
+#include <zephyr.h>
+#include <stdio.h>
+#include <zephyr.h>
+#include "util_sys.h"
+#include "plat_pldm_sensor.h"
 
-enum CLOCK_COMPONENT { CLK_BUF_100M_U85, CLK_BUF_100M_U87, CLK_BUF_100M_U88, CLK_COMPONENT_MAX };
+#define PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS 1000 
 
-typedef struct clock_compnt_mapping {
-	uint8_t clock_name_index;
-	uint8_t addr;
-	uint8_t bus;
-	uint8_t *clock_name;
-} clock_compnt_mapping;
+void cmd_plat_reboot(struct shell *shell, size_t argc, char **argv)
+{
+	set_plat_sensor_polling_enable_flag(false);
+	k_msleep(PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS);
+	submit_bic_warm_reset();
+}
 
-void cmd_set_clock(const struct shell *shell, size_t argc, char **argv);
-void cmd_get_clock(const struct shell *shell, size_t argc, char **argv);
-void cmd_get_clock_status(const struct shell *shell, size_t argc, char **argv);
-void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv);
-
-#endif
+SHELL_CMD_REGISTER(reboot, NULL, "reboot command", cmd_plat_reboot);

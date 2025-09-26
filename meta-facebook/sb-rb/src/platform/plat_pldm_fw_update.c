@@ -27,11 +27,13 @@
 #include "mp2971.h"
 #include "mp29816a.h"
 #include "raa228249.h"
+#include "drivers/i2c_npcm4xx.h"
 
 LOG_MODULE_REGISTER(plat_fwupdate);
 
 static uint8_t pldm_pre_vr_update(void *fw_update_param);
 static uint8_t pldm_post_vr_update(void *fw_update_param);
+static uint8_t pldm_pre_bic_update(void *fw_update_param);
 static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len);
 
 typedef struct {
@@ -55,7 +57,15 @@ compnt_mapping_sensor vr_compnt_mapping_sensor_table[] = {
 	{ COMPNT_VR_11, SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_TEMP_C, "ASIC_P0V75_OWL_W_VDD" },
 	{ COMPNT_VR_12, SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_TEMP_C, "ASIC_P0V9_OWL_W_TRVDD" },
 };
+static uint8_t pldm_pre_bic_update(void *fw_update_param)
+{
+	ARG_UNUSED(fw_update_param);
 
+	/* Stop sensor polling */
+	set_plat_sensor_polling_enable_flag(false);
+	LOG_INF("Stop pldm sensor polling");
+	return 0;
+}
 // clang-format off
 #define VR_COMPONENT_DEF(comp_id)                                                                  \
 	{                                                                                          \
@@ -82,7 +92,7 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.comp_classification = COMP_CLASS_TYPE_DOWNSTREAM,
 		.comp_identifier = COMPNT_BIC,
 		.comp_classification_index = 0x00,
-		.pre_update_func = NULL,
+		.pre_update_func = pldm_pre_bic_update,
 		.update_func = pldm_bic_update,
 		.pos_update_func = NULL,
 		.inf = COMP_UPDATE_VIA_SPI,
@@ -208,7 +218,7 @@ static uint8_t pldm_pre_vr_update(void *fw_update_param)
 
 	/* Stop sensor polling */
 	set_plat_sensor_polling_enable_flag(false);
-	k_msleep(100);
+	k_msleep(2000);
 
 	uint8_t sensor_id = 0;
 	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
@@ -232,6 +242,7 @@ static uint8_t pldm_post_vr_update(void *fw_update_param)
 	ARG_UNUSED(fw_update_param);
 
 	/* Start sensor polling */
+	k_msleep(2000);
 	set_plat_sensor_polling_enable_flag(true);
 
 	return 0;
@@ -329,6 +340,9 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	if (cfg->type == sensor_dev_mp2891 || cfg->type == sensor_dev_mp29816a) {
 		*len += bin2hex((uint8_t *)&version, 2, buf_p, 4);
 		buf_p += 4;
+	} else if (cfg->type == sensor_dev_raa228249 || cfg->type == sensor_dev_mp2971) {
+		*len += bin2hex((uint8_t *)&version, 4, buf_p, 8);
+		buf_p += 8;
 	} else {
 		LOG_ERR("Unsupport VR type(%d)", cfg->type);
 	}
@@ -374,4 +388,31 @@ bool find_sensor_id_and_name_by_firmware_comp_id(uint8_t comp_identifier, uint8_
 	}
 
 	return false;
+}
+
+void plat_reset_prepare()
+{
+	const char *i2c_labels[] = { "I2C_0", "I2C_1", "I2C_2", "I2C_3", "I2C_4",  "I2C_5",
+				     "I2C_6", "I2C_7", "I2C_8", "I2C_9", "I2C_10", "I2C_11" };
+
+	for (int i = 0; i < ARRAY_SIZE(i2c_labels); i++) {
+		const struct device *i2c_dev = device_get_binding(i2c_labels[i]);
+		if (!i2c_dev) {
+			LOG_ERR("Failed to get binding for %s", i2c_labels[i]);
+			continue;
+		}
+
+		int ret = i2c_npcm_device_disable(i2c_dev);
+		if (ret) {
+			LOG_ERR("Failed to disable %s (ret=%d)", i2c_labels[i], ret);
+		} else {
+			LOG_INF("%s disabled", i2c_labels[i]);
+		}
+	}
+}
+
+void pal_warm_reset_prepare()
+{
+	LOG_INF("cmd platform warm reset prepare");
+	plat_reset_prepare();
 }
