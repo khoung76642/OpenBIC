@@ -61,6 +61,7 @@ cpld_info cpld_info_table[] = {
 	{ VR_POWER_FAULT_3_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS, .event_type = VR_POWER_FAULT },
 	{ VR_POWER_FAULT_4_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS, .event_type = VR_POWER_FAULT },
 	{ VR_POWER_FAULT_5_REG, 			0x00, 0x00, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS, .event_type = VR_POWER_FAULT },
+	{ VR_SMBUS_ALERT_REG, 				0xFF, 0xFF, true, 0x00, false, false, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_ALL_BITS },
 };
 
 bool cpld_polling_alert_status = false; // only polling cpld when alert status is true
@@ -245,6 +246,13 @@ void poll_cpld_registers()
 				if (cpld_info_table[i].event_type == VR_POWER_FAULT) {
 					process_mtia_vr_power_fault_sel(&cpld_info_table[i],
 									&data);
+				}
+				if (cpld_info_table[i].cpld_offset == VR_SMBUS_ALERT_REG) {
+					// write cpld register HAMSA_MFIO_REG, bit-7 to 1
+					plat_read_cpld(HAMSA_MFIO_REG, &data, 1);
+					data |= BIT(7);
+					plat_write_cpld(HAMSA_MFIO_REG, &data);
+					LOG_WRN("SMBUS_ALERT_REG changed, write cpld register HAMSA_MFIO_REG, bit-7 to 1");
 				}
 				// update map
 				cpld_info_table[i].is_fault_bit_map = new_fault_map;

@@ -20,6 +20,8 @@
 #define VR_3_EN 0x41
 #define VR_4_EN 0x42
 #define PREST_DELAY_REG 0x9D
+#define VR_SMBUS_ALERT_REG 0x26
+#define HAMSA_MFIO_REG 0x17
 
 #define CPLD_ADDR (0x4C >> 1)
 #define I2C_BUS_CPLD I2C_BUS11
