@@ -132,22 +132,9 @@ void hsc_adm1272_re_enable(uint8_t sensor_num)
 	}
 	// stop polling
 	plat_disable_sensor_poll();
-
-	//change mux
-	I2C_MSG msg = { 0 };
-	msg.bus = cfg->port;
-	msg.target_addr = cfg->target_addr;
-	msg.tx_len = 2;
-	if (!pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args)) {
-		LOG_ERR("pre lock mutex fail !\n");
-		return;
-	}
-
-	//uint8_t bus,uint8_t addr, bool enable_flag
+	
 	uint8_t bus = cfg->port;
 	uint8_t addr = cfg->target_addr;
-
-	plat_disable_sensor_poll();
 	// change mux
 	if (!pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args)) {
 		LOG_ERR("pre lock mutex fail !\n");
@@ -201,32 +188,32 @@ static bool hsc_reset(uint8_t sensor_num)
 	msg.tx_len = 2;
 	if (!pre_PCA9546A_read(cfg, cfg->pre_sensor_read_args)) {
 		LOG_ERR("pre lock mutex fail !\n");
-		return true;
+		return false;
 	}
-
 	//uint8_t bus,uint8_t addr, bool enable_flag
 	uint8_t bus = cfg->port;
 	uint8_t addr = cfg->target_addr;
 	// 1 enable, 0 disable, stop pump first
 	if (cfg->type == sensor_dev_adm1272) {
-		if (enable_adm1272_hsc(bus, addr, false)) {
-			// check pump is already enable, unlock mutex
-			if (!post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, 0))
-				LOG_ERR("post unlock mutex fail !");
-			plat_enable_sensor_poll();
-			// wait 5s
-			if (sensor_num == SENSOR_NUM_PB_1_HSC_P48V_PIN_PWR_W)
-				k_work_schedule(&pump1_adm1272_re_enable_handler_5sec,
-						K_SECONDS(5));
-			else if (sensor_num == SENSOR_NUM_PB_2_HSC_P48V_PIN_PWR_W)
-				k_work_schedule(&pump2_adm1272_re_enable_handler_5sec,
-						K_SECONDS(5));
-			else if (sensor_num == SENSOR_NUM_PB_3_HSC_P48V_PIN_PWR_W)
-				k_work_schedule(&pump3_adm1272_re_enable_handler_5sec,
-						K_SECONDS(5));
-			else
-				LOG_ERR("Unknown sensor type, Fail when stop the pump.");
-		}
+		enable_adm1272_hsc(bus, addr, false);	
+		// wait 5s
+		if (sensor_num == SENSOR_NUM_PB_1_HSC_P48V_PIN_PWR_W)
+			k_work_schedule(&pump1_adm1272_re_enable_handler_5sec,
+					K_SECONDS(5));
+		else if (sensor_num == SENSOR_NUM_PB_2_HSC_P48V_PIN_PWR_W)
+			k_work_schedule(&pump2_adm1272_re_enable_handler_5sec,
+					K_SECONDS(5));
+		else if (sensor_num == SENSOR_NUM_PB_3_HSC_P48V_PIN_PWR_W)
+			k_work_schedule(&pump3_adm1272_re_enable_handler_5sec,
+					K_SECONDS(5));
+		else
+			LOG_ERR("Unknown sensor type, Fail when stop the pump.");
+		
+		if (!post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, 0))
+			LOG_ERR("post unlock mutex fail !");
+
+		plat_enable_sensor_poll();
+		return true;
 	} else if (cfg->type == sensor_dev_xdp710) {
 		hsc_xdp710_pwr_ctrl(cfg, XDP710_RESTART_ADDR, 0);
 		if (!post_PCA9546A_read(cfg, cfg->pre_sensor_read_args, 0))
