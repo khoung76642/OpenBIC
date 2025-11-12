@@ -22,6 +22,12 @@ enum {
 	ADC_IDX_MAX,
 };
 
+enum {
+	ADC_RB_IDX_MEDHA0 = 0,
+	ADC_RB_IDX_MEDHA1,
+	ADC_RB_IDX_MAX,
+};
+
 #define ADC_AVERGE_TIMES_MIN 1
 #define ADC_AVERGE_TIMES_MAX 100
 
@@ -36,3 +42,6 @@ uint16_t get_adc_averge_times(uint8_t idx);
 uint16_t get_adc_ucr(uint8_t idx);
 void set_adc_ucr(uint8_t idx, uint16_t ucr);
 bool get_adc_ucr_status(uint8_t idx);
+void plat_adc_rainbow_init(void);
+void get_ads7066_voltage();
+void get_ad4058_voltage();
