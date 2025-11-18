@@ -25,12 +25,7 @@
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
-	// test code
-	uint8_t index = strtoul(argv[1], NULL, 16);
-	if (index == 0)
-		get_ads7066_voltage();
-	else if (index == 1)
-		get_ad4058_voltage();
+	shell_print(shell, "Hello world!");
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)
@@ -126,6 +121,7 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	uint8_t ubc = get_ubc_module();
 	uint8_t board_id = get_asic_board_id();
 	uint8_t board_rev = get_board_rev_id();
+	uint8_t adc_idx = get_adc_type();
 
 	shell_warn(shell, "vr module: %s",
 		   (vr < VR_MODULE_UNKNOWN) ? vr_module_str[vr] : "UNKNOWN");
@@ -135,6 +131,7 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 	shell_warn(shell, "asic board id: %s",
 		   (board_id < ASIC_BOARD_ID_UNKNOWN) ? asic_board_id_str[board_id] : "UNKNOWN");
 	shell_warn(shell, "asic board rev id: %d", board_rev);
+	shell_warn(shell, "adc idx: %d", adc_idx);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_cpld_cmds, SHELL_CMD(dump, NULL, "cpld dump", cmd_cpld_dump),

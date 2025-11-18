@@ -64,7 +64,6 @@ void pal_post_init()
 	init_fru_info();
 	uint8_t data = 0;
 	plat_write_cpld(CPLD_OFFSET_POWER_CLAMP, &data);
-	//plat_adc_init(); original adc 
 	plat_adc_rainbow_init();
 	init_load_eeprom_log();
 	// if board id >= EVB EVT2(FAB2)

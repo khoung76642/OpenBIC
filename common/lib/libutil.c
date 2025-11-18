@@ -245,3 +245,131 @@ char16_t *ch16_strcat_char(char16_t *dest)
 	dest[len] = u'\0';
 	return dest;
 }
+
+// struct k_spinlock sched_spinlock;
+// static struct k_thread *pending_current;
+// struct z_kernel _kernel;
+
+// extern int arch_swap(unsigned int key);
+
+// static inline int z_swap_irqlock(unsigned int key)
+// {
+// 	int ret;
+// 	z_check_stack_sentinel();
+// 	ret = arch_swap(key);
+// 	return ret;
+// }
+// static void update_cache(int preempt_ok)
+// {
+// #ifndef CONFIG_SMP
+// 	struct k_thread *thread = next_up();
+
+// 	if (should_preempt(thread, preempt_ok)) {
+// #ifdef CONFIG_TIMESLICING
+// 		if (thread != _current) {
+// 			z_reset_time_slice();
+// 		}
+// #endif
+// 		update_metairq_preempt(thread);
+// 		_kernel.ready_q.cache = thread;
+// 	} else {
+// 		_kernel.ready_q.cache = _current;
+// 	}
+
+// #else
+// 	/* The way this works is that the CPU record keeps its
+// 	 * "cooperative swapping is OK" flag until the next reschedule
+// 	 * call or context switch.  It doesn't need to be tracked per
+// 	 * thread because if the thread gets preempted for whatever
+// 	 * reason the scheduler will make the same decision anyway.
+// 	 */
+// 	_current_cpu->swap_ok = preempt_ok;
+// #endif
+// }
+// static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+// {
+// 	k_spin_release(lock);
+// 	return z_swap_irqlock(key.key);
+// }
+// static inline void z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
+// {
+// 	ARG_UNUSED(thread);
+// 	ARG_UNUSED(ticks);
+// }
+
+// static inline void z_mark_thread_as_suspended(struct k_thread *thread)
+// {
+// 	thread->base.thread_state |= _THREAD_SUSPENDED;
+
+// 	SYS_PORT_TRACING_FUNC(k_thread, sched_suspend, thread);
+// }
+
+// static ALWAYS_INLINE void dequeue_thread(void *pq,
+// 					 struct k_thread *thread)
+// {
+// 	thread->base.thread_state &= ~_THREAD_QUEUED;
+// 	if (should_queue_thread(thread)) {
+// 		_priq_run_remove(pq, thread);
+// 	}
+// }
+
+// static inline bool z_is_thread_state_set(struct k_thread *thread, uint32_t state)
+// {
+// 	return (thread->base.thread_state & state) != 0U;
+// }
+
+// static inline bool z_is_thread_queued(struct k_thread *thread)
+// {
+// 	return z_is_thread_state_set(thread, _THREAD_QUEUED);
+// }
+
+// static void unready_thread(struct k_thread *thread)
+// {
+// 	if (z_is_thread_queued(thread)) {
+// 		dequeue_thread(&_kernel.ready_q.runq, thread);
+// 	}
+// 	update_cache(thread == _current);
+// }
+
+// int32_t sys_sleep_for_1ms()
+// {
+// 	k_ticks_t ticks = 0;
+// #ifdef CONFIG_MULTITHREADING
+// 	uint32_t expected_wakeup_ticks;
+
+// 	__ASSERT(!arch_is_in_isr(), "");
+
+// #ifndef CONFIG_TIMEOUT_64BIT
+// 	/* LOG subsys does not handle 64-bit values
+// 	 * https://github.com/zephyrproject-rtos/zephyr/issues/26246
+// 	 */
+// 	LOG_DBG("thread %p for %u ticks", _current, ticks);
+// #endif
+// 	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
+// 	if (Z_TICK_ABS(ticks) <= 0) {
+// 		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
+// 	} else {
+// 		expected_wakeup_ticks = Z_TICK_ABS(ticks);
+// 	}
+
+// 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+// #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+// 	pending_current = _current;
+// #endif
+// 	unready_thread(_current);
+// 	z_add_thread_timeout(_current, timeout);
+// 	z_mark_thread_as_suspended(_current);
+
+// 	(void)z_swap(&sched_spinlock, key);
+
+// 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
+
+// 	ticks = (k_ticks_t)expected_wakeup_ticks - sys_clock_tick_get_32();
+// 	if (ticks > 0) {
+// 		return ticks;
+// 	}
+// #endif
+
+// 	return 0;
+// }
