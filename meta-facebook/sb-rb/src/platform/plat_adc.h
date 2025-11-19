@@ -29,12 +29,15 @@ enum {
 };
 
 #define ADC_AVERGE_TIMES_MIN 1
-#define ADC_AVERGE_TIMES_MAX 100
+#define ADC_AVERGE_TIMES_MAX 700
+
+#define ADI_AD4058 0x0
+#define TIC_ADS7066 0x1
 
 void plat_adc_init(void);
 void adc_set_poll_flag(uint8_t onoff);
 bool adc_get_poll_flag();
-float adc_raw_mv_to_apms(uint16_t mv);
+float adc_raw_mv_to_apms(uint16_t v, float vref);
 uint16_t get_adc_averge_val(uint8_t idx);
 void adc_set_averge_times(uint8_t idx, uint16_t time);
 uint16_t *get_adc_buf(uint8_t idx);
@@ -45,3 +48,8 @@ bool get_adc_ucr_status(uint8_t idx);
 void plat_adc_rainbow_init(void);
 void get_ads7066_voltage();
 void get_ad4058_voltage();
+uint8_t get_adc_type();
+float get_ads7066_vref();
+float get_ad4058_vref();
+float get_adc_vr_pwr(uint8_t idx);
+float *get_pwr_buf(uint8_t idx);

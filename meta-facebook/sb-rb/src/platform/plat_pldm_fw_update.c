@@ -31,6 +31,7 @@
 #include "util_spi.h"
 #include "plat_gpio.h"
 #include "plat_cpld.h"
+#include "plat_iris_smbus.h"
 
 #define RESET_CPLD_ON 0x3F
 #define RESET_CPLD_OFF 0x00
@@ -172,6 +173,55 @@ static uint8_t pldm_post_mtia_flash_update(void *fw_update_param)
 	set_cpld_reset_reg(RESET_CPLD_ON);
 	return 0;
 }
+
+uint8_t pldm_iris_boot_update(void *fw_update_param)
+{
+	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
+
+	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
+
+	CHECK_NULL_ARG_WITH_RETURN(p->data, 1);
+
+	uint8_t ret = 1;
+
+	static uint8_t *hex_buff = NULL;
+	if (p->data_ofs == 0) {
+		if (hex_buff) {
+			LOG_ERR("previous hex_buff doesn't clean up!");
+			goto exit;
+		}
+		hex_buff = malloc(fw_update_cfg.image_size);
+		if (!hex_buff) {
+			LOG_ERR("Failed to malloc hex_buff");
+			return 1;
+		}
+	}
+
+	if (!hex_buff) {
+		LOG_ERR("First package(offset=0) has missed");
+		return 1;
+	}
+
+	memcpy(hex_buff + p->data_ofs, p->data, MAX_DATA_PKT_SIZE);
+
+	p->next_ofs = p->data_ofs + p->data_len;
+	p->next_len = MAX_DATA_PKT_SIZE;
+
+	if (p->next_ofs < fw_update_cfg.image_size) {
+		if (p->next_ofs + p->next_len > fw_update_cfg.image_size)
+			p->next_len = fw_update_cfg.image_size - p->next_ofs;
+		return 0;
+	} else {
+		p->next_len = 0;
+	}
+	// iris smbus update
+	if (iris_smbus_fwupdate(hex_buff, fw_update_cfg.image_size) == false)
+		goto exit;
+exit:
+	SAFE_FREE(hex_buff);
+	return ret;
+}
+
 // clang-format off
 #define VR_COMPONENT_DEF(comp_id)                                                                  \
 	{                                                                                          \

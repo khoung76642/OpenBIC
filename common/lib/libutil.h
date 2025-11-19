@@ -123,5 +123,5 @@ void sort_bubble(int *array, int len);
 size_t strlen16(const char16_t *str);
 char16_t *strcpy16(char16_t *dest, const char16_t *src);
 char16_t *ch16_strcat_char(char16_t *dest);
-
+int32_t sys_sleep_for_1ms();
 #endif

@@ -158,7 +158,7 @@
     status = "okay";
 };
 
-&PWM_4 {
+&pwm4 {
     status = "disabled";
 };
 
@@ -168,4 +168,8 @@
 
 &pwm6 {
     status = "okay";
+};
+
+&gpio7 {
+    label = "GPIO_7";
 };
