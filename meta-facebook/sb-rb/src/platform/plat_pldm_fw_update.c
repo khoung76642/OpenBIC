@@ -215,8 +215,8 @@ uint8_t pldm_iris_boot_update(void *fw_update_param)
 		p->next_len = 0;
 	}
 	// iris smbus update
-	if (iris_smbus_fwupdate(hex_buff, fw_update_cfg.image_size) == false)
-		goto exit;
+	//if (iris_smbus_fwupdate(hex_buff, fw_update_cfg.image_size) == false)
+		//goto exit;
 exit:
 	SAFE_FREE(hex_buff);
 	return ret;
