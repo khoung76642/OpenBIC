@@ -53,3 +53,8 @@ float get_ads7066_vref();
 float get_ad4058_vref();
 float get_adc_vr_pwr(uint8_t idx);
 float *get_pwr_buf(uint8_t idx);
+
+int ads7066_read_reg(uint8_t reg, uint8_t idx);
+int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx);
+int ad4058_read_reg(uint8_t reg, uint8_t idx);
+int ad4058_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx);
