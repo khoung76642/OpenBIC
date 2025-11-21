@@ -54,8 +54,8 @@ LOG_MODULE_REGISTER(plat_i2c_target);
 #define CPLD_VERSION_GET_REG_LEN 4
 #define STRAP_SET_TYPE 0x44 // 01000100
 #define VR_PWR_BUF_SIZE 22
-#define I2C_TARGET_BUS_ASIC I2C_BUS7 // asic bus is I2C_BUS7, I2C_BUS6 is only for test
-
+#define I2C_TARGET_BUS_ASIC I2C_BUS1 // asic bus is I2C_BUS7, I2C_BUS6 is only for test
+static uint8_t fw_dl_status = 0x00;
 static bool command_reply_data_handle(void *arg);
 void set_bootstrap_element_handler();
 K_WORK_DEFINE(set_bootstrap_element_work, set_bootstrap_element_handler);
@@ -68,7 +68,7 @@ struct i2c_target_data *test_for_reading = NULL;
 
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
+	TARGET_ENABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_ENABLE,	TARGET_ENABLE,	TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
@@ -583,185 +583,66 @@ telemetry_info telemetry_info_table[] = {
 static bool command_reply_data_handle(void *arg)
 {
 	struct i2c_target_data *data = (struct i2c_target_data *)arg;
-	if (data->wr_buffer_idx >= 1) {
-		if (data->wr_buffer_idx == 1) {
-			uint8_t reg_offset = data->target_wr_msg.msg[0];
-			size_t struct_size = 0;
-			for (int i = 0; i < ARRAY_SIZE(telemetry_info_table); i++) {
-				if (telemetry_info_table[i].telemetry_offset == reg_offset) {
-					struct_size = telemetry_info_table[i].data_size;
-					break;
-				}
-			}
-			// Make sure the target buffer is not exceeded when reading
-			if (struct_size > sizeof(data->target_rd_msg.msg)) {
-				struct_size = sizeof(data->target_rd_msg.msg);
-			}
-			LOG_DBG("Received reg offset(write 1 data): 0x%02x", reg_offset);
-			switch (reg_offset) {
-			case SENSOR_INIT_DATA_0_REG:
-			case SENSOR_INIT_DATA_1_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_init_data_table[reg_offset - SENSOR_INIT_DATA_0_REG],
-				       struct_size);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "sensor init data");
-			} break;
-			case SENSOR_READING_0_REG:
-			case SENSOR_READING_1_REG:
-			case SENSOR_READING_2_REG:
-			case SENSOR_READING_3_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       sensor_reading_table[reg_offset - SENSOR_READING_0_REG],
-				       struct_size);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "sensor reading");
-			} break;
-			case INVENTORY_IDS_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       inventory_ids_table[reg_offset - INVENTORY_IDS_REG],
-				       struct_size);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "inventory ids");
-			} break;
-			case STRAP_CAPABILTITY_REG: {
-				data->target_rd_msg.msg_length = struct_size;
-				memcpy(data->target_rd_msg.msg,
-				       strap_capability_table[reg_offset - STRAP_CAPABILTITY_REG],
-				       struct_size);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "strap capability");
-			} break;
-			case I2C_BRIDGE_COMMAND_STATUS_REG: {
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] =
-					i2c_bridge_command_status_table[0] ?
-						i2c_bridge_command_status_table[0]->data_status :
-						I2C_BRIDGE_COMMAND_FAILURE;
-			} break;
-			case I2C_BRIDGE_COMMAND_RESPONSE_REG: {
-				if (i2c_bridge_command_response_data_table[0]) {
-					struct_size = i2c_bridge_command_response_data_table[0]
-							      ->data_length +
-						      1;
-					data->target_rd_msg.msg_length = struct_size;
-					memcpy(data->target_rd_msg.msg,
-					       i2c_bridge_command_response_data_table[0],
-					       struct_size);
-				} else {
-					data->target_rd_msg.msg_length = 1;
-					data->target_rd_msg.msg[0] = 0xFF;
-				}
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length,
-						"i2c bridge command response");
-			} break;
-			case CONTROL_VOL_VR_ASIC_P0V75_VDDPHY_HBM0246_REG:
-			case CONTROL_VOL_VR_ASIC_P0V75_VDDPHY_HBM1357_REG:
-			case CONTROL_VOL_VR_ASIC_P1V1_VDDQC_HBM0246_REG:
-			case CONTROL_VOL_VR_ASIC_P1V1_VDDQC_HBM1357_REG:
-			case CONTROL_VOL_VR_ASIC_P0V4_VDDQL_HBM0246_REG:
-			case CONTROL_VOL_VR_ASIC_P0V4_VDDQL_HBM1357_REG:
-			case CONTROL_VOL_VR_ASIC_P1V8_VPP_HBM0246_REG:
-			case CONTROL_VOL_VR_ASIC_P1V8_VPP_HBM1357_REG: {
-				uint8_t rail = get_vr_rail_by_control_vol_reg(reg_offset);
-				uint16_t vout = 0xFFFF;
-				if (!voltage_command_setting_get(rail, &vout)) {
-					LOG_ERR("Can't voltage_command setting_get by rail: 0x%02x",
-						rail);
-				}
-				memcpy(data->target_rd_msg.msg, &vout, sizeof(vout));
-				data->target_rd_msg.msg_length = 2;
-			} break;
-			case VR_POWER_READING_REG: {
-				data->target_rd_msg.msg_length = VR_PWR_BUF_SIZE;
-				vr_power_reading(data->target_rd_msg.msg,
-						 data->target_rd_msg.msg_length);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "vr power reading");
-			} break;
-			default:
-				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] = 0xFF;
-				break;
-			}
-		} else if (data->wr_buffer_idx == 2) {
-			LOG_DBG("Received reg offset(write 2 data): 0x%02x",
-				data->target_wr_msg.msg[0]);
-			uint8_t reg_offset = data->target_wr_msg.msg[0];
-			switch (reg_offset) {
-			case WRITE_STRAP_PIN_VALUE_REG: {
-				int rail = data->target_wr_msg.msg[1];
-				int drive_level = -1;
-				if (!get_bootstrap_change_drive_level(rail, &drive_level)) {
-					LOG_ERR("Can't get_bootstrap_change_drive_level by rail index: %x",
-						rail);
-					data->target_rd_msg.msg[0] = 0xFF;
-				} else {
-					data->target_rd_msg.msg[0] = drive_level;
-				}
-				data->target_rd_msg.msg_length = 1;
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "strap pin value");
-			} break;
-			default:
-				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] = 0xFF;
-				break;
-			}
-		} else if (data->wr_buffer_idx == 3) {
-			LOG_DBG("Received reg offset(write 3 data): 0x%02x",
-				data->target_wr_msg.msg[0]);
-			uint8_t reg_offset = data->target_wr_msg.msg[0];
-			switch (reg_offset) {
-			case LEVEL_1_2_3_PWR_ALERT_THRESHOLD_REG: {
-				data->target_rd_msg.msg_length = 2;
-				uint8_t vr_controller = data->target_wr_msg.msg[1];
-				uint8_t alert_level = data->target_wr_msg.msg[2];
-				get_vr_pwr_alert_data(data->target_rd_msg.msg,
-						      data->target_rd_msg.msg_length, VR_THRESHOLD,
-						      alert_level, vr_controller);
-				LOG_DBG("vr controller: %d, alert level: %d", vr_controller,
-					alert_level);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "vr threshold");
-			} break;
-			case LEVEL_1_2_3_PWR_ALERT_TIME_WINDOW_REG: {
-				data->target_rd_msg.msg_length = 2;
-				uint8_t vr_controller = data->target_wr_msg.msg[1];
-				uint8_t alert_level = data->target_wr_msg.msg[2];
-				get_vr_pwr_alert_data(data->target_rd_msg.msg,
-						      data->target_rd_msg.msg_length,
-						      VR_TIME_WINDOW, alert_level, vr_controller);
-				LOG_DBG("vr controller: %d, alert level: %d", vr_controller,
-					alert_level);
-				LOG_HEXDUMP_DBG(data->target_rd_msg.msg,
-						data->target_rd_msg.msg_length, "vr time window");
-			} break;
-			default:
-				LOG_ERR("Unknown reg offset: 0x%02x", reg_offset);
-				data->target_rd_msg.msg_length = 1;
-				data->target_rd_msg.msg[0] = 0xFF;
-				break;
-			}
-		} else {
-			LOG_ERR("Received data length: 0x%02x", data->wr_buffer_idx);
-			data->target_rd_msg.msg_length = 1;
-			data->target_rd_msg.msg[0] = 0xFF;
-		}
+	/* Master 寫入資料（Write message） */
+	uint8_t wr_len = data->target_wr_msg.msg_length;
+	uint8_t *wr_buf = data->target_wr_msg.msg;
+
+	if (wr_len == 0) {
+		LOG_DBG("Master write length = 0");
 	}
-	LOG_DBG("Reply data length: 0x%02x", data->target_rd_msg.msg_length);
+
+	/* 假設第 0 byte 就是 offset */
+	uint8_t offset = wr_buf[0];
+	LOG_DBG("I2C Write Offset: 0x%02X", offset);
+
+	if (wr_len > 1) {
+		LOG_HEXDUMP_INF(&wr_buf[1], wr_len - 1, "I2C Write Data");
+	} else {
+		LOG_DBG("No additional data");
+	}
+	uint8_t struct_size = 1;
+	/***********************
+	 * 回傳資料給 Master
+	 ***********************/
+
+	/* 回傳 OK (0xAA) 給 master */
+
+	#define FASTBOOT_MODE BIT(0)
+	#define SB_MODE_QUERY 135
+	if (offset == SB_MODE_QUERY) {
+		LOG_INF("return FASTBOOT_MODE");
+		data->target_rd_msg.msg_length = struct_size;
+		data->target_rd_msg.msg[0] = FASTBOOT_MODE;
+		return true;
+	}
+	#define FW_CTRL_READ 137
+	if (offset == FW_CTRL_READ) {
+		// return  to master
+		data->target_rd_msg.msg_length = struct_size;
+		data->target_rd_msg.msg[0] = fw_dl_status;
+		return true;
+	}
+	#define FW_SMBUS_ERROR 130
+	if (offset == FW_SMBUS_ERROR)
+	{
+		return true;
+	}
+	
+	#define FW_CTRL_WRITE 136
+	if (offset == FW_CTRL_WRITE) {
+		return true;
+	}
+	
+	data->target_rd_msg.msg[0] = 0x01;
+	data->target_rd_msg.msg_length = 1;
+
+	LOG_DBG("Reply: OK");
 	return true;
 }
 
 /* I2C target init-config table */
 const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
-	{ 0xFF, 0xA },
+	{ 0x19, 0xA,command_reply_data_handle },
 	{ 0xFF, 0xA },
 	{ 0xFF, 0xA },
 	{ 0xFF, 0xA },
@@ -884,6 +765,7 @@ void set_control_voltage_handler(struct k_work *work_item)
 void plat_master_write_thread_handler()
 {
 	int rc = 0;
+	LOG_INF("Start master write thread");
 	while (1) {
 		uint8_t rdata[MAX_I2C_TARGET_BUFF] = { 0 };
 		uint16_t rlen = 0;
@@ -898,135 +780,50 @@ void plat_master_write_thread_handler()
 			LOG_ERR("Received data too short");
 			continue;
 		}
-
-		uint8_t reg_offset = rdata[0];
+		uint8_t byte_write = rdata[0];
+		uint8_t reg_offset = rdata[1];
 		LOG_DBG("Received reg offset[0]: 0x%02x", rdata[0]);
 		LOG_DBG("Received reg offset[1]: 0x%02x", rdata[1]);
 		LOG_DBG("Received reg offset[2]: 0x%02x", rdata[2]);
-		switch (reg_offset) {
-		case WRITE_STRAP_PIN_VALUE_REG: {
-			if (rlen != 3) {
-				LOG_WRN("WRITE_STRAP_PIN_VALUE_REG Invalid length for offset(write): 0x%02x",
-					reg_offset);
-				LOG_DBG("Received data length: 0x%02x", rlen);
-				break;
+	
+		// show all data what received
+		if (byte_write == FW_CTRL_WRITE) {
+			if (reg_offset == FW_DL_SLV_RDY) {
+				LOG_INF("set FW_DL_SLV_RDY on");
+				fw_dl_status = FW_DL_SLV_RDY;
+				LOG_INF("status: 0x%x", fw_dl_status);
+				LOG_INF("set progress on ");
+				fw_dl_status = FW_DL_SLV_PROG;
+				LOG_INF("status: 0x%x", fw_dl_status);
 			}
-			bootstrap_pin = rdata[1];
-			user_setting_level = rdata[2];
-			k_work_submit(&set_bootstrap_element_work);
-		} break;
-		case I2C_BRIDGE_COMMAND_REG: {
-			if (rlen < 5) {
-				LOG_ERR("Invalid length for offset: 0x%02x", reg_offset);
-				break;
+			if (reg_offset == FW_DL_START) {
+				LOG_INF("clear fw_dl_status");
+				fw_dl_status = 0;
+				LOG_INF("set FW_DL_START on");
+				//set fw_dl_status bit
+				fw_dl_status = FW_DL_START;
+				LOG_INF("status: 0x%x", fw_dl_status);
+				LOG_INF("set FW_DL_SLV_RDY on");
+				fw_dl_status = FW_DL_SLV_RDY;
+				LOG_INF("status: 0x%x", fw_dl_status);
 			}
-			size_t payload_len = rlen - 4;
-			size_t struct_size = sizeof(plat_i2c_bridge_command_config) + payload_len;
-			plat_i2c_bridge_command_config *sensor_data = malloc(struct_size);
-			if (!sensor_data) {
-				LOG_ERR("Memory allocation failed!");
-				break;
+			if (reg_offset == FW_DL_HST_ABRT) {
+				LOG_INF("set FW_DL_HST_ABRT on");
+				fw_dl_status = FW_DL_HST_ABRT;
+				LOG_INF("status: 0x%x", fw_dl_status);
 			}
-			sensor_data->bus = rdata[1];
-			sensor_data->addr = rdata[2];
-			sensor_data->read_len = rdata[3];
-			sensor_data->write_len = payload_len;
-			memcpy(sensor_data->data, &rdata[4], payload_len);
-			k_work_init(&sensor_data->work, i2c_bridge_command_handler);
-			k_work_submit(&sensor_data->work);
-			LOG_HEXDUMP_DBG(rdata, rlen, "I2C_BRIDGE_COMMAND_REG");
-		} break;
-		case CONTROL_VOL_VR_ASIC_P0V75_VDDPHY_HBM0246_REG:
-		case CONTROL_VOL_VR_ASIC_P0V75_VDDPHY_HBM1357_REG:
-		case CONTROL_VOL_VR_ASIC_P1V1_VDDQC_HBM0246_REG:
-		case CONTROL_VOL_VR_ASIC_P1V1_VDDQC_HBM1357_REG:
-		case CONTROL_VOL_VR_ASIC_P0V4_VDDQL_HBM0246_REG:
-		case CONTROL_VOL_VR_ASIC_P0V4_VDDQL_HBM1357_REG:
-		case CONTROL_VOL_VR_ASIC_P1V8_VPP_HBM0246_REG:
-		case CONTROL_VOL_VR_ASIC_P1V8_VPP_HBM1357_REG: {
-			if (rlen != 3) {
-				LOG_ERR("Invalid length for offset(write): 0x%02x", reg_offset);
-				break;
+			if (reg_offset == FW_DL_FINISH) {
+				LOG_INF("set FW_DL_FINISH on");
+				fw_dl_status = FW_DL_FINISH;
+				LOG_INF("status: 0x%x", fw_dl_status);
+				LOG_INF("set FW_DL_SLV_DONE on");
+				fw_dl_status = FW_DL_SLV_DONE;
+				LOG_INF("status: 0x%x", fw_dl_status);
 			}
-
-			plat_control_voltage *sensor_data = malloc(sizeof(plat_control_voltage));
-			if (!sensor_data) {
-				LOG_ERR("Memory allocation failed!");
-				break;
-			}
-			sensor_data->rail = get_vr_rail_by_control_vol_reg(reg_offset);
-			sensor_data->set_value = rdata[1] | (rdata[2] << 8);
-			k_work_init(&sensor_data->work, set_control_voltage_handler);
-			k_work_submit(&sensor_data->work);
-		} break;
-		case SET_SENSOR_POLLING_COMMAND_REG: {
-			if (rlen != 8) {
-				LOG_ERR("Invalid length for offset: 0x%02x", reg_offset);
-				LOG_ERR("length: 0x%02x", rlen);
-				break;
-			}
-			uint8_t expected_signature[] = {
-				0x4D, 0x54, 0x49, 0x41, 0x56, 0x31
-			}; // ascii to hex: "MTIAV1"
-			if (memcmp(&rdata[1], expected_signature, sizeof(expected_signature)) !=
-			    0) {
-				LOG_HEXDUMP_DBG(rdata, rlen, "rdata:");
-				LOG_ERR("Wrong command for set sensor_polling");
-				break;
-			}
-			plat_control_sensor_polling *sensor_data =
-				malloc(sizeof(plat_control_sensor_polling));
-			if (!sensor_data) {
-				LOG_ERR("Memory allocation failed!");
-				break;
-			}
-			sensor_data->set_value = rdata[9]; // need to check
-			LOG_DBG("set sensor_polling:%x", sensor_data->set_value);
-			// transfer rdata[9] type to bool
-			sensor_data->set_value = sensor_data->set_value ? true : false;
-			k_work_init(&sensor_data->work, set_sensor_polling_handler);
-			k_work_submit(&sensor_data->work);
-		} break;
-		/*
-		Request Data
-		[0] - VR controller
-			0 - MEDHA0
-			1 - MEDHA1
-		[1] - alert level
-			0 - Level 1
-			1 - Level 2
-			2 - Level 3
-		[2] - alert threshold. Unit: W  (LSB, write only)
-		[3] - alert threshold. Unit: W  (MSB, write only)
-		*/
-		case LEVEL_1_2_3_PWR_ALERT_THRESHOLD_REG: {
-			if (rlen != 5) {
-				LOG_ERR("Invalid length for offset(write threshold): 0x%02x",
-					reg_offset);
-				break;
-			}
-			uint8_t vr_controller = rdata[1];
-			uint8_t alert_level = rdata[2];
-			uint8_t lsb = rdata[3];
-			uint8_t msb = rdata[4];
-			set_vr_pwr_alert_data(vr_controller, alert_level, VR_THRESHOLD, lsb, msb);
-		} break;
-		case LEVEL_1_2_3_PWR_ALERT_TIME_WINDOW_REG: {
-			if (rlen != 5) {
-				LOG_ERR("Invalid length for offset(write time window): 0x%02x",
-					reg_offset);
-				break;
-			}
-			uint8_t vr_controller = rdata[1];
-			uint8_t alert_level = rdata[2];
-			uint8_t lsb = rdata[3];
-			uint8_t msb = rdata[4];
-			set_vr_pwr_alert_data(vr_controller, alert_level, VR_TIME_WINDOW, lsb, msb);
-		} break;
-		default:
-			LOG_WRN("Unknown reg offset(write): 0x%02x", reg_offset);
-			break;
 		}
+		//show all data what to write
+		LOG_HEXDUMP_INF(&rdata[1], rlen - 1, "I2C Write Data");
+
 	}
 }
 void plat_master_write_thread_init()

@@ -22,7 +22,15 @@
 
 #define TARGET_ENABLE 1
 #define TARGET_DISABLE 0
-
+// fw download status/control bytes
+#define FW_DL_START BIT(7)
+#define FW_DL_SLV_RDY BIT(6)
+#define FW_DL_HST_ABRT BIT(5)
+#define FW_DL_SLV_ABRTD BIT(4)
+#define FW_DL_FINISH BIT(3)
+#define FW_DL_SLV_DONE BIT(2)
+#define FW_DL_SLV_PROG BIT(1)
+#define FW_SB_EXIT_CMD BIT(0)
 // i2c target register
 #define SENSOR_INIT_DATA_0_REG 0x00
 #define SENSOR_INIT_DATA_1_REG 0x01
