@@ -24,6 +24,7 @@
 #include "plat_pldm_fw_update.h"
 #include "plat_pldm_sensor.h"
 #include "plat_hook.h"
+#include "plat_class.h"
 
 LOG_MODULE_REGISTER(shell_fw_version);
 
@@ -38,11 +39,17 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 	set_plat_sensor_polling_enable_flag(false);
 
 	shell_print(shell, "comp_id |                rail name               |version |remain");
-	for (int i = COMPNT_VR_1; i <= COMPNT_VR_12; i++) {
+	for (int i = COMPNT_VR_1; i <= COMPNT_VR_3V3; i++) {
 		uint8_t sensor_id = 0;
 		char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
 		if (is_mb_dc_on() == false)
+			continue;
+
+		if (i == COMPNT_HAMSA || i == COMPNT_MEDHA0 || i == COMPNT_MEDHA1)
+			continue;
+
+		if (i == COMPNT_VR_3V3 && (get_asic_board_id() != ASIC_BOARD_ID_EVB))
 			continue;
 
 		if (!find_sensor_id_and_name_by_firmware_comp_id(i, &sensor_id, sensor_name)) {
@@ -120,10 +127,18 @@ void cmd_get_fw_version_cpld(const struct shell *shell, size_t argc, char **argv
 	return;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_get_fw_version_cmd,
-			       SHELL_CMD(vr, NULL, "get fw version vr", cmd_get_fw_version_vr),
-			       SHELL_CMD(cpld, NULL, "get fw version cpld",
-					 cmd_get_fw_version_cpld),
-			       SHELL_SUBCMD_SET_END);
+void cmd_get_fw_version_asic(const struct shell *shell, size_t argc, char **argv)
+{
+	shell_print(shell, "HAMSA boot0 CRC32 : %08x", plat_get_image_crc_checksum(BOOT0_HAMSA));
+	shell_print(shell, "MEDHA0 boot0 CRC32 : %08x", plat_get_image_crc_checksum(BOOT0_MEDHA0));
+	shell_print(shell, "MEDHA1 boot0 CRC32 : %08x", plat_get_image_crc_checksum(BOOT0_MEDHA1));
+	return;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_get_fw_version_cmd, SHELL_CMD(vr, NULL, "get fw version vr", cmd_get_fw_version_vr),
+	SHELL_CMD(cpld, NULL, "get fw version cpld", cmd_get_fw_version_cpld),
+	SHELL_CMD(asic, NULL, "get fw version asic", cmd_get_fw_version_asic),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(get_fw_version, &sub_get_fw_version_cmd, "get fw version command", NULL);

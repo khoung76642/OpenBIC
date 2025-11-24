@@ -21,8 +21,14 @@
 
 #include "plat_gpio.h"
 #include "plat_cpld.h"
+#include "plat_log.h"
+#include "plat_event.h"
+#include "plat_ioexp.h"
+#include "plat_hook.h"
 
 LOG_MODULE_REGISTER(plat_isr);
+
+K_TIMER_DEFINE(check_ubc_delayed_timer, check_ubc_delayed_timer_handler, NULL);
 
 void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 {
@@ -30,4 +36,53 @@ void ISR_GPIO_ALL_VR_PM_ALERT_R_N()
 		gpio_get(ALL_VR_PM_ALERT_R_N), gpio_get_direction(ALL_VR_PM_ALERT_R_N));
 
 	check_cpld_polling_alert_status();
+	if (gpio_get(ALL_VR_PM_ALERT_R_N) == GPIO_LOW) {
+		give_all_vr_pm_alert_sem();
+	}
+}
+
+void ISR_GPIO_FM_PLD_UBC_EN_R()
+{
+	LOG_DBG("gpio_%d_isr called, val=%d , dir= %d", FM_PLD_UBC_EN_R, gpio_get(FM_PLD_UBC_EN_R),
+		gpio_get_direction(FM_PLD_UBC_EN_R));
+
+	LOG_INF("FM_PLD_UBC_EN_R = %d", gpio_get(FM_PLD_UBC_EN_R));
+
+	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) {
+		//plat_clock_init();
+		plat_set_dc_on_log(LOG_ASSERT);
+	}
+
+	if (gpio_get(FM_PLD_UBC_EN_R) == GPIO_LOW) {
+		plat_set_dc_on_log(LOG_DEASSERT);
+	}
+
+	k_timer_start(&check_ubc_delayed_timer, K_MSEC(1000), K_NO_WAIT);
+}
+
+void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
+{
+	// dc on
+	if (gpio_get(RST_IRIS_PWR_ON_PLD_R1_N)) {
+		pca6416a_init();
+		set_bootstrap_ioexp_val();
+	} else {
+		LOG_INF("dc off, clear io expander init flag");
+		set_ioe_init_flag(0);
+	}
+}
+
+bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
+{
+	bool ret = false;
+
+	switch (gpio_num) {
+	case ALL_VR_PM_ALERT_R_N:
+		ret = true;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
 }

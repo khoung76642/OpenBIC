@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef CLOCK_SHELL_H
-#define CLOCK_SHELL_H
+#ifndef PLAT_IOEXP_H
+#define PLAT_IOEXP_H
 
-#include <shell/shell.h>
+#define PCA6414A_INPUT_PORT_0 0x00
+#define PCA6414A_INPUT_PORT_1 0x01
+#define PCA6414A_OUTPUT_PORT_0 0x02
+#define PCA6414A_OUTPUT_PORT_1 0x03
+#define PCA6414A_CONFIG_0 0x06
+#define PCA6414A_CONFIG_1 0x07
 
-enum CLOCK_COMPONENT { CLK_BUF_100M_U85, CLK_BUF_100M_U87, CLK_BUF_100M_U88, CLK_COMPONENT_MAX };
-
-typedef struct clock_compnt_mapping {
-	uint8_t clock_name_index;
-	uint8_t addr;
-	uint8_t bus;
-	uint8_t *clock_name;
-} clock_compnt_mapping;
-
-void cmd_set_clock(const struct shell *shell, size_t argc, char **argv);
-void cmd_get_clock(const struct shell *shell, size_t argc, char **argv);
-void cmd_get_clock_status(const struct shell *shell, size_t argc, char **argv);
-void cmd_clear_clock_status(const struct shell *shell, size_t argc, char **argv);
-
+bool pca6416a_i2c_read(uint8_t offset, uint8_t *data, uint8_t len);
+bool pca6416a_i2c_write(uint8_t offset, uint8_t *data, uint8_t len);
+bool pca6416a_init(void);
 #endif
