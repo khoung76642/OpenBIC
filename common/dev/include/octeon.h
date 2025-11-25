@@ -14,24 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef PLAT_DEF_H
-#define PLAT_DEF_H
+#ifndef OCTEON_H
+#define OCTEON_H
 
-#define BMC_USB_PORT "CDC_ACM_0"
-
-#define ENABLE_MCTP_I3C
-#define MCTP_I3C_PEC_ENABLE 1
-#define PLAT_MCTP_MSG_MAX_SIZE 64
-
-#define ENABLE_PLDM
-#define ENABLE_PLDM_SENSOR
-#define ENABLE_CCI
-#define ENABLE_VISTARA
-#define ENABLE_EVENT_TO_BMC
-
-#define ENABLE_RTQ6056
-
-#define BIC_UPDATE_MAX_OFFSET 0xC0000
-#define WORKER_STACK_SIZE 2048
+enum OCTEON_REIGSTER_OFFSET {
+	OCTEON_DIE_JUNCTION_TEMPERATRUE = 0x01,
+};
 
 #endif
