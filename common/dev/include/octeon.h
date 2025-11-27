@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-#ifndef TMP75_H
-#define TMP75_H
+#ifndef OCTEON_H
+#define OCTEON_H
 
-enum TMP75_REIGSTER_MAP {
-	TMP75_LOCAL_HIGH_LIMIT_REG = 0x03,
-	TMP75_LOCAL_LOW_LIMIT_REG = 0x02,
+enum OCTEON_REIGSTER_OFFSET {
+	OCTEON_DIE_JUNCTION_TEMPERATRUE = 0x01,
 };
-
-bool tmp75_get_temp_threshold(sensor_cfg *cfg, uint8_t temp_threshold_index,
-			      int32_t *millidegree_celsius);
-bool tmp75_set_temp_threshold(sensor_cfg *cfg, uint8_t temp_threshold_index,
-			      uint32_t *millidegree_celsius);
-uint8_t tmp75_init(sensor_cfg *cfg);
 
 #endif
