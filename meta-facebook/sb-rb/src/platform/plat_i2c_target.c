@@ -68,7 +68,7 @@ struct i2c_target_data *test_for_reading = NULL;
 
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
-	TARGET_ENABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
+	TARGET_ENABLE,	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_ENABLE,	TARGET_ENABLE,	TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
@@ -607,36 +607,34 @@ static bool command_reply_data_handle(void *arg)
 
 	/* 回傳 OK (0xAA) 給 master */
 
-	#define FASTBOOT_MODE BIT(0)
-	#define SB_MODE_QUERY 135
+#define FASTBOOT_MODE BIT(0)
+#define SB_MODE_QUERY 135
 	if (offset == SB_MODE_QUERY) {
 		LOG_INF("return FASTBOOT_MODE");
 		data->target_rd_msg.msg_length = struct_size;
 		data->target_rd_msg.msg[0] = FASTBOOT_MODE;
 		return true;
 	}
-	#define FW_CTRL_READ 137
+#define FW_CTRL_READ 137
 	if (offset == FW_CTRL_READ) {
 		// return  to master
 		data->target_rd_msg.msg_length = struct_size;
 		data->target_rd_msg.msg[0] = fw_dl_status;
 		return true;
 	}
-	#define FW_SMBUS_ERROR 130
-	if (offset == FW_SMBUS_ERROR)
-	{
+#define FW_SMBUS_ERROR 130
+	if (offset == FW_SMBUS_ERROR) {
 		return true;
 	}
 
-	#define FW_CTRL_WRITE 136
+#define FW_CTRL_WRITE 136
 	if (offset == FW_CTRL_WRITE) {
 		return true;
 	}
 
-	#define ASIC_COM_TEST_REG 0x7A
+#define ASIC_COM_TEST_REG 0x7A
 	if (offset == ASIC_COM_TEST_REG) {
-
-		uint8_t reply_buf[8] = {0x08, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+		uint8_t reply_buf[8] = { 0x08, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
 		data->target_rd_msg.msg_length = sizeof(reply_buf);
 		memcpy(data->target_rd_msg.msg, reply_buf, sizeof(reply_buf));
 		LOG_HEXDUMP_DBG(reply_buf, sizeof(reply_buf), "ASIC_COM_TEST_REG reply");
@@ -653,7 +651,7 @@ static bool command_reply_data_handle(void *arg)
 
 /* I2C target init-config table */
 const struct _i2c_target_config I2C_TARGET_CONFIG_TABLE[MAX_TARGET_NUM] = {
-	{ 0x19, 0xA,command_reply_data_handle },
+	{ 0x64, 0xA, command_reply_data_handle },
 	{ 0xFF, 0xA },
 	{ 0xFF, 0xA },
 	{ 0xFF, 0xA },
@@ -796,7 +794,7 @@ void plat_master_write_thread_handler()
 		LOG_DBG("Received reg offset[0]: 0x%02x", rdata[0]);
 		LOG_DBG("Received reg offset[1]: 0x%02x", rdata[1]);
 		LOG_DBG("Received reg offset[2]: 0x%02x", rdata[2]);
-	
+
 		// show all data what received
 		if (byte_write == FW_CTRL_WRITE) {
 			if (reg_offset == FW_DL_SLV_RDY) {
@@ -834,7 +832,6 @@ void plat_master_write_thread_handler()
 		}
 		//show all data what to write
 		LOG_HEXDUMP_INF(&rdata[1], rlen - 1, "I2C Write Data");
-
 	}
 }
 void plat_master_write_thread_init()
