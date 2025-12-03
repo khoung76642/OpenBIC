@@ -642,6 +642,16 @@ static bool command_reply_data_handle(void *arg)
 		return true;
 	}
 
+#define ASIC_COM_FW_VERSION_REG 104
+	if (offset == ASIC_COM_FW_VERSION_REG) {
+		uint8_t reply_buf[11] = { 0x0B, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x00, 0x06, 0x01, 0x06 };
+		data->target_rd_msg.msg_length = sizeof(reply_buf);
+		memcpy(data->target_rd_msg.msg, reply_buf, sizeof(reply_buf));
+		LOG_HEXDUMP_DBG(reply_buf, sizeof(reply_buf), "ASIC_COM_TEST_REG reply");
+
+		return true;
+	}
+
 	data->target_rd_msg.msg[0] = 0x01;
 	data->target_rd_msg.msg_length = 1;
 
