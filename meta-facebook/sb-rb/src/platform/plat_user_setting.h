@@ -38,6 +38,13 @@ enum USER_SETTING_OFFSET_E {
 	THERMALTRIP,
 };
 
+enum UBC_VR_RAIL_TYPE {
+	POWER,
+	VOLTAGE,
+	CURRENT,
+	TYPE_MAX,
+};
+
 enum PLAT_TEMP_INDEX_E {
 	TEMP_INDEX_TOP_INLET,
 	TEMP_INDEX_BOT_INLET,
@@ -141,8 +148,10 @@ bool get_user_settings_thermaltrip_from_eeprom(void *user_settings, uint8_t data
 bool get_user_settings_throttle_from_eeprom(void *user_settings, uint8_t data_length);
 bool perm_config_clear();
 bool get_average_power(uint8_t rail, uint32_t *milliwatt);
+bool get_average_voltage(uint8_t rail, uint32_t *voltage);
+bool get_average_current(uint8_t rail, uint32_t *current);
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
-bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name);
+bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name, uint8_t type);
 bool ubc_vr_rail_enum_get(uint8_t *name, uint8_t *num);
 void pwr_level_mutex_init(void);
 bool set_user_settings_delay_pcie_perst_to_eeprom(void *user_settings, uint8_t data_length, uint8_t user_settings_offset);

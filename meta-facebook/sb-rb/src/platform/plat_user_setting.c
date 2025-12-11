@@ -31,6 +31,8 @@
 #include "tmp431.h"
 #include "plat_class.h"
 #include "shell_plat_average_power.h"
+#include "shell_plat_average_voltage.h"
+#include "shell_plat_average_current.h"
 #include "shell_plat_throttle_switch.h"
 #include "pldm_monitor.h"
 #include "sensor.h"
@@ -48,6 +50,10 @@ bool alert_level_is_assert = false;
 static struct k_mutex pwrlevel_mutex;
 static uint8_t power_index[UBC_VR_RAIL_E_MAX] = { 0 };
 static uint8_t power_count[UBC_VR_RAIL_E_MAX] = { 0 };
+static uint8_t voltage_index[UBC_VR_RAIL_E_MAX] = { 0 };
+static uint8_t voltage_count[UBC_VR_RAIL_E_MAX] = { 0 };
+static uint8_t current_index[UBC_VR_RAIL_E_MAX] = { 0 };
+static uint8_t current_count[UBC_VR_RAIL_E_MAX] = { 0 };
 
 void pwr_level_mutex_init(void)
 {
@@ -1026,10 +1032,196 @@ ubc_vr_power_mapping_sensor ubc_vr_power_table[] = {
 	  SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_PWR_W,
 	  "VR_ASIC_P0V75_OWL_W_TRVDD_PWR_W",
 	  { 0 } },
-	{ UBC_VR_RAIL_E_P3V3_OSFP, SENSOR_NUM_P3V3_OSFP_PWR_W, "VR_RAIL_E_P3V3_OSFP", { 0 } },
+	{ UBC_VR_RAIL_E_P3V3_OSFP, SENSOR_NUM_P3V3_OSFP_PWR_W, "VR_RAIL_E_P3V3_OSFP_PWR_W", { 0 } },
+};
+ubc_vr_voltage_mapping_sensor ubc_vr_voltage_table[] = {
+	{ UBC_VR_RAIL_E_UBC1, SENSOR_NUM_UBC1_P12V_VOLT_V, "UBC1_P12V_VOLT_V", { 0 } },
+	{ UBC_VR_RAIL_E_UBC2, SENSOR_NUM_UBC2_P12V_VOLT_V, "UBC2_P12V_VOLT_V", { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD,
+	  SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
+	  "VR_ASIC_P0V85_MEDHA0_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD,
+	  SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
+	  "VR_ASIC_P0V85_MEDHA1_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD,
+	  SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_VOLT_V,
+	  "VR_ASIC_P0V9_OWL_E_TRVDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_E_TRVDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_VOLT_V,
+	  "VR_ASIC_P0V75_OWL_E_TRVDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_M_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_M_VDD_VOLT_V,
+	  "VR_ASIC_P0V75_MAX_M_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM1357,
+	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_VOLT_V,
+	  "VR_ASIC_P0V75_VDDPHY_HBM1357_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_E_VDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_VOLT_V,
+	  "VR_ASIC_P0V75_OWL_E_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V4_VDDQL_HBM1357,
+	  SENSOR_NUM_ASIC_P0V4_VDDQL_HBM1357_VOLT_V,
+	  "VR_ASIC_P0V4_VDDQL_HBM1357_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V1_VDDQC_HBM1357,
+	  SENSOR_NUM_ASIC_P1V1_VDDQC_HBM1357_VOLT_V,
+	  "VR_ASIC_P1V1_VDDQC_HBM1357_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V8_VPP_HBM1357,
+	  SENSOR_NUM_ASIC_P1V8_VPP_HBM1357_VOLT_V,
+	  "VR_ASIC_P1V8_VPP_HBM1357_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_N_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_VOLT_V,
+	  "VR_ASIC_P0V75_MAX_N_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE,
+	  SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_VOLT_V,
+	  "VR_ASIC_P0V8_HAMSA_AVDD_PCIE_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE,
+	  SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_VOLT_V,
+	  "VR_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_HAMSA_VDD,
+	  SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_VOLT_V,
+	  "VR_ASIC_P0V85_HAMSA_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V1_VDDQC_HBM0246,
+	  SENSOR_NUM_ASIC_P1V1_VDDQC_HBM0246_VOLT_V,
+	  "VR_ASIC_P1V1_VDDQC_HBM0246_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V8_VPP_HBM0246,
+	  SENSOR_NUM_ASIC_P1V8_VPP_HBM0246_VOLT_V,
+	  "VR_ASIC_P1V8_VPP_HBM0246_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V4_VDDQL_HBM0246,
+	  SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0246_VOLT_V,
+	  "VR_ASIC_P0V4_VDDQL_HBM0246_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM0246,
+	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_VOLT_V,
+	  "VR_ASIC_P0V75_VDDPHY_HBM0246_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_W_VDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_VOLT_V,
+	  "VR_ASIC_P0V75_OWL_W_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_S_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_VOLT_V,
+	  "VR_ASIC_P0V75_MAX_S_VDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD,
+	  SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_VOLT_V,
+	  "VR_ASIC_P0V9_OWL_W_TRVDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_VOLT_V,
+	  "VR_ASIC_P0V75_OWL_W_TRVDD_VOLT_V",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_P3V3_OSFP, SENSOR_NUM_P3V3_OSFP_VOLT_V, "VR_RAIL_E_P3V3_OSFP_VOLT_V", { 0 } },
+};
+ubc_vr_current_mapping_sensor ubc_vr_current_table[] = {
+	{ UBC_VR_RAIL_E_UBC1, SENSOR_NUM_UBC1_P12V_CURR_A, "UBC1_P12V_CURR_A", { 0 } },
+	{ UBC_VR_RAIL_E_UBC2, SENSOR_NUM_UBC2_P12V_CURR_A, "UBC2_P12V_CURR_A", { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD,
+	  SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_CURR_A,
+	  "VR_ASIC_P0V85_MEDHA0_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD,
+	  SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_CURR_A,
+	  "VR_ASIC_P0V85_MEDHA1_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD,
+	  SENSOR_NUM_ASIC_P0V9_OWL_E_TRVDD_CURR_A,
+	  "VR_ASIC_P0V9_OWL_E_TRVDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_E_TRVDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_E_TRVDD_CURR_A,
+	  "VR_ASIC_P0V75_OWL_E_TRVDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_M_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_M_VDD_CURR_A,
+	  "VR_ASIC_P0V75_MAX_M_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM1357,
+	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_CURR_A,
+	  "VR_ASIC_P0V75_VDDPHY_HBM1357_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_E_VDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_CURR_A,
+	  "VR_ASIC_P0V75_OWL_E_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V4_VDDQL_HBM1357,
+	  SENSOR_NUM_ASIC_P0V4_VDDQL_HBM1357_CURR_A,
+	  "VR_ASIC_P0V4_VDDQL_HBM1357_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V1_VDDQC_HBM1357,
+	  SENSOR_NUM_ASIC_P1V1_VDDQC_HBM1357_CURR_A,
+	  "VR_ASIC_P1V1_VDDQC_HBM1357_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V8_VPP_HBM1357,
+	  SENSOR_NUM_ASIC_P1V8_VPP_HBM1357_CURR_A,
+	  "VR_ASIC_P1V8_VPP_HBM1357_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_N_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_CURR_A,
+	  "VR_ASIC_P0V75_MAX_N_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE,
+	  SENSOR_NUM_ASIC_P0V8_HAMSA_AVDD_PCIE_CURR_A,
+	  "VR_ASIC_P0V8_HAMSA_AVDD_PCIE_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE,
+	  SENSOR_NUM_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_CURR_A,
+	  "VR_ASIC_P1V2_HAMSA_VDDHRXTX_PCIE_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V85_HAMSA_VDD,
+	  SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_CURR_A,
+	  "VR_ASIC_P0V85_HAMSA_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V1_VDDQC_HBM0246,
+	  SENSOR_NUM_ASIC_P1V1_VDDQC_HBM0246_CURR_A,
+	  "VR_ASIC_P1V1_VDDQC_HBM0246_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P1V8_VPP_HBM0246,
+	  SENSOR_NUM_ASIC_P1V8_VPP_HBM0246_CURR_A,
+	  "VR_ASIC_P1V8_VPP_HBM0246_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V4_VDDQL_HBM0246,
+	  SENSOR_NUM_ASIC_P0V4_VDDQL_HBM0246_CURR_A,
+	  "VR_ASIC_P0V4_VDDQL_HBM0246_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_VDDPHY_HBM0246,
+	  SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_CURR_A,
+	  "VR_ASIC_P0V75_VDDPHY_HBM0246_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_W_VDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_CURR_A,
+	  "VR_ASIC_P0V75_OWL_W_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_MAX_S_VDD,
+	  SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_CURR_A,
+	  "VR_ASIC_P0V75_MAX_S_VDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V9_OWL_W_TRVDD,
+	  SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_CURR_A,
+	  "VR_ASIC_P0V9_OWL_W_TRVDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_ASIC_P0V75_OWL_W_TRVDD,
+	  SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_CURR_A,
+	  "VR_ASIC_P0V75_OWL_W_TRVDD_CURR_A",
+	  { 0 } },
+	{ UBC_VR_RAIL_E_P3V3_OSFP, SENSOR_NUM_P3V3_OSFP_CURR_A, "VR_RAIL_E_P3V3_OSFP_CURR_A", { 0 } },
 };
 
-bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name)
+bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name, uint8_t type)
 {
 	CHECK_NULL_ARG_WITH_RETURN(name, false);
 
@@ -1037,8 +1229,18 @@ bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name)
 		*name = NULL;
 		return false;
 	}
+	switch(type){
+		case POWER:
+			*name = (uint8_t *)ubc_vr_power_table[rail].sensor_name;
+			break;
+		case VOLTAGE:
+			*name = (uint8_t *)ubc_vr_voltage_table[rail].sensor_name;
+			break;
+		case CURRENT:
+			*name = (uint8_t *)ubc_vr_current_table[rail].sensor_name;
+			break;
+	}
 
-	*name = (uint8_t *)ubc_vr_power_table[rail].sensor_name;
 	return true;
 }
 bool ubc_vr_rail_enum_get(uint8_t *name, uint8_t *num)
@@ -1048,6 +1250,14 @@ bool ubc_vr_rail_enum_get(uint8_t *name, uint8_t *num)
 
 	for (int i = 0; i < UBC_VR_RAIL_E_MAX; i++) {
 		if (strcmp(name, ubc_vr_power_table[i].sensor_name) == 0) {
+			*num = i;
+			return true;
+		}
+		if (strcmp(name, ubc_vr_voltage_table[i].sensor_name) == 0) {
+			*num = i;
+			return true;
+		}
+		if (strcmp(name, ubc_vr_current_table[i].sensor_name) == 0) {
 			*num = i;
 			return true;
 		}
@@ -1150,7 +1360,7 @@ bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
 		int decoded_reading =
 			(int)((tmp_reading * power(10, -1 * unit_modifier) - offset) / resolution);
 
-		/* record power history */
+		/* record power voltage and current history */
 		for (int i = 0; i < UBC_VR_RAIL_E_MAX; i++) {
 			if (cfg->num == ubc_vr_power_table[i].sensor_id) {
 				ubc_vr_power_table[i].power_history[power_index[i]] =
@@ -1158,6 +1368,22 @@ bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
 				power_index[i] = (power_index[i] + 1) % POWER_HISTORY_SIZE;
 				if (power_count[i] < POWER_HISTORY_SIZE) {
 					power_count[i]++;
+				}
+			}
+			else if (cfg->num == ubc_vr_voltage_table[i].sensor_id) {
+				ubc_vr_voltage_table[i].voltage_history[voltage_index[i]] =
+					decoded_reading;
+				voltage_index[i] = (voltage_index[i] + 1) % VOLTAGE_HISTORY_SIZE;
+				if (voltage_count[i] < VOLTAGE_HISTORY_SIZE) {
+					voltage_count[i]++;
+				}
+			}
+			else if (cfg->num == ubc_vr_current_table[i].sensor_id) {
+				ubc_vr_current_table[i].current_history[current_index[i]] =
+					decoded_reading;
+				current_index[i] = (current_index[i] + 1) % CURRENT_HISTORY_SIZE;
+				if (current_count[i] < CURRENT_HISTORY_SIZE) {
+					current_count[i]++;
 				}
 			}
 		}
@@ -1259,6 +1485,22 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 					power_count[i]++;
 				}
 			}
+			else if (cfg->num == ubc_vr_voltage_table[i].sensor_id) {
+				ubc_vr_voltage_table[i].voltage_history[voltage_index[i]] =
+					decoded_reading;
+				voltage_index[i] = (voltage_index[i] + 1) % VOLTAGE_HISTORY_SIZE;
+				if (voltage_count[i] < VOLTAGE_HISTORY_SIZE) {
+					voltage_count[i]++;
+				}
+			}
+			else if (cfg->num == ubc_vr_current_table[i].sensor_id) {
+				ubc_vr_current_table[i].current_history[current_index[i]] =
+					decoded_reading;
+				current_index[i] = (current_index[i] + 1) % CURRENT_HISTORY_SIZE;
+				if (current_count[i] < POWER_HISTORY_SIZE) {
+					current_count[i]++;
+				}
+			}
 		}
 
 		/* TO_DO wait power capping add
@@ -1324,6 +1566,106 @@ bool get_average_power(uint8_t rail, uint32_t *milliwatt)
 
 	LOG_DBG("real_power = %f, integer_part = %d, fraction_part = %d, milliwatt = 0x%x",
 		real_power, integer_part, fraction_part, *milliwatt);
+
+	return true;
+}
+bool get_average_voltage(uint8_t rail, uint32_t *voltage)
+{
+	CHECK_NULL_ARG_WITH_RETURN(voltage, false);
+
+	if (rail >= UBC_VR_RAIL_E_MAX || voltage_count[rail] == 0) {
+		*voltage = 0;
+		return false;
+	}
+
+	int sum = 0;
+	for (int i = 0; i < voltage_count[rail]; i++) {
+		sum += ubc_vr_voltage_table[rail].voltage_history[i];
+	}
+
+	float avg_sensor_value = sum / (float)voltage_count[rail];
+	if (avg_sensor_value < 0) {
+		LOG_ERR("avg_sensor_value is negative: %f", avg_sensor_value);
+		*voltage = 0;
+		return false;
+	}
+
+	uint8_t sensor_id = ubc_vr_voltage_table[rail].sensor_id;
+	float resolution = 0, offset = 0;
+	int cache_reading = 0;
+	int8_t unit_modifier = 0;
+	uint8_t sensor_operational_state = PLDM_SENSOR_STATUSUNKOWN;
+	pldm_sensor_get_info_via_sensor_id(sensor_id, &resolution, &offset, &unit_modifier,
+					   &cache_reading, &sensor_operational_state);
+	if (resolution == 0) {
+		*voltage = 0;
+		LOG_ERR("resolution is 0");
+		return false;
+	}
+
+	float real_voltage = (avg_sensor_value * resolution + offset) / power(10, -unit_modifier);
+
+	int16_t integer_part = (int16_t)real_voltage;
+	int16_t fraction_part = (int16_t)((real_voltage - integer_part) * 1000.0);
+
+	if (integer_part < 0 && fraction_part > 0) {
+		fraction_part = -fraction_part;
+	}
+
+	*voltage = ((uint16_t)fraction_part << 16) | (uint16_t)integer_part;
+
+	LOG_DBG("real_voltage = %f, integer_part = %d, fraction_part = %d, milliwatt = 0x%x",
+		real_voltage, integer_part, fraction_part, *voltage);
+
+	return true;
+}
+bool get_average_current(uint8_t rail, uint32_t *current)
+{
+	CHECK_NULL_ARG_WITH_RETURN(current, false);
+
+	if (rail >= UBC_VR_RAIL_E_MAX || current_count[rail] == 0) {
+		*current = 0;
+		return false;
+	}
+
+	int sum = 0;
+	for (int i = 0; i < current_count[rail]; i++) {
+		sum += ubc_vr_current_table[rail].current_history[i];
+	}
+
+	float avg_sensor_value = sum / (float)current_count[rail];
+	if (avg_sensor_value < 0) {
+		LOG_ERR("avg_sensor_value is negative: %f", avg_sensor_value);
+		*current = 0;
+		return false;
+	}
+
+	uint8_t sensor_id = ubc_vr_current_table[rail].sensor_id;
+	float resolution = 0, offset = 0;
+	int cache_reading = 0;
+	int8_t unit_modifier = 0;
+	uint8_t sensor_operational_state = PLDM_SENSOR_STATUSUNKOWN;
+	pldm_sensor_get_info_via_sensor_id(sensor_id, &resolution, &offset, &unit_modifier,
+					   &cache_reading, &sensor_operational_state);
+	if (resolution == 0) {
+		*current = 0;
+		LOG_ERR("resolution is 0");
+		return false;
+	}
+
+	float real_current = (avg_sensor_value * resolution + offset) / power(10, -unit_modifier);
+
+	int16_t integer_part = (int16_t)real_current;
+	int16_t fraction_part = (int16_t)((real_current - integer_part) * 1000.0);
+
+	if (integer_part < 0 && fraction_part > 0) {
+		fraction_part = -fraction_part;
+	}
+
+	*current = ((uint16_t)fraction_part << 16) | (uint16_t)integer_part;
+
+	LOG_DBG("real_current = %f, integer_part = %d, fraction_part = %d, milliwatt = 0x%x",
+		real_current, integer_part, fraction_part, *current);
 
 	return true;
 }
