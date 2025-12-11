@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#ifndef PLAT_AVERAGE_PWR_H
-#define PLAT_AVERAGE_PWRE_H
+#ifndef PLAT_AVERAGE_CUR_H
+#define PLAT_AVERAGE_CURE_H
 
-#define POWER_HISTORY_SIZE 20
+#define CURRENT_HISTORY_SIZE 20
 #include <stdint.h>
-typedef struct ubc_vr_power_mapping_sensor {
+typedef struct ubc_vr_current_mapping_sensor {
 	uint8_t index;
 	uint8_t sensor_id;
 	uint8_t *sensor_name;
-	uint32_t power_history[POWER_HISTORY_SIZE];
-} ubc_vr_power_mapping_sensor;
+	uint32_t current_history[CURRENT_HISTORY_SIZE];
+} ubc_vr_current_mapping_sensor;
 
 #endif

@@ -24,22 +24,22 @@
 #include "plat_event.h"
 #include "pldm_sensor.h"
 #include "plat_user_setting.h"
-#include "shell_plat_average_power.h"
+#include "shell_plat_average_voltage.h"
 #include "plat_cpld.h"
 
-LOG_MODULE_REGISTER(plat_average_power_shell, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(plat_average_voltage_shell, LOG_LEVEL_DBG);
 
-static int cmd_power_get(const struct shell *shell, size_t argc, char **argv)
+static int cmd_voltage_get(const struct shell *shell, size_t argc, char **argv)
 {
 	/* is_ubc_enabled_delayed_enabled() is to wait for all VR to be enabled  */
 	/* (gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) is to shut down polling immediately when UBC is disabled */
 	if (!((gpio_get(FM_PLD_UBC_EN_R) == GPIO_HIGH) && is_ubc_enabled_delayed_enabled())) {
-		shell_error(shell, "Can't get power command because VR has no power yet.");
+		shell_error(shell, "Can't get voltage command because VR has no voltage yet.");
 		return -1;
 	}
 
 	if (!(argc == 2)) {
-		shell_error(shell, "average_power get <ubc_vr_name>|all");
+		shell_error(shell, "average_voltage get <ubc_vr_name>|all");
 		return -1;
 	}
 	if (!strcmp(argv[1], "all")) {
@@ -49,22 +49,22 @@ static int cmd_power_get(const struct shell *shell, size_t argc, char **argv)
 				continue;
 
 			uint8_t *rail_name = NULL;
-			if (!ubc_vr_rail_name_get((uint8_t)i, &rail_name, POWER)) {
+			if (!ubc_vr_rail_name_get((uint8_t)i, &rail_name, VOLTAGE)) {
 				shell_print(shell, "Can't find ubc_vr_rail_name by rail index: %d",
 					    i);
 				continue;
 			}
 
-			uint32_t average_power = 0;
-			if (!get_average_power(i, &average_power)) {
-				shell_print(shell, "Can't find average_power by rail index: %d", i);
+			uint32_t average_voltage = 0;
+			if (!get_average_voltage(i, &average_voltage)) {
+				shell_print(shell, "Can't find average_voltage by rail index: %d", i);
 				continue;
 			}
 			sensor_val tmp_reading;
-			tmp_reading.integer = (int16_t)(average_power & 0xFFFF);
-			tmp_reading.fraction = (int16_t)((average_power >> 16) & 0xFFFF);
+			tmp_reading.integer = (int16_t)(average_voltage & 0xFFFF);
+			tmp_reading.fraction = (int16_t)((average_voltage >> 16) & 0xFFFF);
 
-			shell_print(shell, "%4x|%-50s| %5d.%03dW", i, rail_name,
+			shell_print(shell, "%4x|%-50s| %5d.%03dV", i, rail_name,
 				    tmp_reading.integer, tmp_reading.fraction);
 		}
 	} else {
@@ -79,29 +79,29 @@ static int cmd_power_get(const struct shell *shell, size_t argc, char **argv)
 			return 0;
 		}
 
-		uint32_t average_power = 0;
-		if (!get_average_power(rail, &average_power)) {
-			shell_print(shell, "Can't find average_power by rail index: %d", rail);
+		uint32_t average_voltage = 0;
+		if (!get_average_voltage(rail, &average_voltage)) {
+			shell_print(shell, "Can't find average_voltage by rail index: %d", rail);
 			return -1;
 		}
 		sensor_val tmp_reading;
-		tmp_reading.integer = (int16_t)(average_power & 0xFFFF);
-		tmp_reading.fraction = (int16_t)((average_power >> 16) & 0xFFFF);
+		tmp_reading.integer = (int16_t)(average_voltage & 0xFFFF);
+		tmp_reading.fraction = (int16_t)((average_voltage >> 16) & 0xFFFF);
 
-		shell_print(shell, "%4x|%-50s| %5d.%03dW", rail, argv[1], tmp_reading.integer,
+		shell_print(shell, "%4x|%-50s| %5d.%03dV", rail, argv[1], tmp_reading.integer,
 			    tmp_reading.fraction);
 	}
 
 	return 0;
 }
 
-static void ubc_vr_rname_get_for_get_power(size_t idx, struct shell_static_entry *entry)
+static void ubc_vr_rname_get_for_get_voltage(size_t idx, struct shell_static_entry *entry)
 {
 	if ((get_asic_board_id() != ASIC_BOARD_ID_EVB) && (idx == 2))
 		idx++;
 
 	uint8_t *name = NULL;
-	ubc_vr_rail_name_get((uint8_t)idx, &name, POWER);
+	ubc_vr_rail_name_get((uint8_t)idx, &name, VOLTAGE);
 
 	if (idx == UBC_VR_RAIL_E_MAX)
 		name = (uint8_t *)"all";
@@ -112,13 +112,13 @@ static void ubc_vr_rname_get_for_get_power(size_t idx, struct shell_static_entry
 	entry->subcmd = NULL;
 }
 
-SHELL_DYNAMIC_CMD_CREATE(ubc_vr_rname_for_get_power, ubc_vr_rname_get_for_get_power);
+SHELL_DYNAMIC_CMD_CREATE(ubc_vr_rname_for_get_voltage, ubc_vr_rname_get_for_get_voltage);
 
 /* level 1 */
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_average_power_cmds,
-			       SHELL_CMD(get, &ubc_vr_rname_for_get_power,
-					 "average power get power commands", cmd_power_get),
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_average_voltage_cmds,
+			       SHELL_CMD(get, &ubc_vr_rname_for_get_voltage,
+					 "average voltage get voltage commands", cmd_voltage_get),
 			       SHELL_SUBCMD_SET_END);
 
 /* Root of command test */
-SHELL_CMD_REGISTER(average_power, &sub_average_power_cmds, "average power commands", NULL);
+SHELL_CMD_REGISTER(average_voltage, &sub_average_voltage_cmds, "average voltage commands", NULL);
