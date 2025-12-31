@@ -20,6 +20,7 @@
 #include "sensor.h"
 #include "plat_hook.h"
 #include "plat_class.h"
+#include "plat_vr_test_mode.h"
 
 LOG_MODULE_REGISTER(plat_voltage_range_shell, LOG_LEVEL_DBG);
 
@@ -99,16 +100,21 @@ static int cmd_voltage_range_set(const struct shell *shell, size_t argc, char **
 		return -1;
 	}
 
+	if (!get_vr_test_mode_flag()) {
+		shell_warn(shell, "This command is only for VR test mode");
+		return -1;
+	}
+	
 	/* covert rail string to enum */
 	enum VR_RAIL_E rail;
 	if (vr_rail_enum_get(argv[1], &rail) == false) {
 		shell_error(shell, "Invalid rail name: %s", argv[1]);
 		return -1;
 	}
-
-	if ((get_asic_board_id() != ASIC_BOARD_ID_EVB) && (rail == VR_RAIL_E_P3V3_OSFP_VOLT_V)) {
-		shell_print(shell, "There is no osfp p3v3");
-		return 0;
+	
+	if (rail == VR_RAIL_E_P3V3_OSFP_VOLT_V) {
+			shell_warn(shell, "OSFP P3V3 can't set voltage");
+			return -1;
 	}
 
 	/* covert voltage to millivolt */
@@ -147,8 +153,10 @@ static int cmd_voltage_range_set(const struct shell *shell, size_t argc, char **
 				    voltage_set_val_mv_backup);
 			return -1;
 		}
+		
 		shell_print(shell, "voltage_range set %s %s: %dmV", argv[1], argv[2],
 			    voltage_set_val_mv);
+		
 	} else {
 		shell_error(shell, "voltage_range set <voltage-rail> <new-voltage> min|max");
 		return -1;

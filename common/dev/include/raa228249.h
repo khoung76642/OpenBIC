@@ -31,5 +31,6 @@ bool raa228249_set_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivo
 bool raa228249_get_vr_status(sensor_cfg *cfg, uint8_t rail, uint8_t vr_status_rail,
 			     uint16_t *vr_status);
 bool raa228249_clear_vr_status(sensor_cfg *cfg, uint8_t rail);
+int raa_dma_rd(uint8_t bus, uint8_t addr, uint8_t *reg, uint8_t *resp);
 
 #endif

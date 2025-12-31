@@ -21,6 +21,7 @@
 #include "plat_vr_test_mode.h"
 #include "plat_hook.h"
 #include "plat_util.h"
+#include "raa228249.h"
 
 void cmd_vr_test_mode_start(const struct shell *shell, size_t argc, char **argv)
 {
@@ -108,7 +109,7 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 				    get_vr_reg_to_int(i, VR_OVP_REG),
 				    get_vr_reg_to_int(i, VR_VOUT_MAX_REG),
 				    vout_range_user_settings.change_vout_min[i],
-				    vout_range_user_settings.change_vout_max[i]);
+				    vout_range_user_settings.change_vout_max[i] + 10);
 		}
 	}
 }

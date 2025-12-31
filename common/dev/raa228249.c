@@ -201,7 +201,7 @@ bool raa228249_set_vout_min(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt)
 	return true;
 }
 
-static int raa_dma_rd(uint8_t bus, uint8_t addr, uint8_t *reg, uint8_t *resp)
+int raa_dma_rd(uint8_t bus, uint8_t addr, uint8_t *reg, uint8_t *resp)
 {
 	CHECK_NULL_ARG_WITH_RETURN(reg, SENSOR_UNSPECIFIED_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(resp, SENSOR_UNSPECIFIED_ERROR);
