@@ -58,6 +58,11 @@ __weak void plat_pldm_sensor_post_load_init(int thread_id)
 	return;
 }
 
+__weak void plat_pldm_sensor_poll_post()
+{
+	return;
+}
+
 bool pldm_sensor_is_interval_ready(pldm_sensor_info *pldm_sensor_list)
 {
 	CHECK_NULL_ARG_WITH_RETURN(pldm_sensor_list, false);
@@ -298,7 +303,10 @@ void pldm_sensor_get_reading(sensor_cfg *pldm_sensor_cfg, uint32_t *update_time,
 	if (pldm_sensor_cfg->post_sensor_read_hook) {
 		if (!pldm_sensor_cfg->post_sensor_read_hook(
 			    pldm_sensor_cfg, pldm_sensor_cfg->post_sensor_read_args, &reading)) {
-			pldm_sensor_cfg->cache_status = PLDM_SENSOR_FAILED;
+			if (pldm_sensor_cfg->cache_status == SENSOR_OPEN_CIRCUIT)
+				pldm_sensor_cfg->cache_status = PLDM_SENSOR_OPEN_CIRCUIT;
+			else
+				pldm_sensor_cfg->cache_status = PLDM_SENSOR_FAILED;
 			*update_time_ms = k_uptime_get_32();
 			*update_time = (*update_time_ms / 1000);
 			LOG_DBG("Failed to pose read sensor_num 0x%x of thread %d", sensor_num,
@@ -458,7 +466,7 @@ void pldm_sensor_polling_handler(void *arug0, void *arug1, void *arug2)
 				}
 			}
 		}
-
+		plat_pldm_sensor_poll_post();
 		k_msleep(poll_interval_ms);
 	}
 }
