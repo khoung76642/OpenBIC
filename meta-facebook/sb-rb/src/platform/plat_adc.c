@@ -27,6 +27,8 @@
 #include "plat_i2c_target.h"
 #include "plat_pldm_sensor.h"
 
+#include <sys/crc.h>
+
 LOG_MODULE_REGISTER(plat_adc);
 
 #define BUFFER_SIZE 2
@@ -322,9 +324,9 @@ int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		.slave = 0,
 		.cs = &cs_ctrl,
 	};
-
-	uint8_t tx_buf[3] = { 0x10, reg, 0x00 }; // bit15=1: read
-	uint8_t rx_buf[3] = { 0 };
+	uint8_t crc_buf[3] = { 0x10, reg, 0x00 };
+	uint8_t tx_buf[4] = { 0x10, reg, 0x00, crc8_ccitt(0xFF, &crc_buf, 3) }; // bit15=1: read
+	uint8_t rx_buf[4] = { 0 };
 
 	struct spi_buf tx = { .buf = tx_buf, .len = sizeof(tx_buf) };
 	struct spi_buf rx = { .buf = rx_buf, .len = sizeof(rx_buf) };
@@ -336,15 +338,40 @@ int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		LOG_ERR("SPI write failed: %d", ret);
 		return ret;
 	}
+	LOG_INF("0x%02x 0x%02x 0x%02x 0x%02x",tx_buf[0],
+		tx_buf[1], tx_buf[2], tx_buf[3]);
+
 	ret = spi_read(spi_dev, &spi_cfg, &rx_set);
 	if (ret < 0) {
 		LOG_ERR("SPI read failed: %d", ret);
 		return ret;
 	}
+	LOG_INF("medha%d ADS7066 read reg 0x%02x: 0x%02x 0x%02x 0x%02x 0x%02x", idx, reg, rx_buf[0],
+		rx_buf[1], rx_buf[2], rx_buf[3]);
+	uint8_t crc_buf_get[3] = { 0x00, 0x00, 0x00 };
+	uint8_t tx_buf_get[4] = { 0x00, 0x00, 0x00, crc8_ccitt(0xFF, &crc_buf_get, 3) }; // bit15=1: read
+	uint8_t rx_buf_get[4] = { 0 };
 
-	*out_data = rx_buf[0];
-	LOG_INF("medha%d ADS7066 read reg 0x%02x: 0x%02x 0x%02x 0x%02x", idx, reg, rx_buf[0],
-		rx_buf[1], rx_buf[2]);
+	struct spi_buf tx_get = { .buf = tx_buf_get, .len = sizeof(tx_buf_get) };
+	struct spi_buf rx_get = { .buf = rx_buf_get, .len = sizeof(rx_buf_get) };
+	struct spi_buf_set tx_set_ = { .buffers = &tx_get, .count = 1 };
+	struct spi_buf_set rx_set_ = { .buffers = &rx_get, .count = 1 };
+	ret = spi_write(spi_dev, &spi_cfg, &tx_set_);
+	if (ret < 0) {
+		LOG_ERR("SPI write failed: %d", ret);
+		return ret;
+	}
+	LOG_INF("0x%02x 0x%02x 0x%02x 0x%02x",tx_buf_get[0],
+		tx_buf_get[1], tx_buf_get[2], tx_buf_get[3]);
+	ret = spi_read(spi_dev, &spi_cfg, &rx_set_);
+	if (ret < 0) {
+		LOG_ERR("SPI read failed: %d", ret);
+		return ret;
+	}
+
+	*out_data = rx_buf_get[0];
+	LOG_INF("medha%d ADS7066 read reg 0x%02x: 0x%02x 0x%02x 0x%02x 0x%02x", idx, reg, rx_buf_get[0],
+		rx_buf_get[1], rx_buf_get[2], rx_buf_get[3]);
 	return 0;
 }
 int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
@@ -383,8 +410,8 @@ int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
 		.slave = 0,
 		.cs = &cs_ctrl,
 	};
-
-	uint8_t tx_buf[3] = { 0x08, reg, write_val };
+	uint8_t crc_buf[3] = { 0x08, reg, write_val };
+	uint8_t tx_buf[4] = { 0x08, reg, write_val, crc8_ccitt(0xFF, &crc_buf, 3) };
 
 	struct spi_buf tx = { .buf = tx_buf, .len = sizeof(tx_buf) };
 	struct spi_buf_set tx_set = { .buffers = &tx, .count = 1 };
@@ -676,9 +703,9 @@ void ads7066_mode_init()
 		// if rainbow board revid >= EVT1B, disable internal Volt reference
 		if (get_asic_board_id() == ASIC_BOARD_ID_RAINBOW &&
 		    get_board_rev_id() >= REV_ID_EVT2)
-			ads7066_write_reg(0x1, 0x2, i);
+			ads7066_write_reg(0x1, 0x42, i);
 		else
-			ads7066_write_reg(0x1, 0x82, i);
+			ads7066_write_reg(0x1, 0xC2, i);
 		ads7066_write_reg(0x12, 0x1, i);
 		ads7066_write_reg(0x3, 0x6, i);
 
@@ -688,7 +715,7 @@ void ads7066_mode_init()
 		adc_good_status[i] = (value & 0x07) == 0x06 ? 0 : 0xFF;
 
 		ads7066_write_reg(0x4, 0x8, i);
-		ads7066_write_reg(0x10, 0x11, i);
+		ads7066_write_reg(0x10, 0x00, i);
 		ads7066_write_reg(0x2, 0x10, i);
 	}
 	LOG_INF("ads7066 mode init done");
@@ -721,6 +748,7 @@ void adc_rainbow_polling_handler(void *p1, void *p2, void *p3)
 {
 	read_adc_info();
 	LOG_INF("adc index is %d", adc_idx_read);
+	adc_idx_read = TIC_ADS7066;
 	if (adc_idx_read == ADI_AD4058)
 		ad4058_mode_init();
 	else if (adc_idx_read == TIC_ADS7066)
