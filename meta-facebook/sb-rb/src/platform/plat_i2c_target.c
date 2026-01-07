@@ -79,7 +79,7 @@ struct i2c_target_data *test_for_reading = NULL;
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
-	TARGET_DISABLE, TARGET_ENABLE,  TARGET_ENABLE,  TARGET_DISABLE,
+	TARGET_DISABLE, TARGET_ENABLE,	TARGET_ENABLE,	TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
 
@@ -998,10 +998,10 @@ void set_bootstrap_element_handler()
 	}
 }
 uint8_t vr_pwr_alert_table[] = {
-	SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W,   SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W,
+	SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W,	  SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W,
 	SENSOR_NUM_ASIC_P1V1_VDDQC_HBM0246_PWR_W, SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM0246_PWR_W,
 	SENSOR_NUM_ASIC_P1V1_VDDQC_HBM1357_PWR_W, SENSOR_NUM_ASIC_P0V75_VDDPHY_HBM1357_PWR_W,
-	SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_PWR_W,    SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_PWR_W,
+	SENSOR_NUM_ASIC_P0V75_MAX_N_VDD_PWR_W,	  SENSOR_NUM_ASIC_P0V75_MAX_S_VDD_PWR_W,
 };
 
 void i2c_bridge_command_handler(struct k_work *work_item)
@@ -1064,7 +1064,7 @@ void set_control_voltage_handler(struct k_work *work_item)
 	uint16_t millivolt = sensor_data->set_value;
 	LOG_DBG("Setting rail %x to %d mV", rail, millivolt);
 
-	plat_set_vout_command(rail, &millivolt, false, false);
+	plat_set_vout_command(rail, &millivolt, false);
 }
 
 void set_power_capping_threshold_time_handler(struct k_work *work_item)
