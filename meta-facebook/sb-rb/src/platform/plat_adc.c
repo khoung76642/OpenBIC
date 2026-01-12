@@ -16,6 +16,7 @@
 
 #include <drivers/adc.h>
 #include <drivers/spi.h>
+#include <sys/crc.h>
 #include "libutil.h"
 #include <logging/log.h>
 #include "plat_gpio.h"
@@ -307,7 +308,7 @@ float get_vr_vol_sum(uint8_t idx)
 {
 	return adc_info[idx].vr_sum;
 }
-int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
+int ads7066_read_reg(uint8_t idx, uint8_t reg, uint8_t *out_data, bool crc_enable)
 {
 	spi_dev = device_get_binding("SPIP");
 	if (!spi_dev) {
@@ -344,11 +345,12 @@ int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		.cs = &cs_ctrl,
 	};
 
-	uint8_t tx_buf[3] = { 0x10, reg, 0x00 }; // bit15=1: read
-	uint8_t rx_buf[3] = { 0 };
+	uint8_t tx_buf[4] = { 0x10, reg, 0x00 }; // bit15=1: read
+	tx_buf[3] = crc_enable ? crc8_ccitt(0xFF, tx_buf, 3) : 0;
+	uint8_t rx_buf[4] = { 0 };
 
-	struct spi_buf tx = { .buf = tx_buf, .len = sizeof(tx_buf) };
-	struct spi_buf rx = { .buf = rx_buf, .len = sizeof(rx_buf) };
+	struct spi_buf tx = { .buf = tx_buf, .len = (crc_enable ? 4 : 3) };
+	struct spi_buf rx = { .buf = rx_buf, .len = (crc_enable ? 4 : 3) };
 	struct spi_buf_set tx_set = { .buffers = &tx, .count = 1 };
 	struct spi_buf_set rx_set = { .buffers = &rx, .count = 1 };
 
@@ -357,18 +359,21 @@ int ads7066_read_reg(uint8_t reg, uint8_t idx, uint8_t *out_data)
 		LOG_ERR("SPI write failed: %d", ret);
 		return ret;
 	}
-	ret = spi_read(spi_dev, &spi_cfg, &rx_set);
+
+	memset(tx_buf, 0, 3);
+	tx_buf[3] = crc_enable ? crc8_ccitt(0xFF, tx_buf, 3) : 0;
+	ret = spi_transceive(spi_dev, &spi_cfg, &tx_set, &rx_set);
 	if (ret < 0) {
 		LOG_ERR("SPI read failed: %d", ret);
 		return ret;
 	}
 
 	*out_data = rx_buf[0];
-	LOG_INF("medha%d ADS7066 read reg 0x%02x: 0x%02x 0x%02x 0x%02x", idx, reg, rx_buf[0],
-		rx_buf[1], rx_buf[2]);
+	LOG_INF("medha%d ADS7066 read reg 0x%02x: 0x%02x 0x%02x 0x%02x 0x%02x", idx, reg, rx_buf[0],
+		rx_buf[1], rx_buf[2], rx_buf[3]);
 	return 0;
 }
-int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
+int ads7066_write_reg(uint8_t idx, uint8_t reg, uint8_t write_val, bool crc_enable)
 {
 	spi_dev = device_get_binding("SPIP");
 	if (!spi_dev) {
@@ -405,9 +410,10 @@ int ads7066_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx)
 		.cs = &cs_ctrl,
 	};
 
-	uint8_t tx_buf[3] = { 0x08, reg, write_val };
+	uint8_t tx_buf[4] = { 0x08, reg, write_val };
+	tx_buf[3] = crc_enable ? crc8_ccitt(0xFF, tx_buf, 3) : 0;
 
-	struct spi_buf tx = { .buf = tx_buf, .len = sizeof(tx_buf) };
+	struct spi_buf tx = { .buf = tx_buf, .len = (crc_enable ? 4 : 3) };
 	struct spi_buf_set tx_set = { .buffers = &tx, .count = 1 };
 
 	int ret = spi_write(spi_dev, &spi_cfg, &tx_set);
@@ -457,26 +463,24 @@ static void ads7066_read_voltage(uint8_t idx)
 		.cs = &cs_ctrl,
 	};
 
-	uint8_t tx_buf[3] = { 0x00, 0x00, 0x00 };
-	uint8_t rx_buf[3] = { 0 };
-	uint8_t out_buf[3] = { 0 };
+	uint8_t tx_buf[4] = { 0 };
+	tx_buf[3] = crc8_ccitt(0xFF, tx_buf, 3);
+	uint8_t rx_buf[4] = { 0 };
+	memset(rx_buf, 0, 4);
 
 	struct spi_buf tx = { .buf = tx_buf, .len = sizeof(tx_buf) };
 	struct spi_buf rx = { .buf = rx_buf, .len = sizeof(rx_buf) };
 	struct spi_buf_set tx_set = { .buffers = &tx, .count = 1 };
 	struct spi_buf_set rx_set = { .buffers = &rx, .count = 1 };
 
-	memset(rx_buf, 0, 3);
 	int ret = spi_transceive(spi_dev, &spi_cfg, &tx_set, &rx_set);
 	if (ret < 0) {
 		LOG_ERR("SPI failed: %d", ret);
 		return;
 	}
 
-	memcpy(out_buf, rx_buf, 3);
-
-	LOG_HEXDUMP_DBG(out_buf, 3, "ads7066_read_voltage_value");
-	uint16_t raw_value = out_buf[0] << 8 | out_buf[1];
+	LOG_HEXDUMP_DBG(rx_buf, 4, "ads7066_read_voltage_value");
+	uint16_t raw_value = rx_buf[0] << 8 | rx_buf[1];
 	if (idx == ADC_RB_IDX_MEDHA0) {
 		ads7066_val_0 = ((float)raw_value / 65536) * ads7066_vref;
 		update_adc_info(raw_value, ADC_RB_IDX_MEDHA0, ads7066_vref);
@@ -693,24 +697,32 @@ void ads7066_mode_init()
 	//set auto-sequence mode
 	// medha0 & medha1
 	for (int i = 0; i < ADC_RB_IDX_MAX; i++) {
-		ads7066_write_reg(0, 0x1, i);
+		uint8_t cfg_val;
 		// if rainbow board revid >= EVT1B, disable internal Volt reference
+		// if (get_asic_board_id() == ASIC_BOARD_ID_RAINBOW &&
+		//     get_board_rev_id() >= REV_ID_DVT)
+		// 	cfg_val = crc_enable ? 0x02 : 0x42;
+		// else
+		// 	cfg_val = crc_enable ? 0x82 : 0xC2;
 		if (get_asic_board_id() == ASIC_BOARD_ID_RAINBOW &&
 		    get_board_rev_id() >= REV_ID_DVT)
-			ads7066_write_reg(0x1, 0x2, i);
+			cfg_val = 0x42;
 		else
-			ads7066_write_reg(0x1, 0x82, i);
-		ads7066_write_reg(0x12, 0x1, i);
-		ads7066_write_reg(0x3, 0x6, i);
+			cfg_val = 0xC2;
+		ads7066_write_reg(i, 0x1, cfg_val, false);
+
+		ads7066_write_reg(i, 0, 0x1, true);
+		ads7066_write_reg(i, 0x12, 0x1, true);
+		ads7066_write_reg(i, 0x3, 0x6, true);
 
 		//check and update good status
 		uint8_t value = 0;
-		ads7066_read_reg(0x3, i, &value);
+		ads7066_read_reg(i, 0x3, &value, true);
 		adc_good_status[i] = (value & 0x07) == 0x06 ? 0 : 0xFF;
 
-		ads7066_write_reg(0x4, 0x8, i);
-		ads7066_write_reg(0x10, 0x11, i);
-		ads7066_write_reg(0x2, 0x10, i);
+		ads7066_write_reg(i, 0x4, 0x8, true);
+		ads7066_write_reg(i, 0x10, 0x11, true);
+		ads7066_write_reg(i, 0x2, 0x10, true);
 	}
 	LOG_INF("ads7066 mode init done");
 }

@@ -23,7 +23,7 @@ static int cmd_adc_debug(const struct shell *shell, size_t argc, char **argv)
 	if (argc < 4) {
 		shell_print(
 			shell,
-			"Usage: adc_debug [0:read|1:write] [0:ads7066|1:ad4058] [0:meadha0|1:meadha1] [reg] [value]");
+			"Usage: adc_debug [0:read|1:write] [0:ads7066|1:ad4058] [0:meadha0|1:meadha1] [reg] [0:non-crc|1:crc] [value]");
 		return 0;
 	}
 
@@ -31,18 +31,21 @@ static int cmd_adc_debug(const struct shell *shell, size_t argc, char **argv)
 	uint8_t adc_type = strtoul(argv[2], NULL, 10); // 0: ads7066, 1: ad4058
 	uint8_t meadha_id = strtoul(argv[3], NULL, 16); // 0: meadha0, 1: meadha1
 	uint8_t reg = strtoul(argv[4], NULL, 16);
-	uint8_t write_value = strtoul(argv[5], NULL, 16);
+	uint8_t crc_enable = strtoul(argv[5], NULL, 16);
+	uint8_t write_value = strtoul(argv[6], NULL, 16);
 	// follow shell input
 	if (adc_type == 0) {
 		if (w_r == 0) {
 			uint8_t value = 0;
-			int ret = ads7066_read_reg(reg, meadha_id, &value);
+			int ret =
+				ads7066_read_reg(meadha_id, reg, &value, crc_enable ? true : false);
 			if (ret < 0) {
 				shell_error(shell, "read reg fail (err=%d)", ret);
 				return -EINVAL;
 			}
 		} else if (w_r == 1) {
-			int ret = ads7066_write_reg(reg, write_value, meadha_id);
+			int ret = ads7066_write_reg(meadha_id, reg, write_value,
+						    crc_enable ? true : false);
 			if (ret < 0) {
 				shell_error(shell, "write reg fail (err=%d)", ret);
 				return -EINVAL;
@@ -75,5 +78,5 @@ static int cmd_adc_debug(const struct shell *shell, size_t argc, char **argv)
 SHELL_CMD_REGISTER(
 	adc_debug, NULL,
 	"ADC debug tool\n"
-	"Usage: adc_debug [0:read|1:write] [0:ads7066|1:ad4058] [0:meadha0|1:meadha1] [reg] [value]",
+	"Usage: adc_debug [0:read|1:write] [0:ads7066|1:ad4058] [0:meadha0|1:meadha1] [reg] [0:non-crc|1:crc] [value]",
 	cmd_adc_debug);
