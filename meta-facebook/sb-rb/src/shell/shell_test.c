@@ -21,11 +21,54 @@
 #include "plat_cpld.h"
 #include "plat_class.h"
 #include "plat_adc.h"
+#include "plat_hook.h"
 
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "Hello world!");
+	// uvp
+	uint16_t medha0_uvp_threshold = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_uvp_threshold, UVP_THRESHOLD);
+	shell_print(shell, "medha0_uvp_threshold = %d", medha0_uvp_threshold);
+	uint16_t medha1_uvp_threshold = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_uvp_threshold, UVP_THRESHOLD);
+	shell_print(shell, "medha1_uvp_threshold = %d", medha1_uvp_threshold);
+	// vout max
+	uint16_t medha0_vout_max = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_vout_max, VOUT_MAX);
+	shell_print(shell, "medha0_vout_max = %d", medha0_vout_max);
+	uint16_t medha1_vout_max = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_vout_max, VOUT_MAX);
+	shell_print(shell, "medha1_vout_max = %d", medha1_vout_max);
+	// vout command
+	uint16_t medha0_vout_command = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_vout_command, VOUT_COMMAND);
+	shell_print(shell, "medha0_vout_command = %d", medha0_vout_command);
+	uint16_t medha1_vout_command = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_vout_command, VOUT_COMMAND);
+	shell_print(shell, "medha1_vout_command = %d", medha1_vout_command);
+	// Vout offset
+	uint16_t medha0_vout_offset = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_vout_offset, VOUT_OFFSET);
+	shell_print(shell, "medha0_vout_offset = %d", medha0_vout_offset);
+	uint16_t medha1_vout_offset = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_vout_offset, VOUT_OFFSET);
+	shell_print(shell, "medha1_vout_offset = %d", medha1_vout_offset);
+	// total OCP
+	uint16_t medha0_total_ocp = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_total_ocp, TOTAL_OCP);
+	shell_print(shell, "medha0_total_ocp = %d", medha0_total_ocp);
+	uint16_t medha1_total_ocp = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_total_ocp, TOTAL_OCP);
+	shell_print(shell, "medha1_total_ocp = %d", medha1_total_ocp);
+	// ovp1
+	uint16_t medha0_ovp_1 = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, &medha0_ovp_1, OVP_1);
+	shell_print(shell, "medha0_ovp_1 = %d", medha0_ovp_1);
+	uint16_t medha1_ovp_1 = 0;
+	get_vr_mp29816a_reg(VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, &medha1_ovp_1, OVP_1);
+	shell_print(shell, "medha1_ovp_1 = %d", medha1_ovp_1);
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)
