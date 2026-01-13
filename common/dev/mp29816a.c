@@ -819,57 +819,6 @@ bool mp29816a_clear_vr_status(sensor_cfg *cfg, uint8_t rail)
 
 	return true;
 }
-
-bool mp29816a_get_uvp_threshold(sensor_cfg *cfg, uint16_t *uvp_threshold)
-{
-	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(uvp_threshold, false);
-	uint8_t data[2] = { 0, 0 };
-	if (!mp29816a_i2c_read(cfg->port, cfg->target_addr, PMBUS_VOUT_UV_FAULT_LIMIT, data,
-					sizeof(data))) {
-		return false;
-	}
-	uint16_t read_value = data[0] | (data[1] << 8);
-	/*
-	Delta value to set rail1 under voltage protection threshold. Max protection
-	Value is -500mV.
-	3'b000: disable UVP offset
-	Others: UVP offset = MFR_UVP_DELTA_R1 * (-50mV) - 50 mV
-	*/
-	uint8_t delta_value = ( read_value & UVP_THRESHOLD_MFR_UVP_DELTA_R1) >> 9;
-	LOG_INF("VR[0x%x] UVP delta value:0x%x", cfg->num, delta_value);
-	/*
-	Set the absolutely voltage level of rail1 UVP.
-	10mV/LSB,
-	UVP Threshold = MFR_UVP_ABS_LIMIT_R1- MFR_UVP_DELTA_R1
-	*/
-	LOG_INF("VR[0x%x] UVP threshold:0x%x", cfg->num, data[0]);
-	*uvp_threshold = ((read_value & UVP_THRESHOLD_MASK) * 10) - (delta_value * (-50) - 50);
-	
-	return true;
-}
-
-bool mp29816a_set_uvp_threshold(sensor_cfg *cfg, uint16_t *write_uvp_threshold)
-{
-	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
-	CHECK_NULL_ARG_WITH_RETURN(write_uvp_threshold, false);
-	uint16_t write_value = *write_uvp_threshold / 10;
-	//check if the value is valid(bit15:9 will all be 0)
-	if (write_value > UVP_THRESHOLD_MASK) {
-		LOG_ERR("VR[0x%x] set uvp threshold 0x%x failed, overflow", cfg->num, write_value);
-		return false;
-	}
-
-	uint8_t data[1] = { 0 };
-	data[0] = write_value;
-	if (!mp29816a_i2c_write(cfg->port, cfg->target_addr, PMBUS_VOUT_UV_FAULT_LIMIT, data,
-				sizeof(data))) {
-		return false;
-	}
-
-	return true;
-}
-
 // to do get_Vout_offset (0x22)
 bool mp29816a_get_vout_offset(sensor_cfg *cfg, uint16_t *vout_offset)
 {
@@ -930,6 +879,123 @@ bool mp29816a_set_vout_offset(sensor_cfg *cfg, uint16_t *write_vout_offset)
 
 	return true;
 }
+
+bool mp29816a_get_uvp_threshold(sensor_cfg *cfg, uint16_t *uvp_threshold)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(uvp_threshold, false);
+	uint8_t data[2] = { 0, 0 };
+	if (!mp29816a_i2c_read(cfg->port, cfg->target_addr, PMBUS_VOUT_UV_FAULT_LIMIT, data,
+					sizeof(data))) {
+		return false;
+	}
+	uint16_t read_value = data[0] | (data[1] << 8);
+	/*
+	Delta value to set rail1 under voltage protection threshold. Max protection
+	Value is -500mV.
+	3'b000: disable UVP offset
+	Others: UVP offset = MFR_UVP_DELTA_R1 * (-50mV) - 50 mV
+	*/
+	uint8_t uvp_offset_value = ( read_value & UVP_THRESHOLD_MFR_UVP_DELTA_R1) >> 9;
+	LOG_INF("VR[0x%x] UVP delta value:0x%x", cfg->num, uvp_offset_value);
+	/*
+	value = Vout cmd + UVP offset + Vout offset
+	*/
+	int16_t uvp_offset = (uvp_offset_value * (-50)) - 50;
+	LOG_INF("VR[0x%x] UVP offset value:%d", cfg->num, uvp_offset);
+	uint16_t vout_cmd = 0;
+	mp29816a_get_vout_command(cfg, 0, &vout_cmd);
+	LOG_INF("VR[0x%x] Vout cmd value:0x%x", cfg->num, vout_cmd);
+	uint16_t vout_offset = 0;
+	mp29816a_get_vout_offset(cfg, &vout_offset);
+	LOG_INF("VR[0x%x] Vout offset value:0x%x", cfg->num, vout_offset);
+	
+	*uvp_threshold = (uint16_t)(vout_cmd + uvp_offset + vout_offset);
+	return true;
+}
+
+bool mp29816a_set_uvp_threshold(sensor_cfg *cfg, uint16_t *write_uvp_threshold)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(write_uvp_threshold, false);
+	
+	uint16_t vout_cmd = 0;
+    uint16_t vout_offset = 0;
+
+    if (!mp29816a_get_vout_command(cfg, 0, &vout_cmd)) {
+        return false;
+    }
+
+    if (!mp29816a_get_vout_offset(cfg, &vout_offset)) {
+        return false;
+    }
+
+    /*
+     * uvp_offset = target - vout_cmd - vout_offset
+     */
+    int16_t uvp_offset = (int16_t)*write_uvp_threshold
+                       - (int16_t)vout_cmd
+                       - (int16_t)vout_offset;
+
+    LOG_INF("Target UVP=%d, VoutCmd=%d, VoutOffset=%d, UVP offset=%d",
+			*write_uvp_threshold, vout_cmd, vout_offset, uvp_offset);
+
+    /*
+     * uvp_offset = uvp_offset_value * (-50) - 50
+     * => uvp_offset_value = (-uvp_offset - 50) / 50
+     */
+    int16_t tmp = (-uvp_offset - 50);
+
+    if (tmp < 0) {
+        LOG_ERR("UVP offset out of range (too small)");
+        return false;
+    }
+
+    uint8_t uvp_offset_value = (uint8_t)(tmp / 50);
+
+    /* Range protection (3-bit example: 0~7) */
+    if (uvp_offset_value > 7) {
+        LOG_ERR("UVP offset out of range (too large): %d", uvp_offset_value);
+        return false;
+    }
+
+    LOG_INF("Calculated UVP delta code = %d", uvp_offset_value);
+
+    /*
+     * Read original register first (avoid destroying other bits)
+     */
+    uint8_t data[2];
+    if (!mp29816a_i2c_read(cfg->port,
+                           cfg->target_addr,
+                           PMBUS_VOUT_UV_FAULT_LIMIT,
+                           data,
+                           sizeof(data))) {
+        return false;
+    }
+
+    uint16_t reg = data[0] | (data[1] << 8);
+
+    /* Clear UVP delta bits */
+    reg &= ~UVP_THRESHOLD_MFR_UVP_DELTA_R1;
+
+    /* Set new UVP delta bits */
+    reg |= ((uint16_t)uvp_offset_value << 9) & UVP_THRESHOLD_MFR_UVP_DELTA_R1;
+
+    data[0] = reg & 0xFF;
+    data[1] = (reg >> 8) & 0xFF;
+
+    if (!mp29816a_i2c_write(cfg->port,
+                            cfg->target_addr,
+                            PMBUS_VOUT_UV_FAULT_LIMIT,
+                            data,
+                            sizeof(data))) {
+        return false;
+    }
+
+    LOG_INF("UVP threshold set OK (target=%d mV)", *write_uvp_threshold);
+    return true;
+}
+
 
 
 float get_iout_scale_bit_a(sensor_cfg *cfg) {

@@ -21,6 +21,7 @@
 #include "plat_vr_test_mode.h"
 #include "plat_hook.h"
 #include "plat_util.h"
+#include "plat_class.h"
 
 static bool cmd_is_dc_on(const struct shell *shell)
 {
@@ -152,13 +153,44 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 	else if (vr == VR_MODULE_MPS)
 	{
 		// MPS
+		// uvp
+		uint16_t uvp_threshold = 0;
+		// vout max
+		uint16_t vout_max = 0;
+		// vout command
+		uint16_t vout_command = 0;
+		// Vout offset	
+		uint16_t vout_offset = 0;
+		// total OCP
+		uint16_t total_ocp = 0;
+		// ovp1
+		uint16_t ovp_1 = 0;
+		// ovp2
+		uint16_t ovp_2 = 0;
 		shell_print(shell, "MPS");
-		shell_print(shell, "%-30s | %-11s | %-11s | %-7s | %-7s | %-9s | %-7s | %-7s ",
+		shell_print(shell, "%-30s | %-12s | %-7s | %-8s | %-8s | %-9s | %-7s | %-7s ",
 				"VR RAIL NAME", "Total OCP(A)", "UVP(mv)", "OVP1(mV)", "OVP2(mV)", "V MAX(mV)",
 				"LCR(mV)", "UCR(mV)");
 		shell_print(
 			shell,
 			"----------------------------------------------------------------------------------------------------------------");
+		// not include P3V3
+		for (uint8_t i = 0; i <= VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD; i++) {
+			uint8_t *rail_name = NULL;
+			get_vr_mp29816a_reg(i, &uvp_threshold, UVP_THRESHOLD);
+			get_vr_mp29816a_reg(i, &vout_max, VOUT_MAX);
+			get_vr_mp29816a_reg(i, &vout_command, VOUT_COMMAND);
+			get_vr_mp29816a_reg(i, &vout_offset, VOUT_OFFSET);
+			get_vr_mp29816a_reg(i, &total_ocp, TOTAL_OCP);
+			get_vr_mp29816a_reg(i, &ovp_1, OVP_1);
+			if (vr_rail_name_get((uint8_t)i, &rail_name)) {
+				shell_print(shell,
+						"%-30s | %-12d | %-7d | %-8d | %-8d | %-9d | %-7d | %-7d",
+						(char *)rail_name, total_ocp, uvp_threshold, ovp_1, ovp_2, vout_max,
+						vout_range_user_settings.change_vout_min[i],
+						vout_range_user_settings.change_vout_max[i]);
+			}
+		}
 	}
 	else 
 	{
