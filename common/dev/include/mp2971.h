@@ -33,6 +33,7 @@ bool mp2971_clear_vr_status(sensor_cfg *cfg, uint8_t rail);
 bool mp2971_get_vout_offset(sensor_cfg *cfg, uint16_t *vout_offset);
 bool mp2971_get_total_ocp(sensor_cfg *cfg, uint8_t rail, uint16_t *total_ocp);
 bool mp2971_get_ovp_1(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_1_mv);
+bool mp2971_get_ovp_2(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_1_mv);
 bool mp2971_get_uvp(sensor_cfg *cfg, uint8_t rail, uint16_t *uvp_mv);
 
 #endif

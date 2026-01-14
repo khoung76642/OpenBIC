@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(mp2971);
 #define MP2971_MFR_OVP_SET 0xE5
 #define MP2971_MFR_UVP_SET 0xE6
 
+#define MP2971_MFR_PROTECT_SET 0xC5
 #define MFR_RESO_SET 0xC7
 
 #define MP2971_VOUT_SENSE_SET 0x29
@@ -1315,10 +1316,10 @@ bool mp2971_get_total_ocp(sensor_cfg *cfg, uint8_t rail, uint16_t *total_ocp)
 	uint8_t mc_reg = 0;
 	bool is_rail1 = false;
 
-	if (rail == VR_MPS_PAGE_0 || rail == 0) {
+	if (rail == VR_MPS_PAGE_0) {
 		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R1; /* 0x0D */
 		is_rail1 = true;
-	} else if (rail == VR_MPS_PAGE_1 || rail == 1) {
+	} else if (rail == VR_MPS_PAGE_1) {
 		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R2; /* 0x1D */
 		is_rail1 = false;
 	} else {
@@ -1399,6 +1400,84 @@ bool mp2971_get_ovp_1(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_1_mv)
 	/* 3) Final OVP1(mV) = VOUT_MAX + OVP1_threshold_delta */
 	uint32_t ovp32 = (uint32_t)vout_max_mv + (uint32_t)delta_mv;
 	*ovp_1_mv = (ovp32 > UINT16_MAX) ? UINT16_MAX : (uint16_t)ovp32;
+
+	return true;
+}
+
+bool mp2971_get_ovp_2(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_2_mv)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(ovp_2_mv, false);
+
+	*ovp_2_mv = 0;
+
+	uint16_t vref_mv = 0;
+	if (!mp2971_get_vout_command(cfg, rail, &vref_mv)) {
+		LOG_ERR("mp2971_get_ovp_2: get vout_command failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	uint8_t data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, MP2971_MFR_PROTECT_SET, data,
+			     sizeof(data))) {
+		LOG_ERR("mp2971_get_ovp_2: read MFR_PROTECT_SET failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	uint16_t raw_data = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+
+	uint8_t ovp2_code = 0;
+	if (rail == VR_MPS_PAGE_0) {
+		ovp2_code = (uint8_t)((raw_data >> 12) & 0x7);
+	} else {
+		ovp2_code = (uint8_t)((raw_data >> 10) & 0x7);
+	}
+
+	uint16_t base_delta_mv = 0;
+	switch (ovp2_code) {
+	case 0x4: /* 3’b100 */
+		base_delta_mv = 400;
+		break;
+	case 0x2: /* 3’b010 */
+		base_delta_mv = 220;
+		break;
+	case 0x1: /* 3’b001 */
+		base_delta_mv = 140;
+		break;
+	default:
+		LOG_WRN("mp2971_get_ovp_2: unsupported ovp2_code=0x%X, treat delta=0", ovp2_code);
+		base_delta_mv = 0;
+		break;
+	}
+
+	if (!mp2856_set_page(cfg->port, cfg->target_addr, VR_MPS_PAGE_2)) {
+		LOG_ERR("mp2971_get_ovp_2: set page2 failed (bus=%u addr=0x%02X)", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	uint8_t coef_reg = (rail == VR_MPS_PAGE_0) ? MFR_VR_CONFIG_IMON_OFFSET_R1 :
+						     MFR_VR_CONFIG_IMON_OFFSET_R2;
+
+	uint8_t coef_data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, coef_reg, coef_data, sizeof(coef_data))) {
+		LOG_ERR("mp2971_get_ovp_2: read coef reg failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, coef_reg);
+		return false;
+	}
+
+	uint16_t raw_coef = (uint16_t)coef_data[0] | ((uint16_t)coef_data[1] << 8);
+
+	uint8_t a = (raw_coef & BIT(9)) ? 2U : 1U;
+	uint8_t b_den = (raw_coef & BIT(14)) ? 2U : 1U;
+
+	uint32_t delta_mv = (uint32_t)base_delta_mv * (uint32_t)a;
+	delta_mv /= (uint32_t)b_den;
+
+	uint32_t ovp2_u32 = (uint32_t)vref_mv + delta_mv;
+	*ovp_2_mv = (ovp2_u32 > UINT16_MAX) ? UINT16_MAX : (uint16_t)ovp2_u32;
 
 	return true;
 }

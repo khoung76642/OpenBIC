@@ -1402,7 +1402,11 @@ int get_vr_mp2971_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg)
 			goto err;
 		}
 		break;
-	case OVP_2: //need to do
+	case OVP_2:
+		if (!mp2971_get_ovp_2(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 ovp 1 setting failed");
+			goto err;
+		}
 		break;
 	default:
 		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);

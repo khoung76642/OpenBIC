@@ -200,6 +200,7 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 			get_vr_mp2971_reg(j, &vout_offset, VOUT_OFFSET);
 			get_vr_mp2971_reg(j, &total_ocp, TOTAL_OCP);
 			get_vr_mp2971_reg(j, &ovp_1, OVP_1);
+			get_vr_mp2971_reg(j, &ovp_2, OVP_2);
 			if (vr_rail_name_get((uint8_t)j, &rail_name)) {
 				shell_print(
 					shell,
