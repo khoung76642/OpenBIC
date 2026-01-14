@@ -204,6 +204,7 @@ enum VR_MP29816_REG_E {
 	VOUT_OFFSET,
 	TOTAL_OCP,
 	OVP_1,
+	OVP_2,
 	VR_MP29816_SET_REG_MAX,
 };
 
@@ -283,4 +284,5 @@ bool plat_set_vr_reg(uint8_t rail, uint8_t reg, uint8_t *data, uint8_t len);
 int get_vr_page(uint8_t rail);
 int get_vr_mp29816a_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg);
 int set_vr_mp29816a_reg(uint8_t rail, uint16_t *millivolt, uint8_t set_reg);
+int get_vr_mp2971_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg);
 #endif

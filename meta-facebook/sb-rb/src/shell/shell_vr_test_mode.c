@@ -119,12 +119,11 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 	if (!cmd_is_dc_on(shell))
 		return;
 	uint8_t vr = get_vr_module();
-	if (vr == VR_MODULE_RNS)
-	{
+	if (vr == VR_MODULE_RNS) {
 		// RNS
 		shell_print(shell, "%-30s | %-11s | %-11s | %-7s | %-7s | %-9s | %-7s | %-7s ",
-				"VR RAIL NAME", "FAST OCP(A)", "SLOW OCP(A)", "UVP(mV)", "OVP(mV)", "V MAX(mV)",
-				"LCR(mV)", "UCR(mV)");
+			    "VR RAIL NAME", "FAST OCP(A)", "SLOW OCP(A)", "UVP(mV)", "OVP(mV)",
+			    "V MAX(mV)", "LCR(mV)", "UCR(mV)");
 		shell_print(
 			shell,
 			"----------------------------------------------------------------------------------------------------------------");
@@ -140,18 +139,18 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 				} else if (!get_vr_offset_uvp_ovp(i, &uvp, &ovp))
 					shell_error(shell, "get vr %d uvp/ovp fail", i);
 
-				shell_print(shell,
-						"%-30s | %-11d | %-11d | %-7d | %-7d | %-9d | %-7d | %-7d ",
-						(char *)rail_name, (get_vr_reg_to_int(i, VR_FAST_OCP_REG) / 10),
-						(get_vr_reg_to_int(i, VR_SLOW_OCP_REG) / 10), uvp, ovp,
-						get_vr_reg_to_int(i, VR_VOUT_MAX_REG),
-						vout_range_user_settings.change_vout_min[i],
-						vout_range_user_settings.change_vout_max[i]);
+				shell_print(
+					shell,
+					"%-30s | %-11d | %-11d | %-7d | %-7d | %-9d | %-7d | %-7d ",
+					(char *)rail_name,
+					(get_vr_reg_to_int(i, VR_FAST_OCP_REG) / 10),
+					(get_vr_reg_to_int(i, VR_SLOW_OCP_REG) / 10), uvp, ovp,
+					get_vr_reg_to_int(i, VR_VOUT_MAX_REG),
+					vout_range_user_settings.change_vout_min[i],
+					vout_range_user_settings.change_vout_max[i]);
 			}
 		}
-	}
-	else if (vr == VR_MODULE_MPS)
-	{
+	} else if (vr == VR_MODULE_MPS) {
 		// MPS
 		// uvp
 		uint16_t uvp_threshold = 0;
@@ -159,7 +158,7 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 		uint16_t vout_max = 0;
 		// vout command
 		uint16_t vout_command = 0;
-		// Vout offset	
+		// Vout offset
 		uint16_t vout_offset = 0;
 		// total OCP
 		uint16_t total_ocp = 0;
@@ -169,8 +168,8 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 		uint16_t ovp_2 = 0;
 		shell_print(shell, "MPS");
 		shell_print(shell, "%-30s | %-12s | %-7s | %-8s | %-8s | %-9s | %-7s | %-7s ",
-				"VR RAIL NAME", "Total OCP(A)", "UVP(mv)", "OVP1(mV)", "OVP2(mV)", "V MAX(mV)",
-				"LCR(mV)", "UCR(mV)");
+			    "VR RAIL NAME", "Total OCP(A)", "UVP(mv)", "OVP1(mV)", "OVP2(mV)",
+			    "V MAX(mV)", "LCR(mV)", "UCR(mV)");
 		shell_print(
 			shell,
 			"----------------------------------------------------------------------------------------------------------------");
@@ -184,20 +183,36 @@ void cmd_vr_test_mode_show_real(const struct shell *shell, size_t argc, char **a
 			get_vr_mp29816a_reg(i, &total_ocp, TOTAL_OCP);
 			get_vr_mp29816a_reg(i, &ovp_1, OVP_1);
 			if (vr_rail_name_get((uint8_t)i, &rail_name)) {
-				shell_print(shell,
-						"%-30s | %-12d | %-7d | %-8d | %-8d | %-9d | %-7d | %-7d",
-						(char *)rail_name, total_ocp, uvp_threshold, ovp_1, ovp_2, vout_max,
-						vout_range_user_settings.change_vout_min[i],
-						vout_range_user_settings.change_vout_max[i]);
+				shell_print(
+					shell,
+					"%-30s | %-12d | %-7d | %-8d | %-8d | %-9d | %-7d | %-7d",
+					(char *)rail_name, total_ocp, uvp_threshold, ovp_1, ovp_2,
+					vout_max, vout_range_user_settings.change_vout_min[i],
+					vout_range_user_settings.change_vout_max[i]);
 			}
 		}
-	}
-	else 
-	{
+		for (uint8_t j = VR_RAIL_E_ASIC_P0V9_OWL_E_TRVDD; j < VR_RAIL_E_P3V3_OSFP_VOLT_V;
+		     j++) {
+			uint8_t *rail_name = NULL;
+			get_vr_mp2971_reg(j, &uvp_threshold, UVP_THRESHOLD);
+			get_vr_mp2971_reg(j, &vout_max, VOUT_MAX);
+			get_vr_mp2971_reg(j, &vout_command, VOUT_COMMAND);
+			get_vr_mp2971_reg(j, &vout_offset, VOUT_OFFSET);
+			get_vr_mp2971_reg(j, &total_ocp, TOTAL_OCP);
+			get_vr_mp2971_reg(j, &ovp_1, OVP_1);
+			if (vr_rail_name_get((uint8_t)j, &rail_name)) {
+				shell_print(
+					shell,
+					"%-30s | %-12d | %-7d | %-8d | %-8d | %-9d | %-7d | %-7d",
+					(char *)rail_name, total_ocp, uvp_threshold, ovp_1, ovp_2,
+					vout_max, vout_range_user_settings.change_vout_min[j],
+					vout_range_user_settings.change_vout_max[j]);
+			}
+		}
+	} else {
 		// unknown
 		shell_error(shell, "unknown vr module");
 	}
-
 }
 
 void cmd_vr_test_mode_get_status(const struct shell *shell, size_t argc, char **argv)

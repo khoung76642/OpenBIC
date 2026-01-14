@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(mp2971);
 #define VR_MPS_CMD_STORE_NORMAL_CODE 0xF1
 
 #define VR_MPS_REG_MFR_MTP_PMBUS_CTRL 0x4F
+#define MP2971_MFR_OCP_TOTAL_SET 0x5F
+#define MP2971_MFR_OVP_SET 0xE5
+#define MP2971_MFR_UVP_SET 0xE6
 
 #define MFR_RESO_SET 0xC7
 
@@ -55,6 +58,9 @@ LOG_MODULE_REGISTER(mp2971);
 
 #define VR_MPS_REG_MFR_VR_MULTI_CONFIG_R1 0x0D
 #define VR_MPS_REG_MFR_VR_MULTI_CONFIG_R2 0x1D
+
+#define MFR_VR_CONFIG_IMON_OFFSET_R1 0x0E
+#define MFR_VR_CONFIG_IMON_OFFSET_R2 0x1E
 
 #define MP2971_VOUT_MAX_REG 0x24
 #define MP2971_VOUT_MIN_REG 0x2B
@@ -1264,6 +1270,206 @@ bool mp2971_clear_vr_status(sensor_cfg *cfg, uint8_t rail)
 	if (i2c_master_write(&i2c_msg, retry)) {
 		LOG_ERR("VR[0x%x] clear fault failed.", cfg->num);
 		return false;
+	}
+
+	return true;
+}
+
+bool mp2971_get_vout_offset(sensor_cfg *cfg, uint16_t *vout_offset)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(vout_offset, false);
+
+	uint8_t data_cal_offset[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, PMBUS_VOUT_CAL_OFFSET, data_cal_offset,
+			     sizeof(data_cal_offset))) {
+		return false;
+	}
+
+	uint16_t val_cal_offset = data_cal_offset[0] | (data_cal_offset[1] << 8);
+
+	int8_t signed_offset = get_vout_cal_offset(val_cal_offset);
+	*vout_offset = (uint16_t)signed_offset;
+
+	return true;
+}
+
+bool mp2971_get_total_ocp(sensor_cfg *cfg, uint8_t rail, uint16_t *total_ocp)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(total_ocp, false);
+
+	*total_ocp = 0;
+
+	uint8_t data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, MP2971_MFR_OCP_TOTAL_SET, data,
+			     sizeof(data))) {
+		LOG_ERR("mp2971_get_total_ocp: read failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, MP2971_MFR_OCP_TOTAL_SET);
+		return false;
+	}
+
+	uint16_t raw_ocp = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+	uint16_t ocp_code = (uint16_t)(raw_ocp & 0x7F); /* bit[6:0] OCP_TOTAL_CUR */
+
+	uint8_t mc_reg = 0;
+	bool is_rail1 = false;
+
+	if (rail == VR_MPS_PAGE_0 || rail == 0) {
+		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R1; /* 0x0D */
+		is_rail1 = true;
+	} else if (rail == VR_MPS_PAGE_1 || rail == 1) {
+		mc_reg = VR_MPS_REG_MFR_VR_MULTI_CONFIG_R2; /* 0x1D */
+		is_rail1 = false;
+	} else {
+		LOG_ERR("mp2971_get_total_ocp: invalid rail=%u (expect 0/1)", rail);
+		return false;
+	}
+
+	if (!mp2856_set_page(cfg->port, cfg->target_addr, VR_MPS_PAGE_2)) {
+		LOG_ERR("mp2971_get_total_ocp: set page2 failed (bus=%u addr=0x%02X)", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	uint8_t mc[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, mc_reg, mc, sizeof(mc))) {
+		LOG_ERR("mp2971_get_total_ocp: read multi_config failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, mc_reg);
+		return false;
+	}
+
+	uint16_t raw_mc = (uint16_t)mc[0] | ((uint16_t)mc[1] << 8);
+
+	/*
+	 * Phase field:
+	 * - Rail1 (R1=0x0D): use bit[3:0]
+	 * - Rail2 (R2=0x1D): use bit[2:0]
+	 */
+	uint8_t phase_code = is_rail1 ? (uint8_t)(raw_mc & 0x0F) : (uint8_t)(raw_mc & 0x07);
+
+	/* phase_code mapping (same rule set):
+	 * 0x0: 1-phase DCM
+	 * 0x1: 1-phase CCM
+	 * 0x2..N: N-phase
+	 * Note: rail2 using 3 bits can represent up to 7-phase (0x7).
+	 */
+	uint8_t phase_cnt = 1;
+	if (phase_code == 0x0 || phase_code == 0x1) {
+		phase_cnt = 1;
+	} else {
+		/* for rail2 mask 0x07 => phase_code max is 7, rail1 max is 15 */
+		phase_cnt = phase_code;
+	}
+
+	/* total_ocp = ocp_code * phase_cnt */
+	uint32_t total = (uint32_t)ocp_code * (uint32_t)phase_cnt;
+	*total_ocp = (total > UINT16_MAX) ? UINT16_MAX : (uint16_t)total;
+
+	return true;
+}
+
+bool mp2971_get_ovp_1(sensor_cfg *cfg, uint8_t rail, uint16_t *ovp_1_mv)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(ovp_1_mv, false);
+
+	*ovp_1_mv = 0;
+
+	/* 1) Read VOUT_MAX (mV). Caller already set the rail page. */
+	uint16_t vout_max_mv = 0;
+	if (!mp2971_get_vout_max(cfg, rail, &vout_max_mv)) {
+		LOG_ERR("mp2971_get_ovp_1: read VOUT_MAX failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	/* 2) Read MFR_OVP_SET (0xE5) on current rail page */
+	uint8_t data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, MP2971_MFR_OVP_SET, data, sizeof(data))) {
+		LOG_ERR("mp2971_get_ovp_1: read MFR_OVP_SET failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, MP2971_MFR_OVP_SET);
+		return false;
+	}
+
+	uint16_t raw = (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+	uint8_t code = (uint8_t)(raw & 0x7); /* bits[2:0] */
+	uint16_t delta_mv = (uint16_t)(50U * (uint16_t)(code + 1U));
+
+	/* 3) Final OVP1(mV) = VOUT_MAX + OVP1_threshold_delta */
+	uint32_t ovp32 = (uint32_t)vout_max_mv + (uint32_t)delta_mv;
+	*ovp_1_mv = (ovp32 > UINT16_MAX) ? UINT16_MAX : (uint16_t)ovp32;
+
+	return true;
+}
+
+bool mp2971_get_uvp(sensor_cfg *cfg, uint8_t rail, uint16_t *uvp_mv)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(uvp_mv, false);
+
+	*uvp_mv = 0;
+
+	uint8_t uvp_data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, MP2971_MFR_UVP_SET, uvp_data,
+			     sizeof(uvp_data))) {
+		LOG_ERR("mp2971_get_uvp: read MFR_UVP_SET failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	uint16_t raw_uvp = (uint16_t)uvp_data[0] | ((uint16_t)uvp_data[1] << 8);
+	uint8_t code = (uint8_t)(raw_uvp & 0x7); /* bits[2:0] */
+
+	uint16_t vout_cmd_mv_u16 = 0;
+	if (!mp2971_get_vout_command(cfg, rail, &vout_cmd_mv_u16)) {
+		LOG_ERR("mp2971_get_uvp: mp2971_get_vout_command failed (bus=%u addr=0x%02X rail=%u)",
+			cfg->port, cfg->target_addr, rail);
+		return false;
+	}
+
+	if (!mp2856_set_page(cfg->port, cfg->target_addr, VR_MPS_PAGE_2)) {
+		LOG_ERR("mp2971_get_uvp: set page2 failed (bus=%u addr=0x%02X)", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	uint8_t coef_reg = (rail == VR_MPS_PAGE_0) ? MFR_VR_CONFIG_IMON_OFFSET_R1 :
+						     MFR_VR_CONFIG_IMON_OFFSET_R2;
+
+	uint8_t coef_data[2] = { 0 };
+	if (!mp2971_i2c_read(cfg->port, cfg->target_addr, coef_reg, coef_data, sizeof(coef_data))) {
+		LOG_ERR("mp2971_get_uvp: read coef reg failed (bus=%u addr=0x%02X reg=0x%02X)",
+			cfg->port, cfg->target_addr, coef_reg);
+		return false;
+	}
+
+	uint16_t raw_coef = (uint16_t)coef_data[0] | ((uint16_t)coef_data[1] << 8);
+
+	/* a: bit[9] => 0:a=1, 1:a=2 */
+	uint8_t a = (raw_coef & BIT(9)) ? 2U : 1U;
+
+	/* b: bit[14] => 0:b=1, 1:b=0.5 => denominator 2 */
+	uint8_t b_den = (raw_coef & BIT(14)) ? 2U : 1U;
+
+	/*
+	 * delta(mV) = 50 * (code + 1) * a / b_den
+	 */
+	uint32_t delta_mv_u32 = 50U * (uint32_t)(code + 1U) * (uint32_t)a;
+	delta_mv_u32 /= (uint32_t)b_den;
+
+	/*
+	 * UVP(mV) = Vout_command(mV) - delta(mV) + Vout_offset(mV)
+	 */
+
+	int32_t uvp_calc = (int32_t)vout_cmd_mv_u16 - (int32_t)delta_mv_u32;
+
+	if (uvp_calc < 0) {
+		*uvp_mv = 0;
+	} else if (uvp_calc > (int32_t)UINT16_MAX) {
+		*uvp_mv = UINT16_MAX;
+	} else {
+		*uvp_mv = (uint16_t)uvp_calc;
 	}
 
 	return true;

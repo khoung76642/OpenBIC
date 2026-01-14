@@ -1228,7 +1228,7 @@ int get_vr_page(uint8_t rail)
 	return pre_sensor_read_args->vr_page;
 }
 
-int set_vr_mp29816a_reg(uint8_t rail, uint16_t *millivolt, uint8_t set_reg) 
+int set_vr_mp29816a_reg(uint8_t rail, uint16_t *millivolt, uint8_t set_reg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
 
@@ -1260,7 +1260,7 @@ int set_vr_mp29816a_reg(uint8_t rail, uint16_t *millivolt, uint8_t set_reg)
 			goto err;
 		}
 		break;
-	
+
 	default:
 		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
 		goto err;
@@ -1275,7 +1275,7 @@ err:
 	return ret;
 }
 
-int get_vr_mp29816a_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg) 
+int get_vr_mp29816a_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(get_data, false);
 
@@ -1329,6 +1329,80 @@ int get_vr_mp29816a_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg)
 			LOG_ERR("The VR mp29816a ovp 1 setting failed");
 			goto err;
 		}
+		break;
+	default:
+		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
+		goto err;
+	}
+
+	ret = 0;
+err:
+	if (cfg->post_sensor_read_hook) {
+		if (cfg->post_sensor_read_hook(cfg, cfg->post_sensor_read_args, NULL) == false) {
+			LOG_ERR("sensor id: 0x%x post-read fail", sensor_id);
+		}
+	}
+	return ret;
+}
+
+int get_vr_mp2971_reg(uint8_t rail, uint16_t *get_data, uint8_t get_reg)
+{
+	CHECK_NULL_ARG_WITH_RETURN(get_data, false);
+
+	int ret = -1;
+	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	if (cfg == NULL) {
+		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+		return false;
+	}
+	if (cfg->pre_sensor_read_hook) {
+		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
+			LOG_ERR("sensor id: 0x%x pre-read fail", sensor_id);
+			goto err;
+		}
+	}
+
+	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)cfg->pre_sensor_read_args;
+
+	switch (get_reg) {
+	case UVP_THRESHOLD:
+		if (!mp2971_get_uvp(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 uvp threshold setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_MAX:
+		if (!mp2971_get_vout_max(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 vout max setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_COMMAND:
+		if (!mp2971_get_vout_command(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 vout max setting failed");
+			goto err;
+		}
+		break;
+	case VOUT_OFFSET:
+		if (!mp2971_get_vout_offset(cfg, get_data)) {
+			LOG_ERR("The VR mp2971 vout offset setting failed");
+			goto err;
+		}
+		break;
+	case TOTAL_OCP:
+		if (!mp2971_get_total_ocp(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 total ocp setting failed");
+			goto err;
+		}
+		break;
+	case OVP_1:
+		if (!mp2971_get_ovp_1(cfg, pre_proc_args->vr_page, get_data)) {
+			LOG_ERR("The VR mp2971 ovp 1 setting failed");
+			goto err;
+		}
+		break;
+	case OVP_2: //need to do
 		break;
 	default:
 		LOG_ERR("Unsupport VR mp29816a setting reg (%x)", cfg->type);
