@@ -644,7 +644,7 @@ static bool command_reply_data_handle(void *arg)
 
 #define ASIC_COM_FW_VERSION_REG 104
 	if (offset == ASIC_COM_FW_VERSION_REG) {
-		uint8_t reply_buf[11] = { 0x0B, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x00, 0x06, 0x01, 0x06 };
+		uint8_t reply_buf[11] = { 0x0B, 0x00, 0x20, 0x26, 0x02, 0x04, 0x05, 0x03, 0x26, 0x20, 0x06 };
 		data->target_rd_msg.msg_length = sizeof(reply_buf);
 		memcpy(data->target_rd_msg.msg, reply_buf, sizeof(reply_buf));
 		LOG_HEXDUMP_DBG(reply_buf, sizeof(reply_buf), "ASIC_COM_TEST_REG reply");
@@ -652,9 +652,37 @@ static bool command_reply_data_handle(void *arg)
 		return true;
 	}
 
-	data->target_rd_msg.msg[0] = 0x01;
-	data->target_rd_msg.msg_length = 1;
-
+	LOG_INF("Received reg offset: 0x%02x", offset);
+#define MONITOR 0x70
+#define STAUTUS 0x00
+#define MONITOR_HBM_TEMP 0x8F
+#define RETURN_LEN 10
+	switch (offset)
+	{
+	case MONITOR:
+		LOG_INF("MONITOR");
+		//return 10 byte
+		struct_size = RETURN_LEN;
+		uint8_t reply_data1[RETURN_LEN] = {21, 22, 23, 24, 20, 28, 33, 30, 31, 32};
+		memcpy(data->target_rd_msg.msg, reply_data1, struct_size);
+		break;
+	case STAUTUS:
+		LOG_INF("STAUTUS");
+		//return 8 byte
+		struct_size = 8;
+		uint8_t reply_data2[8] = {0, 0x40, 0, 0, 0, 0, 0, 0};;
+		memcpy(data->target_rd_msg.msg, reply_data2, struct_size);
+		break;
+	case MONITOR_HBM_TEMP:
+		LOG_INF("MONITOR_HBM_TEMP");
+		//return 10 byte
+		struct_size = RETURN_LEN;
+		uint8_t reply_data3[RETURN_LEN] = {22, 32, 33, 24, 35, 26, 27, 29, 30, 32};
+		memcpy(data->target_rd_msg.msg, reply_data3, struct_size);
+		break;
+	default:
+		break;
+	}
 	LOG_DBG("Reply: OK");
 	return true;
 }
