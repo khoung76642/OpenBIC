@@ -24,7 +24,7 @@
 #define MAX_TARGET_NUM 16
 #define I2C_DEVICE_PREFIX "I2C_"
 #define I2C_CONTROLLER_NAME_GET(inst) I2C_DEVICE_PREFIX #inst
-
+#define I2C_TARGET_MULTI_BUS_SKIP -1
 struct __attribute__((__packed__)) i2c_msg_package {
 	uint16_t msg_length;
 	uint8_t msg[MAX_I2C_TARGET_BUFF];
@@ -110,7 +110,7 @@ uint8_t i2c_target_read(uint8_t bus_num, uint8_t *buff, uint16_t buff_len, uint1
 uint8_t i2c_target_write(uint8_t bus_num, uint8_t *buff, uint16_t buff_len);
 int i2c_target_control(uint8_t bus_num, struct _i2c_target_config *cfg,
 		       enum i2c_target_api_control_mode mode);
-
+int i2c_target_multi_bus_read(uint8_t bus_num, uint8_t *buff, uint16_t buff_len, uint16_t *msg_len);
 void util_init_I2C_target(void);
 
 #endif

@@ -384,7 +384,56 @@ uint8_t i2c_target_read(uint8_t bus_num, uint8_t *buff, uint16_t buff_len, uint1
 
 	return I2C_TARGET_API_NO_ERR;
 }
+/*
+ i2c target for multi bus reading
+*/
+int i2c_target_multi_bus_read(uint8_t bus_num, uint8_t *buff, uint16_t buff_len, uint16_t *msg_len)
+{
+	CHECK_NULL_ARG_WITH_RETURN(buff, I2C_TARGET_API_INPUT_ERR);
+	CHECK_NULL_ARG_WITH_RETURN(msg_len, I2C_TARGET_API_INPUT_ERR);
 
+	/* check input, support while bus target is unregistered */
+	uint8_t target_status = i2c_target_status_get(bus_num);
+	if (target_status &
+	    (I2C_TARGET_BUS_INVALID | I2C_TARGET_CONTROLLER_ERR | I2C_TARGET_NOT_INIT)) {
+		LOG_ERR("Bus[%d] check status failed with error status 0x%x!", bus_num,
+			target_status);
+		return I2C_TARGET_API_BUS_GET_FAIL;
+	}
+
+	struct i2c_target_data *data = &i2c_target_device_global[bus_num].data;
+	struct i2c_msg_package local_buf;
+
+	/* check message queue is empty */
+	uint8_t ret = k_msgq_get(&data->target_wr_msgq_id, &local_buf, K_MSEC(10));
+	if (ret) {
+		// no data input, skip this bus
+		return I2C_TARGET_MULTI_BUS_SKIP;
+	}
+
+	if (buff_len < local_buf.msg_length) {
+		LOG_WRN("Given buff_len is not enough for read-back data, given %d, need %d",
+			buff_len, local_buf.msg_length);
+		memcpy(buff, &(local_buf.msg), buff_len);
+		*msg_len = buff_len;
+	} else {
+		memcpy(buff, &(local_buf.msg), local_buf.msg_length);
+		*msg_len = local_buf.msg_length;
+	}
+
+	/* if bus target has been unregister cause of queue full previously, then register it on */
+	if (k_msgq_num_used_get(&data->target_wr_msgq_id) ==
+	    (data->target_wr_msgq_id.max_msgs - 1)) {
+		LOG_DBG("Target queue has available space, register bus[%d]", data->i2c_bus);
+
+		if (do_i2c_target_register(bus_num)) {
+			LOG_ERR("Target queue register bus[%d] failed!", data->i2c_bus);
+			return I2C_TARGET_API_BUS_GET_FAIL;
+		}
+	}
+
+	return I2C_TARGET_API_NO_ERR;
+}
 /*
   - Name: i2c_target_write
   - Description: Try to put message to i2c target message queue.
