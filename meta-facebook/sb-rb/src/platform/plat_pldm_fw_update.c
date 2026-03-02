@@ -35,6 +35,7 @@
 #include "plat_iris_smbus.h"
 #include "plat_util.h"
 #include "plat_i2c.h"
+#include "shell_iris_power.h"
 
 #define IRIS_BOOT0_IMG_SIZE 0x1FFFFB
 #define PLAT_WAIT_SENSOR_POLLING_END_DELAY_MS 1000
@@ -190,7 +191,7 @@ uint32_t plat_get_image_version(uint8_t index)
 static uint8_t pldm_post_mtia_flash_update(void *fw_update_param)
 {
 	CHECK_NULL_ARG_WITH_RETURN(fw_update_param, 1);
-	pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
+	const pldm_fw_update_param_t *p = (pldm_fw_update_param_t *)fw_update_param;
 
 	//read data back to calculate CRC32
 	uint8_t *rxbuf = NULL;
@@ -692,8 +693,8 @@ void get_fw_version_boot0_from_asic()
 	i2c_msg.data[0] = ASIC_VERSION_BYTE;
 	i2c_master_read(&i2c_msg, I2C_MAX_RETRY);
 
-	LOG_INF(" boot0 VER : %02d.%02d.%02d", i2c_msg.data[9], i2c_msg.data[8], i2c_msg.data[7]);
-	uint32_t data_p = i2c_msg.data[9] << 16 | i2c_msg.data[8] << 8 | i2c_msg.data[7];
+	LOG_INF(" boot0 VER : %02d.%02d.%02d", i2c_msg.data[8], i2c_msg.data[7], i2c_msg.data[6]);
+	uint32_t data_p = i2c_msg.data[8] << 16 | i2c_msg.data[7] << 8 | i2c_msg.data[6];
 	if (data_p) {
 		// update temp data
 		LOG_INF("update boot0 version read from asic");
@@ -702,19 +703,16 @@ void get_fw_version_boot0_from_asic()
 		version_boot0[2] = data_p;
 	}
 }
-bool get_fw_version_boot1_from_asic(uint8_t *data)
+uint32_t get_fw_version_boot1_from_asic()
 {
 	I2C_MSG i2c_msg = { .bus = I2C_BUS12, .target_addr = 0x32 };
 	i2c_msg.tx_len = 1;
 	i2c_msg.rx_len = 11;
 	i2c_msg.data[0] = ASIC_VERSION_BYTE;
 	i2c_master_read(&i2c_msg, I2C_MAX_RETRY);
-
-	LOG_INF(" boot1 VER : %02d.%02d.%02d", i2c_msg.data[2], i2c_msg.data[3], i2c_msg.data[4]);
-	uint32_t data_p = i2c_msg.data[2] << 16 | i2c_msg.data[3] << 8 | i2c_msg.data[4];
-	memcpy(data, &data_p, 4);
-
-	return true;
+	LOG_INF(" boot1 VER : %02d.%02d.%02d", i2c_msg.data[1], i2c_msg.data[2], i2c_msg.data[3]);
+	uint32_t version = i2c_msg.data[1] << 16 | i2c_msg.data[2] << 8 | i2c_msg.data[3];
+	return version;
 }
 
 static bool get_boot1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
@@ -727,8 +725,7 @@ static bool get_boot1_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	memcpy(buf_p, remain_str_p, strlen(remain_str_p));
 	buf_p += strlen(remain_str_p);
 	*len += strlen(remain_str_p);
-	uint8_t *version_tmp = NULL;
-	uint32_t version = get_fw_version_boot1_from_asic(version_tmp);
+	uint32_t version = get_fw_version_boot1_from_asic();
 
 	*len += bin2hex((uint8_t *)&version, 4, buf_p, 4);
 	buf_p += 4;
@@ -1114,7 +1111,7 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 	uint8_t sensor_id = 0;
 	char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
-	if (is_mb_dc_on() == false)
+	if (check_p3v3_p5v_pwrgd() == false)
 		return ret;
 
 	if (!find_sensor_id_and_name_by_firmware_comp_id(p->comp_identifier, &sensor_id,
@@ -1123,12 +1120,17 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 		return ret;
 	}
 
+	if (get_asic_board_id() != ASIC_BOARD_ID_EVB && p->comp_identifier == COMPNT_VR_3V3) {
+		LOG_ERR("only evb support 3V3 vr version get");
+		return ret;
+	}
+
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
 	CHECK_NULL_ARG_WITH_RETURN(cfg, ret);
 
 	if ((cfg->pre_sensor_read_hook)) {
 		if ((cfg->pre_sensor_read_hook)(cfg, cfg->pre_sensor_read_args) == false) {
-			LOG_DBG("%d read vr fw pre hook fail!", sensor_id);
+			LOG_ERR("%d read vr fw pre hook fail!", sensor_id);
 			return false;
 		}
 	};
@@ -1178,7 +1180,7 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 		[VR_MODULE_UNKNOWN] = NULL,
 	};
 
-	const char *remain_str_p = ", Remaining Write: ";
+	const char *remain_str_p = ", Remain: ";
 	uint8_t *buf_p = buf;
 	const uint8_t *vr_name_p = vr_name[vr_module];
 	*len = 0;
@@ -1215,12 +1217,28 @@ static bool get_vr_fw_version(void *info_p, uint8_t *buf, uint8_t *len)
 		buf_p += 4;
 	}
 
+	// // add vr rail name
+	// add VR rail name with a space
+	const uint8_t *vr_rail_name_p = sensor_name;
+	// print VR rail name
+	const char *space_str_p = ", ";
+
+	// add ", " separator
+	memcpy(buf_p, space_str_p, strlen(space_str_p));
+	buf_p += strlen(space_str_p);
+	*len += strlen(space_str_p);
+
+	// copy rail name
+	size_t rail_name_len = strlen((const char *)vr_rail_name_p);
+	memcpy(buf_p, vr_rail_name_p, rail_name_len);
+	buf_p += rail_name_len;
+	*len += rail_name_len;
 	ret = true;
 
 err:
 	if ((cfg->post_sensor_read_hook)) {
 		if ((cfg->post_sensor_read_hook)(cfg, cfg->post_sensor_read_args, 0) == false) {
-			LOG_DBG("%d read vr fw post hook fail!", sensor_id);
+			LOG_ERR("%d read vr fw post hook fail!", sensor_id);
 			ret = false;
 		}
 	}
@@ -1255,13 +1273,13 @@ void plat_reset_prepare()
 				     "I2C_6", "I2C_7", "I2C_8", "I2C_9", "I2C_10", "I2C_11" };
 
 	for (int i = 0; i < ARRAY_SIZE(i2c_labels); i++) {
-		const struct device *i2c_dev = device_get_binding(i2c_labels[i]);
-		if (!i2c_dev) {
+		const struct device *check_i2c_dev_by_bus = device_get_binding(i2c_labels[i]);
+		if (!check_i2c_dev_by_bus) {
 			LOG_ERR("Failed to get binding for %s", i2c_labels[i]);
 			continue;
 		}
 
-		int ret = i2c_npcm_device_disable(i2c_dev);
+		int ret = i2c_npcm_device_disable(check_i2c_dev_by_bus);
 		if (ret) {
 			LOG_ERR("Failed to disable %s (ret=%d)", i2c_labels[i], ret);
 		} else {
