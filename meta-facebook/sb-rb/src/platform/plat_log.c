@@ -263,7 +263,9 @@ bool vr_fault_get_error_data(uint8_t sensor_id, uint8_t *data)
 	CHECK_NULL_ARG_WITH_RETURN(data, false);
 
 	// vr status word
-	return get_raw_data_from_sensor_id(sensor_id, 0x79, data, 2);
+	//return get_raw_data_from_sensor_id(sensor_id, 0x79, data, 2);
+	data = 0;
+	return true;
 }
 
 bool get_multi_vr_status(uint8_t alrt_index, uint8_t *data)
@@ -348,18 +350,6 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 			}
 			data_num++;
 		}
-		// if have sensor num, read status word(0x79, 2 bytes) and save to data[7:8]
-		uint8_t sensor_num = get_pwrgd_sequence_fail_sensor_num(data[0]);
-		uint8_t status_word[2];
-		if (sensor_num != NO_SENSOR_NUM) {
-			if (!vr_fault_get_error_data(sensor_num, status_word)) {
-				LOG_ERR("Failed to get VR status word for sensor_num: 0x%x",
-					sensor_num);
-				return false;
-			}
-			data[7] = status_word[0];
-			data[8] = status_word[1];
-		}
 		return true;
 	}
 	case ASIC_ERROR_TRIGGER_CAUSE: {
@@ -386,7 +376,6 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 	// Initialize sensor number
 	uint8_t sensor_num = 0x00;
 	uint8_t device_id = 0x00;
-	uint8_t smbus_alrt_index = bit_position;
 
 	// Find the device_id associated with the error code
 	for (size_t i = 0; i < ARRAY_SIZE(vr_error_callback_info_table); i++) {
@@ -418,28 +407,6 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 
 	if (sensor_num == SENSOR_NUMBER_DONT_CARE)
 		LOG_WRN("error_code: 0x%x, no need to get sensor_num", error_code);
-
-	if (cpld_offset == VR_SMBUS_ALERT_EVENT_LOG_REG) {
-		// smbalrt status some bits will include 2 different VRs(each VR has 2 pages so total 8 Bytes)
-		// Handle VR_FAULT_ASSERT errors and retrieve VR-specific data
-		if (smbus_alrt_index < ARRAY_SIZE(vr_smbus_alrt_sensor_map_table)) {
-			if (!get_multi_vr_status(smbus_alrt_index, data)) {
-				LOG_ERR("Failed to retrieve VR error data for smbus alrt index: 0x%x",
-					smbus_alrt_index);
-				return false;
-			}
-		} else {
-			LOG_ERR("smbus alrt index: 0x%x out of range", smbus_alrt_index);
-			return false;
-		}
-	} else {
-		// Handle VR_FAULT_ASSERT errors and retrieve VR-specific data
-		if (!vr_fault_get_error_data(sensor_num, data)) {
-			LOG_ERR("Failed to retrieve VR fault data for sensor_num: 0x%x",
-				sensor_num);
-			return false;
-		}
-	}
 
 	return true;
 }

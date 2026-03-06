@@ -149,8 +149,10 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 	} else {
 		LOG_INF("dc off, clear io expander init flag");
 		set_ioe_init_flag(0);
-		LOG_INF("dc off, exit the vr test mode");
-		vr_test_mode_enable(false);
+		if (get_vr_test_mode_flag() == true) {
+			LOG_INF("dc off, exit the vr test mode");
+			vr_test_mode_enable(false);
+		}
 
 		// if board id == EVB , ctrl fan pwm
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {

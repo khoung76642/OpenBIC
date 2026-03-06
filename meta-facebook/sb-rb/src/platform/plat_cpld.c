@@ -212,7 +212,6 @@ void give_all_vr_pm_alert_sem()
 void poll_cpld_registers()
 {
 	uint8_t data = 0;
-	uint8_t board_id = get_asic_board_id();
 	uint8_t asic_rst = 0;
 	uint8_t prev_asic_rst = 0;
 
@@ -352,32 +351,6 @@ void poll_cpld_registers()
 						if ((temp_data & BIT(j)) == 0)
 						{
 							LOG_WRN("SMBUS_ALERT_REG changed, bit-%d is changed", j);
-							if(!check_temp_status_bit(j))
-							{
-
-								if (board_id == ASIC_BOARD_ID_EVB) {
-									// EVB board handles VR_HOT through IO expander
-									if (!tca6424a_i2c_write_bit(TCA6424A_OUTPUT_PORT_0,
-													HAMSA_MFIO19,
-													1)) {
-										LOG_ERR("Failed to set VR_HOT (HAMSA_MFIO19) via IO expander");
-									} else {
-										LOG_WRN("Temperature bit-%d is 1, set IO exp VR_HOT (HAMSA_MFIO19) to 1", j);
-									}
-								} else {
-									// Rainbow board uses CPLD to control VR_HOT
-									if (!plat_read_cpld(ASIC_VR_HOT_SWITCH, &data, 1)) {
-										LOG_ERR("Failed to read ASIC_VR_HOT_SWITCH");
-									}
-									data |= BIT(0);
-									if (!plat_write_cpld(ASIC_VR_HOT_SWITCH, &data)) {
-										LOG_ERR("Failed to write ASIC_VR_HOT_SWITCH");
-									}
-									LOG_WRN("Temperature bit-%d is 1, write CPLD ASIC_VR_HOT_SWITCH bit-0 to 1", j);
-								}
-								set_led_flag(true);
-								break;
-							}
 						}
 					}
 				}

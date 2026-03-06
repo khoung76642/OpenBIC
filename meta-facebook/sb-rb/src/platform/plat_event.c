@@ -152,67 +152,6 @@ void process_mtia_vr_power_fault_sel(cpld_info *cpld_info, uint8_t *current_cpld
 
 		LOG_INF("VR[0x%02X] reg[0x%02X] bit[0x%02X] is %s ", vr->mtia_event_source,
 			vr->cpld_reg_offset, vr->cpld_reg_bit, is_assert ? "ASSERT" : "DEASSERT");
-
-		if (vr_fault_table[i].is_pmbus_vr == false) {
-			// non-PMBus VR
-			struct pldm_addsel_data sel_msg = { 0 };
-
-			sel_msg.assert_type = is_assert ? LOG_ASSERT : LOG_DEASSERT;
-			sel_msg.event_type = IRIS_FAULT;
-			sel_msg.event_data_1 = vr_fault_table[i].mtia_event_source;
-
-			if (PLDM_SUCCESS != send_event_log_to_bmc(sel_msg)) {
-				LOG_ERR("Fail send event: 0x%x 0x%x 0x%x", sel_msg.event_data_1,
-					sel_msg.event_data_2, sel_msg.event_data_3);
-			} else {
-				LOG_INF("Send event: 0x%x 0x%x 0x%x", sel_msg.event_data_1,
-					sel_msg.event_data_2, sel_msg.event_data_3);
-			}
-		} else {
-			set_plat_sensor_polling_enable_flag(false);
-			// wait 10ms for vr monitor stop
-			k_msleep(10);
-
-			uint8_t vr_reg_list_len = ARRAY_SIZE(vr_status_rail_list);
-			struct pldm_addsel_data sel_msg[vr_reg_list_len];
-			memset(sel_msg, 0, sizeof(sel_msg));
-			uint8_t sel_msg_idx = 0;
-			for (int j = 0; j < ARRAY_SIZE(vr_status_rail_list); j++) {
-				uint8_t vr_status_rail = vr_status_rail_list[j].index;
-				uint16_t vr_status = 0xFFFF;
-				if (!plat_get_vr_status(vr->rail_id, vr_status_rail, &vr_status)) {
-					LOG_ERR("Fail get VR st: VR[0x%02X] reg[0x%02X]",
-						vr->mtia_event_source,
-						vr_status_rail_list[j].pmbus_reg);
-				}
-				LOG_INF("VR rail id[0x%02X] status: reg[0x%02X] 0x%04X",
-					vr->rail_id, vr_status_rail_list[j].pmbus_reg, vr_status);
-
-				sel_msg[sel_msg_idx].assert_type =
-					is_assert ? LOG_ASSERT : LOG_DEASSERT;
-				sel_msg[sel_msg_idx].event_type = IRIS_FAULT;
-				sel_msg[sel_msg_idx].event_data_1 = vr->mtia_event_source;
-				sel_msg[sel_msg_idx].event_data_2 =
-					(vr_status_rail_list[j].pmbus_reg == PMBUS_STATUS_WORD) ?
-						(uint8_t)((vr_status >> 8) & 0xFF) :
-						vr_status_rail_list[j].pmbus_reg;
-				sel_msg[sel_msg_idx].event_data_3 = (uint8_t)(vr_status & 0xFF);
-				sel_msg_idx += 1;
-			}
-			set_plat_sensor_polling_enable_flag(true);
-			// Send SEL to BMC
-			for (int k = 0; k < sel_msg_idx; k++) {
-				if (PLDM_SUCCESS != send_event_log_to_bmc(sel_msg[k])) {
-					LOG_ERR("Fail send event: 0x%x 0x%x 0x%x",
-						sel_msg[k].event_data_1, sel_msg[k].event_data_2,
-						sel_msg[k].event_data_3);
-				} else {
-					LOG_INF("Send event: 0x%x 0x%x 0x%x",
-						sel_msg[k].event_data_1, sel_msg[k].event_data_2,
-						sel_msg[k].event_data_3);
-				}
-			}
-		}
 	}
 }
 

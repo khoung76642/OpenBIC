@@ -90,6 +90,8 @@ void pal_post_init()
 	// check the thermtrip open-circuit
 	if (!gpio_get(FM_ASIC_0_THERMTRIP_R_N))
 		asic_thermtrip_error_log(LOG_ASSERT);
+	//disable sensor polling 
+	set_plat_sensor_polling_enable_flag(false);
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
