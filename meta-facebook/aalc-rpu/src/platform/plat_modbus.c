@@ -352,9 +352,6 @@ uint8_t modbus_pump_setting(modbus_command_mapping *cmd)
 
 	if (cmd->data[0] == 9) // enable auto mode, reset p0p1 error flag
 	{
-		set_is_rack_level_abnormal(false);
-		set_is_rpu_level_abnormal(false);
-		set_is_press_abnormal(false);
 		set_is_hsc_hsc_fail(false);
 		set_is_pump_not_access(0, false);
 		set_is_pump_not_access(1, false);
