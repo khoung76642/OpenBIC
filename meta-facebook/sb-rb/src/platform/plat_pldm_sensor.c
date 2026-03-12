@@ -17,6 +17,7 @@
 #include "pmbus.h"
 #include "sensor.h"
 #include "tmp431.h"
+#include "emc1413.h"
 #include "pldm_sensor.h"
 #include "plat_hook.h"
 #include "plat_i2c.h"
@@ -12770,4 +12771,43 @@ uint8_t get_pwr_capping_polling_rate_type()
 uint16_t get_quick_medha_polling_rate()
 {
 	return pwr_capping_setting_table[0].case_time_ms[pwr_capping_pollng_rate_type];
+}
+
+temp_sensor_change_cfg change_mapping_table[] = {
+	{ SENSOR_NUM_ASIC_MEDHA0_SENSOR0_TEMP_C, ASIC_MEDHA0_SENSOR0_2ND_ADDR,
+	  EMC1413_REMOTE_TEMPERATRUE_1 },
+	{ SENSOR_NUM_ASIC_MEDHA0_SENSOR1_TEMP_C, ASIC_MEDHA0_SENSOR1_2ND_ADDR,
+	  EMC1413_REMOTE_TEMPERATRUE_2 },
+	{ SENSOR_NUM_ASIC_OWL_W_TEMP_C, ASIC_OWL_W_2ND_ADDR, EMC1413_REMOTE_TEMPERATRUE_1 },
+	{ SENSOR_NUM_ASIC_OWL_E_TEMP_C, ASIC_OWL_E_2ND_ADDR, EMC1413_REMOTE_TEMPERATRUE_2 },
+	{ SENSOR_NUM_ASIC_MEDHA1_SENSOR0_TEMP_C, ASIC_MEDHA1_SENSOR0_2ND_ADDR,
+	  EMC1413_REMOTE_TEMPERATRUE_1 },
+	{ SENSOR_NUM_ASIC_MEDHA1_SENSOR1_TEMP_C, ASIC_MEDHA1_SENSOR1_2ND_ADDR,
+	  EMC1413_REMOTE_TEMPERATRUE_2 },
+	{ SENSOR_NUM_ASIC_HAMSA_CRM_TEMP_C, ASIC_HAMSA_CRM_2ND_ADDR, EMC1413_REMOTE_TEMPERATRUE_1 },
+	{ SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C, ASIC_HAMSA_LS_2ND_ADDR, EMC1413_REMOTE_TEMPERATRUE_2 },
+};
+void check_temp_sensor(uint8_t tmp_module)
+{
+	if (tmp_module == TEMP_EMC1413) {
+		//change temp sensor type and address to em1413
+		uint8_t table_size = sizeof(plat_pldm_sensor_temp_table) /
+				     sizeof(plat_pldm_sensor_temp_table[0]);
+		for (int i = 0; i < table_size; i++) {
+			for (int j = 0;
+			     j < sizeof(change_mapping_table) / sizeof(temp_sensor_change_cfg);
+			     j++) {
+				if (plat_pldm_sensor_temp_table[i].pldm_sensor_cfg.num ==
+				    change_mapping_table[j].sensor_id) {
+					plat_pldm_sensor_temp_table[i].pldm_sensor_cfg.type =
+						sensor_dev_emc1413;
+					plat_pldm_sensor_temp_table[i].pldm_sensor_cfg.target_addr =
+						change_mapping_table[j].address;
+					plat_pldm_sensor_temp_table[i].pldm_sensor_cfg.offset =
+						change_mapping_table[j].offset;
+					break;
+				}
+			}
+		}
+	}
 }
