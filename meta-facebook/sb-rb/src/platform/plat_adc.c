@@ -58,6 +58,30 @@ static uint8_t adc_good_status[2] = { 0xFF, 0xFF };
 static uint8_t final_ucr_status = 0;
 static float inst_medha0 = 0;
 static float inst_medha1 = 0;
+#define TEMP_DATA_SIZE 10000 // 10K data
+uint32_t *avg_pwr_tmp;
+int medha0_count = 0;
+int medha1_count = 0;
+
+int medha0_begin_count = 0;
+int medha1_begin_count = 0;
+
+void init_buffer(void)
+{
+	if (!avg_pwr_tmp)
+		avg_pwr_tmp = malloc(sizeof(uint32_t) * TEMP_DATA_SIZE);
+	if (!avg_pwr_tmp) {
+		printf("malloc failed\n");
+	}
+}
+
+void free_buffer(void)
+{
+	if (avg_pwr_tmp) {
+		free(avg_pwr_tmp);
+		avg_pwr_tmp = NULL;
+	}
+}
 
 typedef struct {
 	uint16_t avg_times; // 20ms at a time
@@ -70,8 +94,11 @@ typedef struct {
 	float pwr_avg_val;
 	float vr_sum;
 	bool ucr_status; // over current
+	uint16_t avg_idx; // for get avg pwr
 } adc_info_t;
 
+uint8_t pwr_avg_flag_medha0 = 0; 
+uint8_t pwr_avg_flag_medha1 = 0;
 //MEDHA0: level 2 , level3
 //MEDHA1: level 2 , level3
 adc_info_t adc_info[ADC_IDX_MAX] = { { .avg_times = 20, .ucr = 1600 },
@@ -274,6 +301,76 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 
 		// decrease buffer idx
 		adc->buf_idx = (adc->buf_idx + 1) % adc->avg_times;
+		// medha0 lv3 avg pwr data collection
+		if (pwr_avg_flag_medha0 == 1)
+		{	
+			
+			if (i == ADC_IDX_MEDHA0_2 && adc->buf_idx == 0)
+			{
+				if(!avg_pwr_tmp)
+					avg_pwr_tmp = malloc(sizeof(uint32_t) * TEMP_DATA_SIZE);
+				if (!avg_pwr_tmp) {
+					printf("malloc failed\n");
+				}
+				LOG_DBG("adc->buf_idx: %d, medha0_count: %d", adc->buf_idx, medha0_count);
+				// save avg pwr in mW to avoid float print/truncation issues
+				uint32_t pwr_mw = (uint32_t)(adc->pwr_avg_val * 1000.0f + 0.5f);
+				avg_pwr_tmp[medha0_count] = pwr_mw;
+				//printk("medha0 avg pwr: %u.%03u W, count: %d\n", pwr_mw / 1000,
+				//      pwr_mw % 1000, medha0_count);
+				medha0_count++;
+				if (medha0_count >= TEMP_DATA_SIZE) {
+					// show all avg_pwr_tmp 10 in 1 line;
+					//printk("[%d] MEDHA0 lv3 average power data:\n, ", k_uptime_get_32());
+					for (int j = 0; j < TEMP_DATA_SIZE; j++) {
+						printk("%u.%03u ", avg_pwr_tmp[j] / 1000,
+						       avg_pwr_tmp[j] % 1000);
+						if ((j + 1) % 10 == 0) {
+							printk("\n");
+						}
+					}
+					//clear flag and buffer after show
+					free_buffer();
+					pwr_avg_flag_medha0 = 0;
+					medha0_count = 0; // reset count if exceeds buffer size
+				}
+			}
+		}
+		// medha1 lv3 avg pwr data collection
+		if (pwr_avg_flag_medha1 == 1)
+		{	
+			
+			if (i == ADC_IDX_MEDHA1_2 && adc->buf_idx == 0)
+			{
+				if(!avg_pwr_tmp)
+					avg_pwr_tmp = malloc(sizeof(uint32_t) * TEMP_DATA_SIZE);
+				if (!avg_pwr_tmp) {
+					printf("malloc failed\n");
+				}
+				LOG_DBG("adc->buf_idx: %d, medha1_count: %d", adc->buf_idx, medha1_count);
+				// save avg pwr in mW to avoid float print/truncation issues
+				uint32_t pwr_mw = (uint32_t)(adc->pwr_avg_val * 1000.0f + 0.5f);
+				avg_pwr_tmp[medha1_count] = pwr_mw;
+				//printk("medha1 avg pwr: %u.%03u W, count: %d\n", pwr_mw / 1000,
+				//      pwr_mw % 1000, medha1_count);
+				medha1_count++;
+				if (medha1_count >= TEMP_DATA_SIZE) {
+					// show all avg_pwr_tmp 10 in 1 line;
+					//printk("[%d] MEDHA1 lv3 average power data:\n, ", k_uptime_get_32());
+					for (int j = 0; j < TEMP_DATA_SIZE; j++) {
+						printk("%u.%03u ", avg_pwr_tmp[j] / 1000,
+						       avg_pwr_tmp[j] % 1000);
+						if ((j + 1) % 10 == 0) {
+							printk("\n");
+						}
+					}
+					//clear flag and buffer after show
+					free_buffer();
+					pwr_avg_flag_medha1 = 0;
+					medha1_count = 0; // reset count if exceeds buffer size
+				}
+			}
+		}
 
 		// check status
 		bool pwr_status = (adc->pwr_avg_val >= adc->ucr);
@@ -309,7 +406,77 @@ static void update_vr_base_power_info()
 
 		// decrease buffer idx
 		adc->buf_idx = (adc->buf_idx + 1) % adc->avg_times;
-
+		// medha0 lv3 avg pwr data collection
+		if (pwr_avg_flag_medha0 == 1)
+		{	
+			
+			if (i == ADC_IDX_MEDHA0_2 && adc->buf_idx == 0)
+			{
+				if(!avg_pwr_tmp)
+					avg_pwr_tmp = malloc(sizeof(uint32_t) * TEMP_DATA_SIZE);
+				if (!avg_pwr_tmp) {
+					printf("malloc failed\n");
+				}
+				LOG_DBG("adc->buf_idx: %d, medha0_count: %d", adc->buf_idx, medha0_count);
+				// save avg pwr in mW to avoid float print/truncation issues
+				uint32_t pwr_mw = (uint32_t)(adc->pwr_avg_val * 1000.0f + 0.5f);
+				avg_pwr_tmp[medha0_count] = pwr_mw;
+				//printk("medha0 avg pwr: %u.%03u W, count: %d\n", pwr_mw / 1000,
+				//      pwr_mw % 1000, medha0_count);
+				medha0_count++;
+				if (medha0_count >= TEMP_DATA_SIZE) {
+					// show all avg_pwr_tmp 10 in 1 line;
+					//printk("[%d] MEDHA0 lv3 average power data:\n, ", k_uptime_get_32());
+					for (int j = 0; j < TEMP_DATA_SIZE; j++) {
+						printk("%u.%03u ", avg_pwr_tmp[j] / 1000,
+						       avg_pwr_tmp[j] % 1000);
+						if ((j + 1) % 10 == 0) {
+							printk("\n");
+						}
+					}
+					//clear flag and buffer after show
+					free_buffer();
+					pwr_avg_flag_medha0 = 0;
+					medha0_count = 0; // reset count if exceeds buffer size
+				}
+			}
+		}
+		// medha1 lv3 avg pwr data collection
+		if (pwr_avg_flag_medha1 == 1)
+		{	
+			
+			if (i == ADC_IDX_MEDHA1_2 && adc->buf_idx == 0)
+			{
+				if(!avg_pwr_tmp)
+					avg_pwr_tmp = malloc(sizeof(uint32_t) * TEMP_DATA_SIZE);
+				if (!avg_pwr_tmp) {
+					printf("malloc failed\n");
+				}
+				LOG_DBG("adc->buf_idx: %d, medha1_count: %d", adc->buf_idx, medha1_count);
+				// save avg pwr in mW to avoid float print/truncation issues
+				uint32_t pwr_mw = (uint32_t)(adc->pwr_avg_val * 1000.0f + 0.5f);
+				avg_pwr_tmp[medha1_count] = pwr_mw;
+				//printk("medha1 avg pwr: %u.%03u W, count: %d\n", pwr_mw / 1000,
+				//      pwr_mw % 1000, medha1_count);
+				medha1_count++;
+				if (medha1_count >= TEMP_DATA_SIZE) {
+					// show all avg_pwr_tmp 10 in 1 line;
+					//printk("[%d] MEDHA1 lv3 average power data:\n, ", k_uptime_get_32());
+					for (int j = 0; j < TEMP_DATA_SIZE; j++) {
+						printk("%u.%03u ", avg_pwr_tmp[j] / 1000,
+						       avg_pwr_tmp[j] % 1000);
+						if ((j + 1) % 10 == 0) {
+							printk("\n");
+						}
+					}
+					//clear flag and buffer after show
+					free_buffer();
+					pwr_avg_flag_medha1 = 0;
+					medha1_count = 0; // reset count if exceeds buffer size
+				}
+			}
+		}
+		
 		// check status
 		bool pwr_status = (adc->avg_val >= adc->ucr);
 		adc->ucr_status = pwr_status;
@@ -862,4 +1029,26 @@ void set_is_adc_init(uint8_t value)
 {
 	is_adc_init = value ? true : false;
 	LOG_INF("set is_adc_init to %d", is_adc_init);
+}
+
+void set_avg_pwr_flag_medha0(uint8_t onoff)
+{
+	pwr_avg_flag_medha0 = onoff ? 1 : 0;
+	//print system time
+	if (pwr_avg_flag_medha0 == 1) {
+			pwr_avg_flag_medha1 = 0;
+	}
+	//uint32_t sys_time = k_uptime_get_32();
+	//printk("set MEDHA0 avg pwr flag ON at system time: %u ms\n", sys_time);
+}
+
+void set_avg_pwr_flag_medha1(uint8_t onoff)
+{
+	pwr_avg_flag_medha1 = onoff ? 1 : 0;
+	if (pwr_avg_flag_medha1 == 1) {
+			pwr_avg_flag_medha0 = 0;
+	}
+	//print system time
+	//uint32_t sys_time = k_uptime_get_32();
+	//printk("set MEDHA1 avg pwr flag ON at system time: %u ms\n", sys_time);
 }
