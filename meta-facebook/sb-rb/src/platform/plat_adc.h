@@ -66,3 +66,5 @@ void set_avg_pwr_flag_medha0(uint8_t onoff);
 void set_avg_pwr_flag_medha1(uint8_t onoff);
 void read_adc_info();
 void set_is_adc_init(uint8_t value);
+void set_temp_data_size(int size);
+int get_temp_data_size();
