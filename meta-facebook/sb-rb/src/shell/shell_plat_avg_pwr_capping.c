@@ -55,7 +55,7 @@ void cmd_medha0_power_get(const struct shell *shell, size_t argc, char **argv)
 void cmd_medha1_power_get(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc != 2) {
-		shell_warn(shell, "Help: pwr_capping_avg_pwr_get medha0 <data_size>");
+		shell_warn(shell, "Help: pwr_capping_avg_pwr_get medha1 <data_size>");
 		return;
 	}
     // set temp data size for avg power capping, default is 10K
@@ -65,6 +65,7 @@ void cmd_medha1_power_get(const struct shell *shell, size_t argc, char **argv)
         shell_warn(shell, "Invalid data size %d, must be between 1 and 10000", data_size);
         return;
     }
+    set_temp_data_size(data_size);
     //get avg pwr time = time windows * 10,000 /1000
     uint16_t time_windows = get_power_capping_time_w(CAPPING_VR_IDX_MEDHA1, CAPPING_LV_IDX_LV3);
     int get_data_size = get_temp_data_size();
