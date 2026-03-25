@@ -550,7 +550,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 		case SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W: {
 			if (get_power_capping_source() == CAPPING_SOURCE_ADC) {
 				/* ADC instant power in W */
-				float pwr_w = get_adc_medha_inst_pwr_w(ADC_RB_IDX_MEDHA0);
+				float pwr_w = get_adc_medha_avg_pwr_w(ADC_RB_IDX_MEDHA0);
 				uint16_t adc_w = (uint16_t)(pwr_w + 0.5f);
 				memcpy(&buffer[6], &adc_w, 2);
 				medha0 = (int)(pwr_w * 1000.0f + 0.5f);
@@ -562,7 +562,7 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 		}
 		case SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W: {
 			if (get_power_capping_source() == CAPPING_SOURCE_ADC) {
-				float pwr_w = get_adc_medha_inst_pwr_w(ADC_RB_IDX_MEDHA1);
+				float pwr_w = get_adc_medha_avg_pwr_w(ADC_RB_IDX_MEDHA1);
 
 				uint16_t adc_w = (uint16_t)(pwr_w + 0.5f);
 				memcpy(&buffer[8], &adc_w, 2);
@@ -891,8 +891,8 @@ static bool command_reply_data_handle(void *arg)
 
 				if (get_power_capping_source() == CAPPING_SOURCE_ADC) {
 					/* ADC instant power in W */
-					float pwr_w0 = get_adc_medha_inst_pwr_w(ADC_RB_IDX_MEDHA0);
-					float pwr_w1 = get_adc_medha_inst_pwr_w(ADC_RB_IDX_MEDHA1);
+					float pwr_w0 = get_adc_medha_avg_pwr_w(ADC_RB_IDX_MEDHA0);
+					float pwr_w1 = get_adc_medha_avg_pwr_w(ADC_RB_IDX_MEDHA1);
 
 					sensor_value = (uint16_t)(pwr_w0 + 0.5f);
 					memcpy(&data->target_rd_msg.msg[0], &sensor_value,

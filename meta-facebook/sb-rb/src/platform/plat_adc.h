@@ -64,3 +64,4 @@ int ad4058_write_reg(uint8_t reg, uint8_t write_val, uint8_t idx);
 uint16_t *get_vr_buf(uint16_t idx);
 void read_adc_info();
 void set_is_adc_init(uint8_t value);
+uint16_t get_adc_medha_avg_pwr_w(uint8_t medha_idx);

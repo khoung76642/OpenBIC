@@ -187,6 +187,23 @@ float get_adc_medha_inst_pwr_w(uint8_t medha_idx)
 	/* power(W) */
 	return v * cur;
 }
+uint16_t get_adc_medha_avg_pwr_w(uint8_t medha_idx)
+{
+	uint16_t avg_pwr = 0;
+
+	if (medha_idx == ADC_RB_IDX_MEDHA0) {
+		avg_pwr = get_power_capping_avg_power(CAPPING_VR_IDX_MEDHA0, CAPPING_LV_IDX_LV2);
+	} else if (medha_idx == ADC_RB_IDX_MEDHA1) {
+		avg_pwr = get_power_capping_avg_power(CAPPING_VR_IDX_MEDHA1, CAPPING_LV_IDX_LV2);
+	} else {
+		LOG_WRN("ADC pwr: invalid medha_idx=%d", medha_idx);
+		return 0;
+	}
+
+	/* power(W) */
+	return avg_pwr;
+}
+
 
 uint16_t get_adc_ucr(uint8_t idx)
 {
