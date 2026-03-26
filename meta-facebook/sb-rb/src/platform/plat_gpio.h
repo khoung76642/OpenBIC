@@ -121,7 +121,7 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIOA1) \
 	gpio_name_to_num(Reserve_GPIOA2) \
 	gpio_name_to_num(MEDHA1_PWR_CAP_LV1_LVC33) \
-	gpio_name_to_num(Reserve_GPIOA4) \
+	gpio_name_to_num(TEST_PWR_CAPPING_STREAMING) \
 	gpio_name_to_num(Reserve_GPIOA5) \
 	gpio_name_to_num(Reserve_GPIOA6) \
 	gpio_name_to_num(Reserve_GPIOA7)

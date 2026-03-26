@@ -257,3 +257,15 @@ bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
 
 	return ret;
 }
+void ISR_GPIO_TEST_PWR_CAPPING_STREAMING()
+{
+	// start streaming
+	if (gpio_get(TEST_PWR_CAPPING_STREAMING) == GPIO_HIGH) {
+		LOG_INF("Test power capping streaming start...");
+		return;
+
+	} else {
+	// end streaming
+		LOG_INF("Test power capping streaming end...");
+	}
+}

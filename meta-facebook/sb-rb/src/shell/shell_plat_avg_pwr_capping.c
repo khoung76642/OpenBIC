@@ -26,6 +26,7 @@
 #include "plat_cpld.h"
 #include "plat_power_capping.h"
 #include "plat_adc.h"
+#include "plat_gpio.h"
 
 LOG_MODULE_REGISTER(plat_avg_pwr_capping_shell, LOG_LEVEL_DBG);
 
@@ -49,6 +50,7 @@ void cmd_medha0_power_get(const struct shell *shell, size_t argc, char **argv)
     float avg_pwr_time = time_windows * get_data_size / 1000.0;
     printf("Getting MEDHA0 average power, may spend %.2f s\n", avg_pwr_time);
     printf("Please do not enter any commands during this time....\n");
+    gpio_set(TEST_PWR_CAPPING_STREAMING, 1);
     set_avg_pwr_flag_medha0(1);
 }
 
@@ -72,6 +74,7 @@ void cmd_medha1_power_get(const struct shell *shell, size_t argc, char **argv)
     float avg_pwr_time = time_windows * get_data_size / 1000.0;
     printf("Getting MEDHA1 average power, may spend %.2f s\n", avg_pwr_time);
     printf("Please do not enter any commands during this time....\n");
+    gpio_set(TEST_PWR_CAPPING_STREAMING, 1);
     set_avg_pwr_flag_medha1(1);
 }
 

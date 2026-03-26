@@ -347,6 +347,7 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 					free_buffer();
 					pwr_avg_flag_medha0 = 0;
 					medha0_count = 0; // reset count if exceeds buffer size
+					gpio_set(TEST_PWR_CAPPING_STREAMING, 0);
 				}
 			}
 		}
@@ -382,6 +383,7 @@ static void update_adc_info(uint16_t raw_data, uint8_t base_idx, float vref)
 					free_buffer();
 					pwr_avg_flag_medha1 = 0;
 					medha1_count = 0; // reset count if exceeds buffer size
+					gpio_set(TEST_PWR_CAPPING_STREAMING, 0);
 				}
 			}
 		}
@@ -451,6 +453,7 @@ static void update_vr_base_power_info()
 					free_buffer();
 					pwr_avg_flag_medha0 = 0;
 					medha0_count = 0; // reset count if exceeds buffer size
+					gpio_set(TEST_PWR_CAPPING_STREAMING, 0);
 				}
 			}
 		}
@@ -485,6 +488,7 @@ static void update_vr_base_power_info()
 					free_buffer();
 					pwr_avg_flag_medha1 = 0;
 					medha1_count = 0; // reset count if exceeds buffer size
+					gpio_set(TEST_PWR_CAPPING_STREAMING, 0);
 				}
 			}
 		}
