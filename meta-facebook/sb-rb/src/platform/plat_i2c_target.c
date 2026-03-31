@@ -615,8 +615,8 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	uint16_t val = (uint16_t)reading;
 	memcpy(&buffer[36], &val, 2);
 
-	chiplet0 = ((medha0 + 0.5 * x) + 500) / 1000;
-	chiplet1 = ((medha1 + 0.5 * x) + 500) / 1000;
+	chiplet0 = ((medha0*1000 + 0.5 * x) + 500) / 1000; //mW to W
+	chiplet1 = ((medha1*1000 + 0.5 * x) + 500) / 1000; //mW to W
 	uint16_t val_x = (uint16_t)((x + 500) / 1000);
 	uint16_t val_c0 = (uint16_t)chiplet0;
 	uint16_t val_c1 = (uint16_t)chiplet1;
