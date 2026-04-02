@@ -322,7 +322,7 @@
 
 typedef struct _power_capping_time_setting {
 	uint8_t sensor_id;
-	uint16_t case_time_ms[8];
+	uint16_t case_time_ms[10];
 } power_capping_time_setting;
 
 enum SENSOR_THREAD_LIST {

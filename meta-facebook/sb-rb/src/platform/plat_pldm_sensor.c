@@ -41,7 +41,8 @@ static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = 
 	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD" },
 	{ QUICK_VR_SENSOR_THREAD_ID, "QUICK_VR_PLDM_SENSOR_THREAD", QUICK_POLL_INTERVAL, true,
 	  true },
-	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD" },
+	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD", QUICK_POLL_INTERVAL, true,
+	  true },
 	{ EVB_SENSOR_THREAD_ID, "EVB_SENSOR_THREAD" },
 };
 
@@ -8946,6 +8947,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9015,6 +9017,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9084,6 +9087,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_ubc_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9153,6 +9157,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_ubc_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9222,6 +9227,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9291,6 +9297,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9360,6 +9367,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9429,6 +9437,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_ubc_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9498,6 +9507,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_ubc_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 	{
 		{
@@ -9567,6 +9577,7 @@ pldm_sensor_info plat_pldm_sensor_ubc_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_common_sensor_read,
 		},
+		.poll_interval_ms = 1000, //1000ms
 	},
 };
 
@@ -12517,36 +12528,64 @@ bool is_vr_access(uint8_t sensor_num)
 }
 
 power_capping_time_setting pwr_capping_setting_table[] = {
-	{ SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W, { 10, 5, 2, 1, 2, 5, 5, 2 } },
-	{ SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W, { 10, 5, 2, 1, 2, 5, 5, 2 } },
-	{ SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V, { 10, 5, 2, 1, 2, 5, 5, 2 } },
-	{ SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V, { 10, 5, 2, 1, 2, 5, 5, 2 } },
+	{ SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W, { 10, 5, 2, 1, 2, 5, 5, 2, 2, 2 } },
+	{ SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W, { 10, 5, 2, 1, 2, 5, 5, 2, 2, 2 } },
+	{ SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V, { 10, 5, 2, 1, 2, 5, 5, 2, 2, 2 } },
+	{ SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V, { 10, 5, 2, 1, 2, 5, 5, 2, 2, 2 } },
 
 	{ SENSOR_NUM_ASIC_P1V1_VDDQC_HBM0246_PWR_W,
 	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
-	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS, 10, 10, 5, 10 } },
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS, 10, 10, 5, 10, 10, 10 } },
 
 	{ SENSOR_NUM_ASIC_P1V1_VDDQC_HBM1357_PWR_W,
 	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
-	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS, 10, 10, 5, 10 } },
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS, 10, 10, 5, 10, 10, 10 } },
 
 	{ SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W,
 	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
-	    VR_DEFAULT_POLLING_INTERVAL_MS, 100 } },
+	    VR_DEFAULT_POLLING_INTERVAL_MS, 100, 100, 100 } },
 
 	{ SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W,
 	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
-	    VR_DEFAULT_POLLING_INTERVAL_MS, 100 } },
+	    VR_DEFAULT_POLLING_INTERVAL_MS, 100, 100, 100 } },
 
 	{ SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W,
 	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
 	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
-	    VR_DEFAULT_POLLING_INTERVAL_MS, 100 } },
+	    VR_DEFAULT_POLLING_INTERVAL_MS, 100, 100, 100 } },
+
+	{ SENSOR_NUM_UBC1_P12V_PWR_W,
+	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		10, 5 } },
+	
+	{ SENSOR_NUM_UBC2_P12V_PWR_W,
+	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		10, 5 } },
+	
+	{ SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V,
+	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		10, 5 } },
+	
+	{ SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V,
+	  { VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+	    VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		VR_DEFAULT_POLLING_INTERVAL_MS, VR_DEFAULT_POLLING_INTERVAL_MS,
+		10, 5 } },
 };
 
 void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_source)
@@ -12560,17 +12599,34 @@ void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_s
 	5 = MEDHA0/1_VDD power every 5ms, VDDQC0246/VDDQC1357 every 10ms
 	6 = MEDHA0/1_VDD power every 5ms, VDDQC0246/VDDQC1357 every 5ms
 	7 = MEDHA0/1_VDD power every 2ms, VDDQC0246/VDDQC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD every 100ms
+	8 = MEDHA0/1_VDD power every 2ms, VDDQC0246/VDDQC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD power 100ms, UBC1_PWR poll every 10ms, UBC2_PWR poll every 10ms
+	9 = MEDHA0/1_VDD power every 2ms, VDDQC0246/VDDQC1357 every 10ms, OWL_E_VDD/OWL_W_VDD/HAMSA_VDD power 100ms, UBC1_PWR poll every 5ms, UBC2_PWR poll every 5ms
 	*/
 	pldm_sensor_info *table = plat_pldm_sensor_load(QUICK_VR_SENSOR_THREAD_ID);
+	pldm_sensor_info *ubc_table = plat_pldm_sensor_load(UBC_SENSOR_THREAD_ID);
 	int count = plat_pldm_sensor_get_sensor_count(QUICK_VR_SENSOR_THREAD_ID);
+	int ubc_count = plat_pldm_sensor_get_sensor_count(UBC_SENSOR_THREAD_ID);
 	// print out polling ms
+	if (count < 0) {
+		LOG_ERR("Cannot get table: %d", QUICK_VR_SENSOR_THREAD_ID);
+		return;
+	}
+	if (ubc_count < 0) {
+		LOG_ERR("Cannot get table: %d", UBC_SENSOR_THREAD_ID);
+		return;
+	}
 	for (uint8_t i = 0; i < count; i++) {
 		LOG_INF("get 0x%x: quick vr poll interval is %d ms", table[i].pldm_sensor_cfg.num,
 			table[i].poll_interval_ms);
 	}
-	if (count < 0) {
-		LOG_ERR("Cannot get table: %d", QUICK_VR_SENSOR_THREAD_ID);
-		return;
+	for (uint8_t i = 0; i < ubc_count; i++) {
+		if (ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC1_P12V_PWR_W ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC2_P12V_PWR_W ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V) {
+		LOG_INF("get 0x%x: ubc poll interval is %d ms", ubc_table[i].pldm_sensor_cfg.num,
+			ubc_table[i].poll_interval_ms);
+		};
 	}
 	// size of pwr_capping_setting_table
 	uint8_t table_size = sizeof(pwr_capping_setting_table) / sizeof(power_capping_time_setting);
@@ -12583,6 +12639,8 @@ void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_s
 	case 5:
 	case 6:
 	case 7:
+	case 8:
+	case 9:
 		LOG_INF("%d: set medha0/1 poll interval", type);
 		for (uint8_t i = 0; i < count; i++) {
 			for (uint8_t j = 0; j < table_size; j++) {
@@ -12626,16 +12684,38 @@ void plat_pldm_sensor_set_quick_vr_poll_interval(uint8_t type, uint8_t capping_s
 				}
 			}
 		}
+		LOG_INF("%d: set ubc poll interval", type);
+		for (uint8_t i = 0; i < ubc_count; i++) {
+			for (uint8_t j = 0; j < table_size; j++) {
+				if (ubc_table[i].pldm_sensor_cfg.num ==
+				    pwr_capping_setting_table[j].sensor_id) {
+					const uint16_t *time_index =
+						pwr_capping_setting_table[j].case_time_ms;
+					ubc_table[i].poll_interval_ms = time_index[type];
+				}
+			}
+		}
 		pwr_capping_pollng_rate_type = type;
 		break;
 	default:
-		LOG_ERR("set quick vr poll interval error, Wrong type %d", type);
+		LOG_ERR("set quick vr or ubc poll interval error, Wrong type %d", type);
 		break;
 	};
+	
 	for (uint8_t i = 0; i < count; i++) {
 		LOG_INF("set 0x%x: quick vr poll interval is %d ms", table[i].pldm_sensor_cfg.num,
 			table[i].poll_interval_ms);
-	}
+	};
+	for (uint8_t i = 0; i < ubc_count; i++) {
+		if (ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC1_P12V_PWR_W ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC2_P12V_PWR_W ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V ||
+		    ubc_table[i].pldm_sensor_cfg.num == SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V) 
+			{
+				LOG_INF("set 0x%x: ubc poll interval is %d ms", ubc_table[i].pldm_sensor_cfg.num,
+					ubc_table[i].poll_interval_ms);
+			}
+	};
 }
 
 void set_ioe_value(uint8_t ioe_addr, uint8_t ioe_reg, uint8_t value)

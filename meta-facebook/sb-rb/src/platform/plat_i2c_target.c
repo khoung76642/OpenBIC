@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(plat_i2c_target);
 #define CPLD_VERSION_GET_REG 0x32
 #define CPLD_VERSION_GET_REG_LEN 4
 #define STRAP_SET_TYPE 0x44 // 01000100
-#define VR_PWR_BUF_SIZE 38
+#define VR_PWR_BUF_SIZE 46
 #define I2C_TARGET_BUS_ASIC I2C_BUS7 // asic HAMSA
 #define I2C_TARGET_BUS_ASIC_MEDHA0 I2C_BUS4 // asic medha0
 #define I2C_TARGET_BUS_ASIC_MEDHA1 I2C_BUS5 // asic medha1
@@ -502,6 +502,11 @@ uint8_t vr_pwr_sensor_table[] = {
 	SENSOR_NUM_ASIC_P0V9_OWL_W_TRVDD_PWR_W,
 	SENSOR_NUM_ASIC_P0V75_OWL_W_TRVDD_PWR_W,
 	SENSOR_NUM_P3V3_OSFP_PWR_W,
+	//UBC
+	SENSOR_NUM_UBC1_P12V_PWR_W,
+	SENSOR_NUM_UBC2_P12V_PWR_W,
+	SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V,
+	SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V,
 };
 
 void vr_power_reading(uint8_t *buffer, size_t buf_size)
@@ -527,6 +532,10 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 	[32:33] - P0V75_OWL_E_VDD (Unit: W)
 	[34:35] - P0V75_OWL_W_VDD (Unit: W)
 	[36:37] - PDB1_P52V_ASIC_SENSE_PWR (Unit: W) (Need BMC support)
+	[38:39] - UBC1 (Unit: W)
+	[40:41] - UBC2 (Unit: W)
+	[42:43] - UBC1_P52V_VIN(Unit: V)
+	[44:45] - UBC2_P52V_VIN(Unit: V)
 	each data is 2 bytes
 	*/
 	float x = 0;
@@ -613,13 +622,33 @@ void vr_power_reading(uint8_t *buffer, size_t buf_size)
 		case SENSOR_NUM_ASIC_P0V75_OWL_W_VDD_PWR_W:
 			memcpy(&buffer[34], &val, 2);
 			break;
+		case SENSOR_NUM_UBC1_P12V_PWR_W:
+			memcpy(&buffer[38], &val, 2);
+			//printf("UBC1 P12V_PWR_W: %d W\n", val);
+			break;
+		case SENSOR_NUM_UBC2_P12V_PWR_W:
+			memcpy(&buffer[40], &val, 2);
+			//printf("UBC2 P12V_PWR_W: %d W\n", val);
+			break;
+		case SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V:
+			memcpy(&buffer[42], &val, 2);
+			//printf("UBC1 P52V_INPUT_VOLT_V: %d W\n", val);
+			break;
+		case SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V:
+			memcpy(&buffer[44], &val, 2);
+			//printf("UBC2 P52V_INPUT_VOLT_V: %d W\n", val);
+			break;
 		default:
 			// do nothing
 			break;
 		}
 
 		if (vr_pwr_sensor_table[i] != SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W &&
-		    vr_pwr_sensor_table[i] != SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W) {
+		    vr_pwr_sensor_table[i] != SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W &&
+			vr_pwr_sensor_table[i] != SENSOR_NUM_UBC1_P12V_PWR_W &&
+			vr_pwr_sensor_table[i] != SENSOR_NUM_UBC2_P12V_PWR_W &&
+			vr_pwr_sensor_table[i] != SENSOR_NUM_UBC1_P52V_INPUT_VOLT_V &&
+			vr_pwr_sensor_table[i] != SENSOR_NUM_UBC2_P52V_INPUT_VOLT_V) {
 			x += milivolt;
 		}
 	}
@@ -1324,12 +1353,14 @@ void plat_master_write_thread_handler()
 				case 5:
 				case 6:
 				case 7:
+				case 8:
+				case 9:
 					if (flag == 0)
 						plat_pldm_sensor_set_quick_vr_poll_interval(
 							poll_rate_type, capping_source);
 					break;
 				default:
-					LOG_ERR("Polling rate type should be 0-7");
+					LOG_ERR("Polling rate type should be 0-9");
 					flag = 1;
 					break;
 				}
