@@ -12339,53 +12339,18 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 
 	LOG_INF("asic_board_id: %d, board_rev_id: %d, vr_module: %d", asic_board_id, board_rev_id,
 		vr_module);
-	// VR check version
-	switch (asic_board_id) {
-	case ASIC_BOARD_ID_EVB:
-		// check newer than FAB3
-		if (board_rev_id >= REV_ID_EVT2) {
-			// new RNS
-			if (vr_module == VR_MODULE_RNS) {
-				LOG_WRN("change VR address to new RNS");
-				vr_change_mode = NEW_RNS;
-			}
-			// new MPS
-			if (vr_module == VR_MODULE_MPS) {
-				LOG_WRN("change VR address to new MPS");
-				vr_change_mode = NEW_MPS;
-			}
-		} else {
-			if (vr_module == VR_MODULE_RNS) {
-				LOG_WRN("change VR address to old RNS");
-				vr_change_mode = OLD_RNS;
-			}
-			// default is old MPS so do nothing
-		}
-		break;
-	case ASIC_BOARD_ID_RAINBOW:
-		// check newer than FAB2 (EVT2)
-		if (board_rev_id >= REV_ID_EVT2) {
-			// new RNS
-			if (vr_module == VR_MODULE_RNS) {
-				LOG_WRN("change VR address to new RNS");
-				vr_change_mode = NEW_RNS;
-			}
-			// new MPS
-			if (vr_module == VR_MODULE_MPS) {
-				LOG_WRN("change VR address to new MPS");
-				vr_change_mode = NEW_MPS;
-			}
-		} else {
-			if (vr_module == VR_MODULE_RNS) {
-				LOG_WRN("change VR address to old RNS");
-				vr_change_mode = OLD_RNS;
-			}
-			// default is old MPS so do nothing
-		}
-		break;
-	default:
-		break;
+	// change vr address to new RNS or NEW MPS
+	// new RNS
+	if (vr_module == VR_MODULE_RNS) {
+		LOG_WRN("change VR address to new RNS");
+		vr_change_mode = NEW_RNS;
 	}
+	// new MPS
+	if (vr_module == VR_MODULE_MPS) {
+		LOG_WRN("change VR address to new MPS");
+		vr_change_mode = NEW_MPS;
+	}
+
 	LOG_INF("vr change mode: 0x%x", vr_change_mode);
 	// vr sensor
 	for (uint8_t i = VR_SENSOR_THREAD_ID; i <= QUICK_VR_SENSOR_THREAD_ID; i++) {
