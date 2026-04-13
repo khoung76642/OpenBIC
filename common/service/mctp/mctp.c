@@ -24,6 +24,8 @@
 #include <zephyr.h>
 #include "libutil.h"
 
+#include <drivers/gpio.h>
+
 LOG_MODULE_REGISTER(mctp);
 
 typedef struct __attribute__((packed)) {
@@ -222,8 +224,11 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 	}
 
 	LOG_INF("mctp_rx_task start %p", mctp_inst);
+	const struct device *dev_oem;
+	dev_oem = device_get_binding("GPIO_D");
 
 	while (1) {
+		gpio_pin_set(dev_oem, 6, 1);
 		k_msleep(MCTP_POLL_TIME_MS);
 		uint8_t read_buf[256] = { 0 };
 		mctp_ext_params ext_params;
@@ -232,6 +237,7 @@ static void mctp_rx_task(void *arg, void *dummy0, void *dummy1)
 
 		uint16_t read_len =
 			mctp_inst->read_data(mctp_inst, read_buf, sizeof(read_buf), &ext_params);
+		gpio_pin_set(dev_oem, 6, 0);
 
 		if (!read_len)
 			continue;
@@ -319,10 +325,15 @@ static void mctp_tx_task(void *arg, void *dummy0, void *dummy1)
 	}
 
 	LOG_INF("mctp_tx_task start %p ", mctp_inst);
+	const struct device *dev_oem;
+	dev_oem = device_get_binding("GPIO_D");
 
 	while (1) {
+		gpio_pin_set(dev_oem, 7, 1);
 		mctp_tx_msg mctp_msg = { 0 };
 		int ret = k_msgq_get(&mctp_inst->mctp_tx_queue, &mctp_msg, K_FOREVER);
+		gpio_pin_set(dev_oem, 7, 0);
+
 		if (ret)
 			continue;
 

@@ -56,8 +56,8 @@ void gpio_int_default();
 #define name_gpio3	\
 	gpio_name_to_num(Reserve_GPIO30) \
 	gpio_name_to_num(Reserve_GPIO31) \
-	gpio_name_to_num(Reserve_GPIO32) \
-	gpio_name_to_num(Reserve_GPIO33) \
+	gpio_name_to_num(DEBUG_GPIO32) \
+	gpio_name_to_num(DEBUG_GPIO33) \
 	gpio_name_to_num(Reserve_GPIO34) \
 	gpio_name_to_num(Reserve_GPIO35) \
 	gpio_name_to_num(Reserve_GPIO36) \
@@ -150,8 +150,8 @@ void gpio_int_default();
 	gpio_name_to_num(Reserve_GPIOD3) \
 	gpio_name_to_num(Reserve_GPIOD4) \
 	gpio_name_to_num(Reserve_GPIOD5) \
-	gpio_name_to_num(Reserve_GPIOD6) \
-	gpio_name_to_num(Reserve_GPIOD7)
+	gpio_name_to_num(DEBUG_GPIOD6) \
+	gpio_name_to_num(DEBUG_GPIOD7)
 #define name_gpioE	\
 	gpio_name_to_num(Reserve_GPIOE0) \
 	gpio_name_to_num(Reserve_GPIOE1) \

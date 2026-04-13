@@ -81,7 +81,7 @@ struct i2c_target_data *test_for_reading = NULL;
 
 /* I2C target init-enable table */
 const bool I2C_TARGET_ENABLE_TABLE[MAX_TARGET_NUM] = {
-	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_ENABLE,
+	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 	TARGET_ENABLE,	TARGET_ENABLE,	TARGET_ENABLE,	TARGET_DISABLE,
 	TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE, TARGET_DISABLE,
 };
@@ -1154,7 +1154,7 @@ void set_power_capping_source_handler(struct k_work *work_item)
 
 static const asic_i2c_bus_map target_bus_list[] = {
 	{ HAMSA_I2C_BUS_IDX, I2C_TARGET_BUS_ASIC },
-	{ MEDHA0_I2C_BUS_IDX, I2C_TARGET_BUS_ASIC_MEDHA0 },
+	{ MEDHA0_I2C_BUS_IDX, I2C_TARGET_BUS_ASIC_MEDHA1 },
 	{ MEDHA1_I2C_BUS_IDX, I2C_TARGET_BUS_ASIC_MEDHA1 },
 };
 void plat_master_write_thread_handler()

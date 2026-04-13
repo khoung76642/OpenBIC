@@ -830,7 +830,9 @@ void adc_rainbow_polling_handler(void *p1, void *p2, void *p3)
 					ad4058_read_voltage(ADC_RB_IDX_MEDHA1);
 					break;
 				case TIC_ADS7066:
+					//gpio_set(DEBUG_GPIO32, 1);
 					ads7066_read_voltage(ADC_RB_IDX_MEDHA0);
+					//gpio_set(DEBUG_GPIO32, 0);
 					ads7066_read_voltage(ADC_RB_IDX_MEDHA1);
 					break;
 				default:
