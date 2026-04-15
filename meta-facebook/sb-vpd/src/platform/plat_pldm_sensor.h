@@ -164,6 +164,10 @@
 #define ASIC_IMON_MEDHA0_VDD_ADDR (0x00 >> 1)
 #define ASIC_IMON_MEDHA1_VDD_ADDR (0x00 >> 1)
 
+// VPD Addr
+#define VPD_MPS_P0V85_HAMSA_VDD_ADDR 0x62
+#define VPD_MPS_P0V75_OWL_E_VDD_ADDR 0x60
+
 // sensor number
 /* Define sensors address(7 bit) */
 #define SENSOR_NUM_TOP_INLET_TEMP_C 0x01
