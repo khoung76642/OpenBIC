@@ -5250,7 +5250,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		{
 			.num = SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_TEMP_C,
 			.type = sensor_dev_mp29816a,
-			.port = I2C_BUS3,
+			.port = I2C_BUS2,
 			.target_addr = ASIC_P0V85_HAMSA_VDD_ADDR,
 			.offset = PMBUS_READ_TEMPERATURE_1,
 			.access_checker = is_vr_access,
@@ -5322,7 +5322,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		{
 			.num = SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_VOLT_V,
 			.type = sensor_dev_mp29816a,
-			.port = I2C_BUS3,
+			.port = I2C_BUS2,
 			.target_addr = ASIC_P0V85_HAMSA_VDD_ADDR,
 			.offset = PMBUS_READ_VOUT,
 			.access_checker = is_vr_access,
@@ -5394,7 +5394,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		{
 			.num = SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_CURR_A,
 			.type = sensor_dev_mp29816a,
-			.port = I2C_BUS3,
+			.port = I2C_BUS2,
 			.target_addr = ASIC_P0V85_HAMSA_VDD_ADDR,
 			.offset = PMBUS_READ_IOUT,
 			.access_checker = is_vr_access,
@@ -5466,7 +5466,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 		{
 			.num = SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_INPUT_VOLT_V,
 			.type = sensor_dev_mp29816a,
-			.port = I2C_BUS3,
+			.port = I2C_BUS2,
 			.target_addr = ASIC_P0V85_HAMSA_VDD_ADDR,
 			.offset = PMBUS_READ_VIN,
 			.access_checker = is_vr_access,
@@ -8861,7 +8861,7 @@ pldm_sensor_info plat_pldm_sensor_quick_vr_table[] = {
 		{
 			.num = SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W,
 			.type = sensor_dev_mp29816a,
-			.port = I2C_BUS3,
+			.port = I2C_BUS2,
 			.target_addr = ASIC_P0V85_HAMSA_VDD_ADDR,
 			.offset = PMBUS_READ_POUT,
 			.access_checker = is_vr_access,
