@@ -12368,9 +12368,35 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 		for (uint8_t j = 0; j < count; j++) {
 			if (vr_change_mode == NEW_RNS || vr_change_mode == OLD_RNS)
 				table[j].pldm_sensor_cfg.type = sensor_dev_raa228249;
+			uint8_t sensor_num = table[j].pldm_sensor_cfg.num;
 
 			table[j].pldm_sensor_cfg.target_addr = convert_vr_addr(
 				table[j].pldm_sensor_cfg.target_addr, vr_change_mode);
+
+			/*
+				VPD change:
+				HAMSA_VDD : bus 2a, 0x62(main), 0x63(second, unused)
+				OWL_E_VDD : bus 2a, 0x60(main), 0x61(second, unused)
+			*/
+			if (vr_change_mode == NEW_MPS) {
+				// HAMSA VDD sensors
+				if (sensor_num >= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_TEMP_C &&
+				    sensor_num <= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W)
+					table[j].pldm_sensor_cfg.target_addr =
+						VPD_MPS_P0V85_HAMSA_VDD_ADDR;
+				if (sensor_num == SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_INPUT_VOLT_V)
+					table[j].pldm_sensor_cfg.target_addr =
+						VPD_MPS_P0V85_HAMSA_VDD_ADDR;
+				// OWL_E_VDD sensors
+				if (sensor_num >= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_TEMP_C &&
+				    sensor_num <= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W)
+					table[j].pldm_sensor_cfg.target_addr =
+						VPD_MPS_P0V75_OWL_E_VDD_ADDR;
+				if (sensor_num == SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_INPUT_VOLT_V)
+					table[j].pldm_sensor_cfg.target_addr =
+						VPD_MPS_P0V75_OWL_E_VDD_ADDR;
+			}
+
 			LOG_INF("change VR sensors 0x%x address to 0x%x",
 				table[j].pldm_sensor_cfg.num, table[j].pldm_sensor_cfg.target_addr);
 		}
