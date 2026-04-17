@@ -36,7 +36,6 @@
 #include "pldm_monitor.h"
 #include "sensor.h"
 #include "pldm_sensor.h"
-#include "plat_hamsa_avdd_pcie.h"
 
 LOG_MODULE_REGISTER(plat_user_setting);
 
@@ -895,25 +894,29 @@ static int delay_module_pg_user_settings_init(void)
 
 	return 0;
 }
-static int hamsa_avdd_pcie_user_settings_init(void)
+static int vr_vout_user_settings_init(void)
 {
-	uint16_t setting_value = 0;
-
-	if (get_user_settings_hamsa_avdd_pcie_from_eeprom(&setting_value, sizeof(setting_value)) ==
-	    false) {
-		LOG_ERR("get hamsa avdd pcie user settings failed");
+	if (get_user_settings_vr_vout_from_eeprom(&vr_vout_user_settings,
+						  sizeof(vr_vout_user_settings)) == false) {
+		LOG_ERR("get vr vout user settings failed");
 		return -1;
 	}
 
-	if (setting_value != 0xffff) {
-		if (!set_hamsa_avdd_pcie(&setting_value, false)) {
-			LOG_ERR("set hamsa avdd pcie failed");
-			return -1;
+	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+		if (vr_vout_user_settings.vout[i] != 0xffff) {
+			/* write vout */
+			uint16_t millivolt = vr_vout_user_settings.vout[i];
+			if (!plat_set_vout_command(i, &millivolt, false)) {
+				LOG_ERR("Set vout[%d]=%x by user settings failed", i, millivolt);
+				return -1;
+			}
+			LOG_INF("set [%x]%s: %dmV", i, vr_rail_table[i].sensor_name, millivolt);
 		}
 	}
 
 	return 0;
 }
+
 bool get_user_settings_delay_pcie_perst_from_eeprom(void *user_settings, uint8_t data_length)
 {
 	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
@@ -982,23 +985,22 @@ bool set_user_settings_delay_module_pg_to_eeprom(void *user_settings, uint8_t da
 
 	return true;
 }
-bool get_user_settings_hamsa_avdd_pcie_from_eeprom(void *user_settings, uint8_t data_length)
+bool get_user_settings_vr_vout_from_eeprom(void *user_settings, uint8_t data_length)
 {
 	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
 
-	if (!plat_eeprom_read(HAMSA_AVDD_PCIE_VOUT_USER_SETTINGS_OFFSET, user_settings,
-			      data_length)) {
-		LOG_ERR("Failed to read hamsa_avdd_pcie from eeprom");
+	if (!plat_eeprom_read(VR_VOUT_USER_SETTINGS_OFFSET, user_settings, data_length)) {
+		LOG_ERR("Failed to read vout from eeprom");
 		return false;
 	}
 	return true;
 }
-bool set_user_settings_hamsa_avdd_pcie_to_eeprom(void *user_settings, uint8_t data_length)
+
+bool set_user_settings_vr_vout_to_eeprom(void *user_settings, uint8_t data_length)
 {
 	CHECK_NULL_ARG_WITH_RETURN(user_settings, false);
 
-	if (!plat_eeprom_write(HAMSA_AVDD_PCIE_VOUT_USER_SETTINGS_OFFSET, user_settings,
-			       data_length)) {
+	if (!plat_eeprom_write(VR_VOUT_USER_SETTINGS_OFFSET, user_settings, data_length)) {
 		LOG_ERR("hamsa_avdd_pcie Failed to write eeprom");
 		return false;
 	}
@@ -1059,11 +1061,11 @@ bool perm_config_clear(void)
 		return false;
 	}
 
-	/* clear hamsa_avdd_pcie perm parameter */
-	uint16_t setting_value_for_hamsa_avdd_pcie = 0xFFFF;
-	if (!set_user_settings_hamsa_avdd_pcie_to_eeprom(
-		    &setting_value_for_hamsa_avdd_pcie,
-		    sizeof(setting_value_for_hamsa_avdd_pcie))) {
+	/* clear vr vout perm parameter */
+	uint8_t setting_value_for_vr_vout[4] = { 0 };
+	memset(setting_value_for_vr_vout, 0xFF, sizeof(setting_value_for_vr_vout));
+	if (!set_user_settings_vr_vout_to_eeprom(&setting_value_for_vr_vout,
+						 sizeof(setting_value_for_vr_vout))) {
 		LOG_ERR("The perm_config clear failed");
 		return false;
 	}
@@ -1517,5 +1519,5 @@ void user_settings_init(void)
 	delay_asic_rst_user_settings_init();
 	delay_module_pg_user_settings_init();
 	delay_pcie_perst_user_settings_init();
-	hamsa_avdd_pcie_user_settings_init();
+	vr_vout_user_settings_init();
 }
