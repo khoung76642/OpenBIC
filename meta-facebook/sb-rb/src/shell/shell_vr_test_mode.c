@@ -453,8 +453,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_vr_pmbus_cmds,
 			       SHELL_SUBCMD_SET_END);
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_vr_test_mode_cmds,
-	SHELL_CMD(start, NULL, "vr test mode start command", cmd_vr_test_mode_start),
-	SHELL_CMD(exit, NULL, "vr test mode exit command", cmd_vr_test_mode_exit),
 	SHELL_CMD(show, &sub_vr_test_mode_show_cmds, "show vr test mode val command", NULL),
 	SHELL_CMD(get_status, NULL, "get vr current modecommand", cmd_vr_test_mode_get_status),
 	SHELL_CMD(get_page, &sub_vr_test_mode_rname_cmds, "vr get page command",
