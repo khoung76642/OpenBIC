@@ -77,7 +77,6 @@ extern const uint8_t vr_mps_normal_mode_table_size;
 bool update_vr_reg(uint8_t rail, uint8_t reg, uint16_t val);
 bool get_vr_test_mode_flag(void);
 void vr_test_mode_enable(bool onoff);
-void init_vr_test_mode_polling(void);
 bool dma_write_vr(uint8_t rail, uint16_t reg, uint8_t *data, uint8_t len);
 bool dma_read_vr(uint8_t rail, uint16_t reg, uint8_t *data, uint8_t len);
 bool get_vr_offset_uvp_ovp(uint8_t rail, uint16_t *uvp, uint16_t *ovp);
