@@ -74,15 +74,10 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (argc >= 4) {
-		if (!get_vr_test_mode_flag()) {
-			if (!strcmp(argv[3], "perm")) {
-				is_perm = true;
-			} else {
-				shell_error(shell, "The last argument must be <perm>");
-				return -1;
-			}
+		if (!strcmp(argv[3], "perm")) {
+			is_perm = true;
 		} else {
-			shell_error(shell, "voltage set <voltage-rail> <new-voltage>");
+			shell_error(shell, "The last argument must be <perm>");
 			return -1;
 		}
 	}
@@ -126,7 +121,8 @@ static int cmd_voltage_set(const struct shell *shell, size_t argc, char **argv)
 
 static void voltage_rname_get(size_t idx, struct shell_static_entry *entry)
 {
-	if ((get_asic_board_id() == ASIC_BOARD_ID_EVB))
+	if (((get_asic_board_id() != ASIC_BOARD_ID_EVB)) &&
+		    (idx == VR_RAIL_E_P3V3_OSFP_VOLT_V))
 		idx++;
 
 	uint8_t *name = NULL;

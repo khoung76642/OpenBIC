@@ -440,22 +440,6 @@ static bool set_mps_vr_test_mode_reg(bool is_default)
 	return ret;
 }
 
-static bool check_vr_fast_ocp_match_test_mode(void)
-{
-	for (uint8_t i = 0; i < VR_RAIL_E_P3V3_OSFP_VOLT_V; i++) {
-		uint8_t data[2] = { 0 };
-		if (!get_raw_data_from_sensor_id(vr_rail_table[i].sensor_id, VR_FAST_OCP_REG, data,
-						 2))
-			return false;
-
-		uint16_t raw_val = (data[1] << 8) | data[0];
-		if (vr_test_mode_table[i].fast_ocp != raw_val)
-			return false;
-	}
-
-	return true;
-}
-
 void vr_test_mode_enable(bool onoff)
 {
 	vr_test_mode_flag = onoff;
@@ -507,32 +491,4 @@ void vr_test_mode_enable(bool onoff)
 	} else {
 		LOG_ERR("VR module %d is not supported!", vr);
 	}
-}
-
-void vr_test_mode_handler(void *arg1, void *arg2, void *arg3)
-{
-	k_sleep(K_MSEC(5000)); // wait sensor thread ready
-
-	while (1) {
-		k_sleep(K_MINUTES(1));
-		if (vr_test_mode_flag)
-			LOG_INF("VR TEST MODE is running! vr test mode flag: %d",
-				vr_test_mode_flag);
-	}
-}
-
-void init_vr_test_mode_polling(void)
-{
-	if (is_dc_on()) {
-		if (check_vr_fast_ocp_match_test_mode()) {
-			vr_test_mode_enable(true);
-			LOG_INF("Fast OCP value is the same, start VR TEST MODE");
-		}
-	}
-
-	vr_test_mode_tid = k_thread_create(&vr_test_mode_thread, vr_test_mode_thread_stack,
-					   K_THREAD_STACK_SIZEOF(vr_test_mode_thread_stack),
-					   vr_test_mode_handler, NULL, NULL, NULL,
-					   CONFIG_MAIN_THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&vr_test_mode_thread, "vr_test_mode_mode_thread");
 }

@@ -99,7 +99,6 @@ void pal_post_init()
 	plat_telemetry_table_init();
 	ioexp_init();
 	init_thermal_polling();
-	init_vr_test_mode_polling();
 	// check the thermtrip open-circuit
 	if (!gpio_get(FM_ASIC_0_THERMTRIP_R_N))
 		asic_thermtrip_error_log(LOG_ASSERT);

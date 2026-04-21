@@ -189,16 +189,20 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 		reset_error_log_states(err_type);
 		// re-init adc
 		set_is_adc_init(0);
+		LOG_INF("start to init vr test mode");
+		vr_test_mode_enable(true);
+		LOG_INF("end of init vr test mode");
+		k_sleep(K_MSEC(5));
+		LOG_INF("start to set all vout command");
+		if (!set_all_vout_command())
+			LOG_ERR("set all vout command fail!");
+		LOG_INF("end of set all vout command");
 	} else {
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
 		gpio_conf(SPI_ADC_CS1_N, GPIO_OUTPUT);
 		gpio_set(SPI_ADC_CS1_N, 0);
 		LOG_INF("dc off, clear io expander init flag");
 		set_ioe_init_flag(0);
-		if (get_vr_test_mode_flag() == true) {
-			LOG_INF("dc off, exit the vr test mode");
-			vr_test_mode_enable(false);
-		}
 
 		// if board id == EVB , ctrl fan pwm
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {

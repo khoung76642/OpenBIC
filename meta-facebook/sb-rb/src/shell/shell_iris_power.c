@@ -554,7 +554,7 @@ static bool iris_power_control(uint8_t onoff)
 	return plat_write_cpld(CPLD_OFFSET_MMC_PWR_EN, &tmp);
 }
 
-static bool set_all_vout_command()
+bool set_all_vout_command()
 {
 	for (int i = 0; i < VR_RAIL_E_MAX; i++) {
 		if (vr_vout_user_settings.vout[i] != 0xffff) {
@@ -580,8 +580,6 @@ void cmd_iris_power_on(const struct shell *shell, size_t argc, char **argv)
 		shell_print(shell, "iris power on success!");
 		set_pwr_steps_on_flag(0);
 		set_plat_sensor_one_step_enable_flag(false);
-		if (!set_all_vout_command())
-			shell_warn(shell, "set all vout command fail!");
 	} else {
 		shell_warn(shell, "iris power on fail!");
 	}
@@ -613,8 +611,6 @@ void cmd_iris_power_cycle(const struct shell *shell, size_t argc, char **argv)
 		shell_warn(shell, "iris power cycle(on) fail!");
 	set_pwr_steps_on_flag(0);
 	set_plat_sensor_one_step_enable_flag(false);
-	if (!set_all_vout_command())
-		shell_warn(shell, "set all vout command fail!");
 }
 
 void cmd_iris_steps_on(const struct shell *shell, size_t argc, char **argv)
