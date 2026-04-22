@@ -102,6 +102,11 @@ void pal_post_init()
 	// check the thermtrip open-circuit
 	if (!gpio_get(FM_ASIC_0_THERMTRIP_R_N))
 		asic_thermtrip_error_log(LOG_ASSERT);
+	if (is_mb_dc_on() == true)
+	{
+		LOG_INF("detect dc on, start to init vr test mode");
+		vr_test_mode_enable(true);
+	}
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
