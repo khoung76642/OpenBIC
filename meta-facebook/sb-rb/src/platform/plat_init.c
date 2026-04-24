@@ -38,6 +38,7 @@
 #include "plat_vr_test_mode.h"
 #include "plat_power_capping.h"
 #include "plat_isr.h"
+#include "shell_iris_power.h"
 
 LOG_MODULE_REGISTER(plat_init);
 
@@ -102,10 +103,11 @@ void pal_post_init()
 	// check the thermtrip open-circuit
 	if (!gpio_get(FM_ASIC_0_THERMTRIP_R_N))
 		asic_thermtrip_error_log(LOG_ASSERT);
-	if (is_mb_dc_on() == true)
-	{
+	if (is_mb_dc_on() == true) {
 		LOG_INF("detect dc on, start to init vr test mode");
 		vr_test_mode_enable(true);
+		if (!set_all_vout_command())
+			LOG_ERR("set all vout command fail!");
 	}
 }
 
