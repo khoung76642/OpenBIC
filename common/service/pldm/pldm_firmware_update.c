@@ -1435,7 +1435,7 @@ static uint8_t get_firmware_parameter(void *mctp_inst, uint8_t *buf, uint16_t le
 #ifdef ENABLE_PLDM_GET_FW_PARAM_DEBUG_LOG
 	LOG_INF("pldm get_firmware_parameter received");
 #endif
-
+	LOG_WRN("pldm get_firmware_parameter received");
 	struct pldm_get_firmware_parameters_resp *resp_p =
 		(struct pldm_get_firmware_parameters_resp *)resp;
 
@@ -1542,8 +1542,9 @@ static uint8_t query_device_identifiers(void *mctp_inst, uint8_t *buf, uint16_t 
 	CHECK_NULL_ARG_WITH_RETURN(resp, PLDM_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(resp_len, PLDM_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(ext_params, PLDM_ERROR);
-
-	return plat_pldm_query_device_identifiers(buf, len, resp, resp_len);
+	uint8_t return_value = plat_pldm_query_device_identifiers(buf, len, resp, resp_len);
+	LOG_WRN("query_device_identifiers called: return value: %d", return_value);
+	return return_value;
 }
 
 static uint8_t query_downstream_devices(void *mctp_inst, uint8_t *buf, uint16_t len,
@@ -1568,7 +1569,7 @@ static uint8_t query_downstream_identifiers(void *mctp_inst, uint8_t *buf, uint1
 	CHECK_NULL_ARG_WITH_RETURN(resp, PLDM_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(resp_len, PLDM_ERROR);
 	CHECK_NULL_ARG_WITH_RETURN(ext_params, PLDM_ERROR);
-
+	LOG_WRN("pldm_query_downstream_identifiers called. return value : %d", plat_pldm_query_downstream_identifiers(buf, len, resp, resp_len));
 	return plat_pldm_query_downstream_identifiers(buf, len, resp, resp_len);
 }
 
@@ -1690,7 +1691,6 @@ __weak uint8_t plat_pldm_query_downstream_identifiers(const uint8_t *buf, uint16
 
 	*completion_code_p = PLDM_ERROR_UNSUPPORTED_PLDM_CMD;
 	*resp_len = 1;
-
 	return PLDM_ERROR_UNSUPPORTED_PLDM_CMD;
 }
 
@@ -1730,6 +1730,7 @@ uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn)
 	}
 
 	*ret_fn = (void *)fn;
+	LOG_WRN("pldm_fw_update_handler_query called: cmd_code: 0x%x, return value: %d", code, fn ? PLDM_SUCCESS : PLDM_ERROR);
 	return fn ? PLDM_SUCCESS : PLDM_ERROR;
 }
 
