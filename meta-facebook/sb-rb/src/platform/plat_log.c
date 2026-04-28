@@ -412,6 +412,43 @@ bool get_error_data(uint16_t error_code, uint8_t *data)
 	uint8_t cpld_offset = error_code & 0xFF;
 	uint8_t bit_position = (error_code >> 8) & 0x07;
 	LOG_WRN("cpld_offset: 0x%x, bit_position: 0x%x", cpld_offset, bit_position);
+	uint8_t asic_temp_data[ASIC_MONITOR_TEMP_REG_LEN] = { 0 };
+	if (read_asic_reg(ASIC_MONITOR_TEMP_REG, (uint8_t *)asic_temp_data,
+			  ASIC_MONITOR_TEMP_REG_LEN) != 0) {
+		LOG_ERR("Can't get max asic temp data from ASIC, reg: 0x%02x",
+			ASIC_MONITOR_TEMP_REG);
+	}
+	// check Asic temp error code
+	if (cpld_offset == MFIO_FOR_RAINBOW) {
+		uint8_t data_read_back = 0;
+		if (!plat_read_cpld(MFIO_FOR_RAINBOW, &data_read_back, 1)) {
+			LOG_ERR("Fail read cpld reg 0x%x", MFIO_FOR_RAINBOW);
+		}
+		switch (bit_position) {
+		case HAMSA_MFIO22:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[1];
+			break;
+		case MEDHA0_MFIO24:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[2];
+			break;
+		case MEDHA1_MFIO24:
+			data[0] = data_read_back;
+			data[1] = asic_temp_data[3];
+			break;
+		case HAMSA_MFIO23:
+		case MEDHA0_MFIO31:
+		case MEDHA1_MFIO31:
+			data[0] = data_read_back;
+			break;
+		default:
+			LOG_ERR("unsupported Asic temp error code with cpld_offset: 0x%x, bit_position: 0x%x",
+				cpld_offset, bit_position);
+			return false;
+		}
+		return true;
+	}
 
 	// Initialize sensor number
 	uint8_t sensor_num = 0x00;
@@ -662,4 +699,20 @@ bool check_temp_status_bit(uint8_t bit_num)
 	}
 
 	return true;
+}
+
+void packaged_bmc_log(uint8_t event_type, uint8_t event_data_1, uint8_t event_data_2,
+		      uint8_t event_data_3)
+{
+	struct pldm_addsel_data to_bmc_sel_msg = { 0 };
+	to_bmc_sel_msg.assert_type = LOG_ASSERT;
+	to_bmc_sel_msg.event_type = event_type;
+	to_bmc_sel_msg.event_data_1 = event_data_1;
+	to_bmc_sel_msg.event_data_2 = event_data_2;
+	to_bmc_sel_msg.event_data_3 = event_data_3;
+	if (send_event_log_to_bmc(to_bmc_sel_msg) != PLDM_SUCCESS) {
+		LOG_ERR("Failed to send msg to bmc, event_type: 0x%x, event data: 0x%x 0x%x 0x%x\n",
+			to_bmc_sel_msg.event_type, to_bmc_sel_msg.event_data_1,
+			to_bmc_sel_msg.event_data_2, to_bmc_sel_msg.event_data_3);
+	}
 }
