@@ -127,6 +127,9 @@ static int i2c_target_read_requested(struct i2c_slave_config *config, uint8_t *v
 	}
 
 	if (!data->target_rd_msg.msg_length) {
+		// print out i2c_bus, req_address, wr_buffer_idx, rd_buffer_idx
+		LOG_INF("i2c bus[%d] receive read request with address 0x%02x, wr_buffer_idx %d, rd_buffer_idx %d",
+			data->i2c_bus, data->req_address, data->wr_buffer_idx, data->rd_buffer_idx);
 		LOG_WRN("Data not ready");
 		return 1;
 	}

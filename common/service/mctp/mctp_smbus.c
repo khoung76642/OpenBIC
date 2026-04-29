@@ -146,6 +146,7 @@ static uint16_t mctp_smbus_read(void *mctp_p, uint8_t *buf, uint32_t len,
 	}
 	if (rlen < sizeof(smbus_hdr)) {
 		LOG_ERR("recv invalid len %d", rlen);
+		LOG_HEXDUMP_ERR(rdata, rlen, "recv invalid data");
 		return 0;
 	}
 
