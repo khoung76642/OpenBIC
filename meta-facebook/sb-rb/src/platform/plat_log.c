@@ -583,7 +583,8 @@ void find_last_log_position()
 
 // Load logs from EEPROM into memory during initialization
 void init_load_eeprom_log(void)
-{
+{	
+	LOG_INF("Initializing log system and loading logs from EEPROM...");
 	memset(err_log_data, 0xFF, sizeof(err_log_data));
 	uint16_t log_len = sizeof(plat_err_log_mapping);
 	for (uint8_t i = 0; i < LOG_MAX_NUM; i++) {

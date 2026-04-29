@@ -37,11 +37,11 @@ uint8_t pwr_capping_pollng_rate_type = 0;
 
 static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = {
 	// thread id, thread name
-	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
-	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD"},
+	//{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
+	//{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD"},
 	{ QUICK_VR_SENSOR_THREAD_ID, "QUICK_VR_PLDM_SENSOR_THREAD", 1},
-	{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD"},
-	{ EVB_SENSOR_THREAD_ID, "EVB_SENSOR_THREAD"},
+	//{ UBC_SENSOR_THREAD_ID, "UBC_PLDM_SENSOR_THREAD"},
+	//{ EVB_SENSOR_THREAD_ID, "EVB_SENSOR_THREAD"},
 };
 
 extern vr_pre_proc_arg vr_pre_read_args[];

@@ -157,4 +157,5 @@ void pwr_level_mutex_init(void);
 bool set_user_settings_delay_pcie_perst_to_eeprom(void *user_settings, uint8_t data_length, uint8_t user_settings_offset);
 bool set_user_settings_delay_asic_rst_to_eeprom(void *user_settings, uint8_t data_length);
 bool set_user_settings_delay_module_pg_to_eeprom(void *user_settings, uint8_t data_length);
+bool get_average_voltage_array(uint8_t rail, uint32_t *voltage_array);
 #endif

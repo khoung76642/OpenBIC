@@ -499,7 +499,7 @@ void plat_power_capping_give_sem()
 void plat_power_capping_init()
 {
 	k_sem_init(&power_capping_sem, 0, 1);
-
+	LOG_INF("init power capping");
 	// sync avg_times
 	uint8_t data = 0;
 	if (plat_read_cpld(CPLD_OFFSET_POWER_CAPPING_LV1_TIME, &data, 1)) {

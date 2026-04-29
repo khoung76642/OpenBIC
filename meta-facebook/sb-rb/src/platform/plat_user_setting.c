@@ -1530,6 +1530,7 @@ bool get_average_power(uint8_t rail, uint32_t *milliwatt)
 
 	int sum = 0;
 	for (int i = 0; i < power_count[rail]; i++) {
+		printf("%d mW\n", ubc_vr_power_table[rail].power_history[i]);
 		sum += ubc_vr_power_table[rail].power_history[i];
 	}
 
@@ -1580,6 +1581,7 @@ bool get_average_voltage(uint8_t rail, uint32_t *voltage)
 
 	int sum = 0;
 	for (int i = 0; i < voltage_count[rail]; i++) {
+		printf("%d mV\n", ubc_vr_voltage_table[rail].voltage_history[i]);
 		sum += ubc_vr_voltage_table[rail].voltage_history[i];
 	}
 
@@ -1630,6 +1632,7 @@ bool get_average_current(uint8_t rail, uint32_t *current)
 
 	int sum = 0;
 	for (int i = 0; i < current_count[rail]; i++) {
+		printf("%d mA\n", ubc_vr_current_table[rail].current_history[i]);	
 		sum += ubc_vr_current_table[rail].current_history[i];
 	}
 
