@@ -218,11 +218,15 @@ static uint16_t mctp_smbus_write(void *mctp_p, uint8_t *buf, uint32_t len,
 	memcpy(&i2c_msg.data[0], send_buf, send_len);
 
 	for (int attempt = 0; attempt < (MCTP_SMBUS_WRITE_MAX_RETRY + 1); attempt++) {
-		status = i2c_master_write(&i2c_msg, 5);
+		status = i2c_master_write(&i2c_msg, 8);
 		if (status == 0) {
 			return MCTP_SUCCESS;
 		}
 		LOG_WRN("i2c_master_write attempt %d failed, ret %d", attempt + 1, status);
+		LOG_WRN("i2c_msg(bus=%d, address=0x%x)", i2c_msg.bus, i2c_msg.target_addr);
+		//i2c msg
+		LOG_HEXDUMP_WRN(i2c_msg.data, i2c_msg.tx_len, "i2c_msg data");
+		LOG_WRN("mctp_inst endpoint = 0x%x, pldm_inst_id = 0x%x, ncsi_inst_id = 0x%x, msg_tag = 0x%x", mctp_inst->endpoint, mctp_inst->pldm_inst_id, mctp_inst->ncsi_inst_id, mctp_inst->msg_tag);
 		k_msleep(10);
 	}
 
