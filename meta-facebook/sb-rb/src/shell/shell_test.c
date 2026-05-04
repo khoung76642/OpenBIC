@@ -31,6 +31,9 @@
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "Hello world!");
+	uint8_t test_input = strtoul(argv[1], NULL, 16);
+	set_test_input(test_input);
+	read_test_input();
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)

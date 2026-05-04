@@ -37,7 +37,10 @@
 #define CHECK_BITS_78 0xC0
 #define CHECK_BITS_678 0xE0
 #define CHECK_BITS_6 0x40
+#define CHECK_BITS_012356 0x6F
+#define CHECK_BITS_631 0x4A
 
+uint8_t test_input = 0;
 LOG_MODULE_REGISTER(plat_cpld);
 
 bool plat_read_cpld(uint8_t offset, uint8_t *data, uint8_t len)
@@ -88,6 +91,7 @@ typedef struct _vr_error_callback_info_ {
 } vr_error_callback_info;
 
 bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value);
+bool asic_temp_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value);
 
 // clang-format off
 cpld_info cpld_info_table[] = {
@@ -102,6 +106,7 @@ cpld_info cpld_info_table[] = {
 	{ SYSTEM_ALERT_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
 	{ ASIC_TEMP_OVER_REG, 				0xFF, 0xFF, true, 0x00, true, 0x00,  .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_8 },
 	{ TEMP_IC_OVER_FAULT_REG, 			0xFF, 0xFF, true, 0x00, false, 0x00, .status_changed_cb = vr_error_callback, .bit_check_mask = CHECK_BITS_678 },
+	{ MFIO_FOR_RAINBOW, 				0x80, 0x80, true, 0x00, true, 0x00, .status_changed_cb = asic_temp_error_callback, .bit_check_mask = CHECK_BITS_012356 },
 };
 
 int power_info = 0;
@@ -197,6 +202,128 @@ bool vr_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
 		} else {
 			LOG_DBG("DEASSERT");
 			error_log_event(error_code, LOG_DEASSERT);
+		}
+	}
+
+	return true;
+}
+
+void trigger_vr_hot()
+{
+	// set VR hot switch bit to 1
+	if (!set_cpld_bit(ASIC_VR_HOT_SWITCH, 0, 1)) {
+		LOG_ERR("Failed to write ASIC_VR_HOT_SWITCH");
+	}
+}
+
+void restore_vr_hot()
+{
+	// set VR hot switch bit to 0
+	if (!set_cpld_bit(ASIC_VR_HOT_SWITCH, 0, 0)) {
+		LOG_ERR("Failed to write ASIC_VR_HOT_SWITCH");
+	}
+}
+
+
+bool asic_temp_error_callback(cpld_info *cpld_info, uint8_t *current_cpld_value)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cpld_info, false);
+	CHECK_NULL_ARG_WITH_RETURN(current_cpld_value, false);
+	LOG_WRN("ASIC temp error callback triggered current_cpld_value: 0x%02X", *current_cpld_value);
+	// Get the expected value based on the current UBC status
+	uint8_t expected_val =
+		ubc_enabled_delayed_status ? cpld_info->dc_on_defaut : cpld_info->dc_off_defaut;
+
+	// Calculate current faults and new faults
+	uint8_t current_fault = (*current_cpld_value ^ expected_val) & cpld_info->bit_check_mask;
+	//current_fault = (test_input ^ expected_val) & cpld_info->bit_check_mask; // test only
+	uint8_t status_changed_bit = current_fault ^ cpld_info->is_fault_bit_map;
+
+	if (!status_changed_bit)
+		return true; // No new faults, return early
+
+	LOG_DBG("Temp CPLD register 0x%02X has status changed 0x%02X", cpld_info->cpld_offset,
+		status_changed_bit);
+
+	// Iterate through each bit in status_changed_bit to handle the corresponding VR
+	for (uint8_t bit = 0; bit < 8; bit++) {
+		if (!(status_changed_bit & BIT(bit)))
+			continue;
+		// Dynamically generate the error code
+		uint16_t error_code = (CPLD_UNEXPECTED_VAL_TRIGGER_CAUSE << 13) | (bit << 8) |
+				      cpld_info->cpld_offset;
+
+		uint8_t bit_val = (*current_cpld_value & BIT(bit)) >> bit;
+		//bit_val = (test_input & BIT(bit)) >> bit; // test only
+		uint8_t expected_bit_val = (expected_val & BIT(bit)) >> bit;
+
+		if (bit_val != expected_bit_val) {
+			LOG_ERR("ASIC TEMP: Generated error code: 0x%04X (bit %d, CPLD offset 0x%02X)",
+				error_code, bit, cpld_info->cpld_offset);
+			uint8_t error_asic_temp_code = 0;
+			uint8_t asic_send_data = 0;
+			uint8_t temp_data[ASIC_MONITOR_TEMP_REG_LEN] = { 0 };
+			if (read_asic_reg(ASIC_MONITOR_TEMP_REG, (uint8_t *)temp_data,
+					ASIC_MONITOR_TEMP_REG_LEN) != 0) {
+				LOG_ERR("Can't get max asic temp data from ASIC, reg: 0x%02x",
+					ASIC_MONITOR_TEMP_REG);
+			}
+			LOG_WRN("reg 0x%02X, bit 0x%2X, error_code 0x%04X", cpld_info->cpld_offset, bit, error_code);
+			switch (bit) {
+			case 6:
+				error_asic_temp_code = HAMSA_MFIO22_ERR_EVENT; // HAMSA_MFIO22
+				asic_send_data = temp_data[1];
+				trigger_vr_hot();
+				LOG_WRN("Temperature bit-%d is 1, write CPLD ASIC_VR_HOT_SWITCH bit-0 to 1", bit);
+				break;
+			case 3:
+				error_asic_temp_code = MEDHA0_MFIO24_ERR_EVENT; // MEDHA0_MFIO24
+				asic_send_data = temp_data[2];
+				trigger_vr_hot();
+				LOG_WRN("Temperature bit-%d is 1, write CPLD ASIC_VR_HOT_SWITCH bit-0 to 1", bit);
+				break;
+			case 1:
+				error_asic_temp_code = MEDHA1_MFIO24_ERR_EVENT; // MEDHA1_MFIO24
+				asic_send_data = temp_data[3];
+				trigger_vr_hot();
+				LOG_WRN("Temperature bit-%d is 1, write CPLD ASIC_VR_HOT_SWITCH bit-0 to 1", bit);
+				break;
+			case 5:
+				error_asic_temp_code = HAMSA_MFIO23_ERR_EVENT;
+				asic_send_data = *current_cpld_value;
+				asic_thermtrip_error_log(LOG_ASSERT);
+				break;
+			case 2:
+				error_asic_temp_code = MEDHA0_MFIO31_ERR_EVENT;
+				asic_send_data = *current_cpld_value;
+				asic_thermtrip_error_log(LOG_ASSERT);
+				break;
+			case 0:
+				error_asic_temp_code = MEDHA1_MFIO31_ERR_EVENT; 
+				asic_send_data = *current_cpld_value;
+				asic_thermtrip_error_log(LOG_ASSERT);
+				break;
+			default:
+				LOG_ERR("Unknown ASIC temp error bit: %d", bit);
+				break;
+			}
+			// black bix log
+			error_log_event(error_code, LOG_ASSERT);
+			// send log to bmc
+			packaged_bmc_log(ASIC_MODULE_ERROR, error_asic_temp_code, asic_send_data, 0);
+		} else {
+			uint8_t check_lv2_data = 0;
+			switch (bit) {
+			case 6:
+			case 3:
+			case 1:
+				// check cpld 0xA8 bit6/3/1 all clear
+				if (!plat_read_cpld(MFIO_FOR_RAINBOW, &check_lv2_data, 1)) {
+					LOG_ERR("Failed to write ASIC_VR_HOT_SWITCH");
+				}
+				if ((check_lv2_data & CHECK_BITS_631) == 0)
+					restore_vr_hot();
+			}
 		}
 	}
 
@@ -324,7 +451,11 @@ void poll_cpld_registers()
 
 			uint8_t new_fault_map =
 				(data ^ expected_val) & cpld_info_table[i].bit_check_mask;
-
+			//test only
+			//if (cpld_info_table[i].cpld_offset == MFIO_FOR_RAINBOW) {
+			//  	new_fault_map = test_input;
+			//}
+			
 			// get unrecorded fault bit map
 			uint8_t is_status_changed =
 				new_fault_map ^ cpld_info_table[i].is_fault_bit_map;
@@ -491,4 +622,14 @@ void check_bootstrap_flag()
 				bootstrap_sel_msg.event_data_3);
 		}
 	}									
+}
+
+void set_test_input(uint8_t value)
+{
+	test_input = value;
+}
+
+void read_test_input()
+{
+	LOG_INF("test_input: 0x%02X", test_input);
 }
