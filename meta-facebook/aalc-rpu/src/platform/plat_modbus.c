@@ -360,7 +360,7 @@ uint8_t modbus_pump_setting(modbus_command_mapping *cmd)
 		//clean boolean status(fan not access)
 		for (uint8_t i = 0; i < 14; i++) {
 			set_is_fan_not_access(i, false);
-		}		
+		}
 		// restore leak led
 		led_ctrl(LED_IDX_E_LEAK, LED_STOP_BLINK); // only stop blind behavior
 		led_ctrl(LED_IDX_E_LEAK, LED_TURN_OFF); // default led status(turn off)
@@ -526,6 +526,38 @@ uint8_t modbus_set_sticky_sensor_status(modbus_command_mapping *cmd)
 		return MODBUS_EXC_NONE;
 	else
 		return MODBUS_EXC_SERVER_DEVICE_FAILURE;
+}
+
+uint8_t modbus_set_sticky_bit_sensor_status(modbus_command_mapping *cmd)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
+
+	switch (cmd->addr) {
+	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
+
+		for (int i = STICKY_HEX_BLADDER_ABNORMAL; i <= STICKY_PUMP_3_SPEED_UCR; i++) {
+			// check bit value is 0 or 1
+			uint8_t bit_status =
+				(cmd->data[0] & BIT(i - STICKY_HEX_BLADDER_ABNORMAL)) ? 1 : 0;
+			if (!set_sticky_sensor_status(i, bit_status))
+				return MODBUS_EXC_SERVER_DEVICE_FAILURE;
+		}
+		break;
+	default:
+		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
+	};
+
+	return MODBUS_EXC_NONE;
+}
+
+uint8_t modbus_get_sticky_bit_sensor_status(modbus_command_mapping *cmd)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
+
+	uint8_t status_num = cmd->arg0;
+	cmd->data[0] = get_sticky_sensor_status(status_num);
+
+	return MODBUS_EXC_NONE;
 }
 
 uint8_t modbus_get_sticky_sensor_status(modbus_command_mapping *cmd)
@@ -754,7 +786,6 @@ uint8_t modbus_set_setpoint(modbus_command_mapping *cmd)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
 
-	
 	set_fsc_setpoint(cmd->arg0, (float)cmd->data[0] * cmd->arg1 * pow_of_10(cmd->arg2));
 	uint8_t idx = cmd->arg0;
 	set_fsc_setpoint(idx, (float)cmd->data[0] * cmd->arg1 * pow_of_10(cmd->arg2));
@@ -820,7 +851,7 @@ uint8_t modbus_set_pump_redundant_switch_day(modbus_command_mapping *cmd)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
 
-	if(!cmd->data[0])
+	if (!cmd->data[0])
 		return MODBUS_EXC_ILLEGAL_DATA_VAL;
 	else {
 		set_pump_redundant_switch_time_type(0);
@@ -1409,7 +1440,7 @@ modbus_command_mapping modbus_command_table[] = {
 	{ MODBUS_AUTO_TUNE_COOLANT_OUTLET_TEMPERATURE_TARGET_SET_ADDR, modbus_set_setpoint,
 	  modbus_get_setpoint, SETPOINT_FLAG_OUTLET_TEMP, 1, -1, 1 },
 	{ MODBUS_PUMP_REDUNDANT_SWITCHED_INTERVAL_ADDR, modbus_set_pump_redundant_switch_day,
-	  modbus_get_pump_redundant_switch_day, SETPOINT_FLAG_LPM, 0, 0, 1 },	  
+	  modbus_get_pump_redundant_switch_day, SETPOINT_FLAG_LPM, 0, 0, 1 },
 	{ MODBUS_MANUAL_CONTROL_PUMP_DUTY_SET_ADDR, modbus_set_manual_pwm, modbus_get_manual_pwm,
 	  MANUAL_PWM_E_PUMP, 0, 0, 1 },
 	{ MODBUS_MANUAL_CONTROL_FAN_DUTY_SET_ADDR, modbus_set_manual_pwm, modbus_get_manual_pwm,
@@ -1431,6 +1462,21 @@ modbus_command_mapping modbus_command_table[] = {
 	{ MODBUS_MANUAL_CONTROL_RPU_PCB_FAN_DUTY_SET_ADDR, modbus_set_manual_pwm,
 	  modbus_get_manual_pwm, MANUAL_PWM_E_RPU_PCB_FAN, 0, 0, 1 },
 	{ MODBUS_PUMP_SETTING_ADDR, modbus_pump_setting, modbus_pump_setting_get, 0, 0, 0, 1 },
+	// Sticky P1 Error
+	{ MODBUS_STICKY_PUMP_1_SPEED_ABNORMAL_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_1_SPEED_ABNORMAL, 0, 0, 1 },
+	{ MODBUS_STICKY_PUMP_2_SPEED_ABNORMAL_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_2_SPEED_ABNORMAL, 0, 0, 1 },
+	{ MODBUS_STICKY_PUMP_3_SPEED_ABNORMAL_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_3_SPEED_ABNORMAL, 0, 0, 1 },
+	{ MODBUS_STICKY_PUMP_1_SPEED_NOT_ACCESS_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_1_SPEED_NOT_ACCESS, 0, 0, 1 },
+	{ MODBUS_STICKY_PUMP_2_SPEED_NOT_ACCESS_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_2_SPEED_NOT_ACCESS, 0, 0, 1 },
+	{ MODBUS_STICKY_PUMP_3_SPEED_NOT_ACCESS_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_PUMP_3_SPEED_NOT_ACCESS, 0, 0, 1 },
+	{ MODBUS_STICKY_P1_ERROR_SETTING_ADDR, modbus_set_sticky_sensor_status,
+	  modbus_get_sticky_sensor_status, STICKY_P1_ERROR_SETTING, 0, 0, 1 },
 	// Leakage Black Box
 	{ MODBUS_STICKY_ITRACK_CHASSIS0_LEAKAGE_ADDR, modbus_set_sticky_sensor_status,
 	  modbus_get_sticky_sensor_status, STICKY_ITRACK_CHASSIS0_LEAKAGE, 0, 0, 1 },

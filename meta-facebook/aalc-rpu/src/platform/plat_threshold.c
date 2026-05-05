@@ -400,7 +400,6 @@ bool get_is_fan_not_access(uint8_t index)
 	return is_fan_not_access[index];
 }
 
-
 void hex_fan_failure_do(uint32_t sensor_num, uint32_t status)
 {
 	fan_board_tach_status_handler(sensor_num, status);
@@ -417,7 +416,7 @@ void hex_fan_failure_do(uint32_t sensor_num, uint32_t status)
 		if (!get_is_fan_not_access(fan_not_access_idx)) {
 			error_log_event(sensor_num, IS_ABNORMAL_VAL);
 			set_is_fan_not_access(fan_not_access_idx, true);
-		}				
+		}
 	} else
 		set_is_fan_not_access(fan_not_access_idx, false);
 }
@@ -841,6 +840,12 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 		if (!get_is_pump_not_access(pump_not_access_idx)) {
 			error_log_event(sensor_num_pump_not_access, IS_ABNORMAL_VAL);
 			set_is_pump_not_access(pump_not_access_idx, true);
+			uint8_t sticky_pump_not_access_idx =
+				(sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ? STICKY_PUMP_1_SPEED_NOT_ACCESS :
+				(sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ? STICKY_PUMP_2_SPEED_NOT_ACCESS :
+				(sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ? STICKY_PUMP_3_SPEED_NOT_ACCESS :
+										0xFF;
+			set_sticky_sensor_status(sticky_pump_not_access_idx, 1);			
 		}
 		if (pump_fail_check())
 			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_TWO_PUMP_X, 1);
@@ -849,11 +854,27 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 		error_log_event(sensor_num, IS_ABNORMAL_VAL);
 		if (pump_fail_check())
 			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_TWO_PUMP_X, 1);
+		uint8_t sticky_pump_abnormal_idx = (sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_1_SPEED_ABNORMAL :
+						   (sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_2_SPEED_ABNORMAL :
+						   (sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_3_SPEED_ABNORMAL :
+							   0xFF;
+		set_sticky_sensor_status(sticky_pump_abnormal_idx, 1);
 		break;
 	case THRESHOLD_STATUS_UCR:
 		set_status_flag(STATUS_FLAG_FAILURE, pump_ucr, 1);
 		LOG_ERR("threshold 0x%02x pump ucr failure", sensor_num);
 		error_log_event(sensor_num_pump_ucr, IS_ABNORMAL_VAL);
+		uint8_t sticky_pump_ucr_idx = (sensor_num == SENSOR_NUM_PB_1_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_1_SPEED_UCR :
+						   (sensor_num == SENSOR_NUM_PB_2_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_2_SPEED_UCR :
+						   (sensor_num == SENSOR_NUM_PB_3_PUMP_TACH_RPM) ?
+							   STICKY_PUMP_3_SPEED_UCR :
+							   0xFF;
+		set_sticky_sensor_status(sticky_pump_ucr_idx, 1);		
 		break;
 	case THRESHOLD_STATUS_NORMAL:
 		reset_flow_rate_ready();
@@ -866,7 +887,7 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 	}
 
 	if (status != THRESHOLD_STATUS_NOT_ACCESS)
-		set_is_pump_not_access(pump_not_access_idx, false);	
+		set_is_pump_not_access(pump_not_access_idx, false);
 
 	pump_board_tach_status_handler(sensor_num, status);
 }
