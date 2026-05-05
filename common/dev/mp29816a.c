@@ -1221,13 +1221,35 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 
 	float val;
 	if (cfg->offset == PMBUS_READ_VOUT) {
-		uint16_t read_value = ((msg.data[1] << 8) | msg.data[0]) & READ_VOUT_MASK;
 		float resolution = mp29816a_get_resolution(cfg, false);
 		if (resolution == 0)
 			return SENSOR_FAIL_TO_ACCESS;
-		val = (float)read_value * resolution;
-	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1 || cfg->offset == PMBUS_READ_POUT ||
-		   cfg->offset == PMBUS_READ_IOUT) {
+		float sum_val = 0.0f;
+		for (int sample = 0; sample < 45; sample++) {
+			if (i2c_master_read(&msg, retry)) {
+				LOG_WRN("I2C read failed");
+				return SENSOR_FAIL_TO_ACCESS;
+			}
+
+			uint16_t read_value = ((msg.data[1] << 8) | msg.data[0]) & READ_VOUT_MASK;
+			sum_val += (float)read_value * resolution;
+		}
+
+		val = sum_val / 45.0f;
+	} else if (cfg->offset == PMBUS_READ_IOUT) {
+		float sum_val = 0.0f;
+		for (int sample = 0; sample < 45; sample++) {
+			if (i2c_master_read(&msg, retry)) {
+				LOG_WRN("I2C read failed");
+				return SENSOR_FAIL_TO_ACCESS;
+			}
+
+			uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
+			sum_val += slinear11_to_float(read_value);
+		}
+
+		val = sum_val / 45.0f;
+	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1 || cfg->offset == PMBUS_READ_POUT) {
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = slinear11_to_float(read_value);
 	} else if (cfg->offset == PMBUS_READ_VIN) {

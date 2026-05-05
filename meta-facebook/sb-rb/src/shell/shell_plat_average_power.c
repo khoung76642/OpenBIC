@@ -97,8 +97,8 @@ static int cmd_power_get(const struct shell *shell, size_t argc, char **argv)
 
 static void ubc_vr_rname_get_for_get_power(size_t idx, struct shell_static_entry *entry)
 {
-	if ((get_asic_board_id() != ASIC_BOARD_ID_EVB) && (idx == 2))
-		idx++;
+	if ((get_asic_board_id() != ASIC_BOARD_ID_EVB) && (idx == UBC_VR_RAIL_E_P3V3_OSFP))
+		return;
 
 	uint8_t *name = NULL;
 	ubc_vr_rail_name_get((uint8_t)idx, &name, POWER);

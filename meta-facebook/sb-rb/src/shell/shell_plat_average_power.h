@@ -17,7 +17,7 @@
 #ifndef PLAT_AVERAGE_PWR_H
 #define PLAT_AVERAGE_PWRE_H
 
-#define POWER_HISTORY_SIZE 20
+#define POWER_HISTORY_SIZE 4
 #include <stdint.h>
 typedef struct ubc_vr_power_mapping_sensor {
 	uint8_t index;
