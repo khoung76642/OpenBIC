@@ -387,6 +387,20 @@ void fan_board_tach_status_handler(uint8_t sensor_num, uint8_t status)
 	}
 }
 
+static bool is_fan_not_access[14];
+;
+
+void set_is_fan_not_access(uint8_t index, bool flag)
+{
+	is_fan_not_access[index] = flag;
+}
+
+bool get_is_fan_not_access(uint8_t index)
+{
+	return is_fan_not_access[index];
+}
+
+
 void hex_fan_failure_do(uint32_t sensor_num, uint32_t status)
 {
 	fan_board_tach_status_handler(sensor_num, status);
@@ -397,6 +411,15 @@ void hex_fan_failure_do(uint32_t sensor_num, uint32_t status)
 
 	if (status == THRESHOLD_STATUS_LCR)
 		error_log_event(sensor_num, IS_ABNORMAL_VAL);
+
+	uint8_t fan_not_access_idx = sensor_num - SENSOR_NUM_FB_1_FAN_TACH_RPM;
+	if (status == THRESHOLD_STATUS_NOT_ACCESS) {
+		if (!get_is_fan_not_access(fan_not_access_idx)) {
+			error_log_event(sensor_num, IS_ABNORMAL_VAL);
+			set_is_fan_not_access(fan_not_access_idx, true);
+		}				
+	} else
+		set_is_fan_not_access(fan_not_access_idx, false);
 }
 
 /* flow_rate_ready_flag is flag to wait flow rate ready*/
@@ -841,6 +864,9 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 		LOG_DBG("Unexpected threshold warning");
 		break;
 	}
+
+	if (status != THRESHOLD_STATUS_NOT_ACCESS)
+		set_is_pump_not_access(pump_not_access_idx, false);	
 
 	pump_board_tach_status_handler(sensor_num, status);
 }
