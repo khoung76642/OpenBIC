@@ -534,7 +534,6 @@ uint8_t modbus_set_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 
 	switch (cmd->addr) {
 	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
-
 		for (int i = STICKY_HEX_BLADDER_ABNORMAL; i <= STICKY_PUMP_3_SPEED_UCR; i++) {
 			// check bit value is 0 or 1
 			uint8_t bit_status =
@@ -554,9 +553,43 @@ uint8_t modbus_get_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cmd, MODBUS_EXC_ILLEGAL_DATA_VAL);
 
-	uint8_t status_num = cmd->arg0;
-	cmd->data[0] = get_sticky_sensor_status(status_num);
+	uint16_t val = 0;
+	switch (cmd->addr) {
+	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:	
+		WRITE_BIT(val, 0,
+			  (get_sticky_sensor_status(STICKY_HEX_BLADDER_ABNORMAL)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 1,
+			  (get_sticky_sensor_status(STICKY_RPU_RESERVOIR_ABNORMAL)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 2,
+			  (get_sticky_sensor_status(STICKY_RPU_COOLANT_FLOW_BLOCKED)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 3,
+			  (get_sticky_sensor_status(STICKY_RPU_OUTLET_PRESSURE_HIGH)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 4,
+			  (get_sticky_sensor_status(STICKY_PUMP_1_SPEED_UCR)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 5,
+			  (get_sticky_sensor_status(STICKY_PUMP_2_SPEED_UCR)) ?
+				  1 :
+				  0);
+		WRITE_BIT(val, 6,
+			  (get_sticky_sensor_status(STICKY_PUMP_3_SPEED_UCR)) ?
+				  1 :
+				  0);
+		break;
+	default:
+		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
+	};				  
 
+	cmd->data[0] = val;
 	return MODBUS_EXC_NONE;
 }
 
@@ -1475,8 +1508,8 @@ modbus_command_mapping modbus_command_table[] = {
 	  modbus_get_sticky_sensor_status, STICKY_PUMP_2_SPEED_NOT_ACCESS, 0, 0, 1 },
 	{ MODBUS_STICKY_PUMP_3_SPEED_NOT_ACCESS_ADDR, modbus_set_sticky_sensor_status,
 	  modbus_get_sticky_sensor_status, STICKY_PUMP_3_SPEED_NOT_ACCESS, 0, 0, 1 },
-	{ MODBUS_STICKY_P1_ERROR_SETTING_ADDR, modbus_set_sticky_sensor_status,
-	  modbus_get_sticky_sensor_status, STICKY_P1_ERROR_SETTING, 0, 0, 1 },
+	{ MODBUS_STICKY_P1_ERROR_SETTING_ADDR, modbus_set_sticky_bit_sensor_status,
+	  modbus_get_sticky_bit_sensor_status, 0, 0, 0, 1 },
 	// Leakage Black Box
 	{ MODBUS_STICKY_ITRACK_CHASSIS0_LEAKAGE_ADDR, modbus_set_sticky_sensor_status,
 	  modbus_get_sticky_sensor_status, STICKY_ITRACK_CHASSIS0_LEAKAGE, 0, 0, 1 },
