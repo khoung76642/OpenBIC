@@ -537,17 +537,14 @@ uint8_t modbus_set_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 		start = STICKY_PUMP_1_SPEED_ABNORMAL;
 		end = STICKY_PUMP_1_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_PUMP_2_ABNORMAL_ADDR:
 		start = STICKY_PUMP_2_SPEED_ABNORMAL;
 		end = STICKY_PUMP_2_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_PUMP_3_ABNORMAL_ADDR:
 		start = STICKY_PUMP_3_SPEED_ABNORMAL;
 		end = STICKY_PUMP_3_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
 		start = STICKY_HEX_BLADDER_ABNORMAL;
 		end = STICKY_PUMP_3_SPEED_UCR;
@@ -575,17 +572,14 @@ uint8_t modbus_get_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 		start = STICKY_PUMP_1_SPEED_ABNORMAL;
 		end = STICKY_PUMP_1_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_PUMP_2_ABNORMAL_ADDR:
 		start = STICKY_PUMP_2_SPEED_ABNORMAL;
 		end = STICKY_PUMP_2_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_PUMP_3_ABNORMAL_ADDR:
 		start = STICKY_PUMP_3_SPEED_ABNORMAL;
 		end = STICKY_PUMP_3_SPEED_NOT_ACCESS;
 		break;
-
 	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
 		start = STICKY_HEX_BLADDER_ABNORMAL;
 		end = STICKY_PUMP_3_SPEED_UCR;

@@ -871,7 +871,7 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 										      0xFF;
 
 	uint8_t sticky_index = get_sticky_index(sensor_num, status);
-	if (sticky_index != 0xFF)
+	if (sticky_index != 0xFF && !get_is_pump_not_access(pump_not_access_idx))
 		set_sticky_sensor_status(sticky_index, 1);
 
 	switch (status) {
