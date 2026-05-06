@@ -769,6 +769,7 @@ void abnormal_press_do(uint32_t thres_tbl_idx, uint32_t status)
 		get_sensor_reading_to_real_val(SENSOR_NUM_BPB_RPU_COOLANT_FLOW_RATE_LPM,
 					       &flow_rate_val);
 		if (flow_rate_val < 10.0) {
+			set_sticky_sensor_status(STICKY_RPU_OUTLET_PRESSURE_HIGH, 1);
 			set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_ABNORMAL_PRESS, 1);
 			error_log_event(SENSOR_NUM_BPB_RPU_COOLANT_OUTLET_P_KPA, IS_ABNORMAL_VAL);
 		} else
@@ -948,6 +949,7 @@ void abnormal_flow_do(uint32_t thres_tbl_idx, uint32_t status)
 			thres_p->last_status = THRESHOLD_STATUS_NORMAL;
 			return;
 		}
+		set_sticky_sensor_status(STICKY_RPU_COOLANT_FLOW_BLOCKED, 1);
 		set_status_flag(STATUS_FLAG_FAILURE, PUMP_FAIL_ABNORMAL_FLOW_RATE, 1);
 		error_log_event(SENSOR_NUM_BPB_RPU_COOLANT_FLOW_RATE_LPM, IS_ABNORMAL_VAL);
 	} else if (status == THRESHOLD_STATUS_NOT_ACCESS) {
