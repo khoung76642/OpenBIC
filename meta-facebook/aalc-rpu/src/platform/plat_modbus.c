@@ -535,34 +535,34 @@ uint8_t modbus_set_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 	switch (cmd->addr) {
 	case MODBUS_STICKY_PUMP_1_ABNORMAL_ADDR:
 		start = STICKY_PUMP_1_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_1_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_1_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_PUMP_2_ABNORMAL_ADDR:
 		start = STICKY_PUMP_2_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_2_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_2_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_PUMP_3_ABNORMAL_ADDR:
 		start = STICKY_PUMP_3_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_3_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_3_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
 		start = STICKY_HEX_BLADDER_ABNORMAL;
-		end   = STICKY_PUMP_3_SPEED_UCR;
+		end = STICKY_PUMP_3_SPEED_UCR;
 		break;
 	default:
 		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
 	}
-	
+
 	for (uint8_t i = start; i <= end; i++) {
 		uint8_t bit_status = (cmd->data[0] & BIT(i - start)) ? 1 : 0;
 		if (!set_sticky_sensor_status(i, bit_status))
 			return MODBUS_EXC_SERVER_DEVICE_FAILURE;
 	}
-	
-	return MODBUS_EXC_NONE;	
+
+	return MODBUS_EXC_NONE;
 }
 
 uint8_t modbus_get_sticky_bit_sensor_status(modbus_command_mapping *cmd)
@@ -573,32 +573,32 @@ uint8_t modbus_get_sticky_bit_sensor_status(modbus_command_mapping *cmd)
 	switch (cmd->addr) {
 	case MODBUS_STICKY_PUMP_1_ABNORMAL_ADDR:
 		start = STICKY_PUMP_1_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_1_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_1_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_PUMP_2_ABNORMAL_ADDR:
 		start = STICKY_PUMP_2_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_2_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_2_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_PUMP_3_ABNORMAL_ADDR:
 		start = STICKY_PUMP_3_SPEED_ABNORMAL;
-		end   = STICKY_PUMP_3_SPEED_NOT_ACCESS;
+		end = STICKY_PUMP_3_SPEED_NOT_ACCESS;
 		break;
 
 	case MODBUS_STICKY_P1_ERROR_SETTING_ADDR:
 		start = STICKY_HEX_BLADDER_ABNORMAL;
-		end   = STICKY_PUMP_3_SPEED_UCR;
+		end = STICKY_PUMP_3_SPEED_UCR;
 		break;
 	default:
 		return MODBUS_EXC_ILLEGAL_DATA_ADDR;
 	}
 
-	uint16_t val = 0;	
+	uint16_t val = 0;
 	for (uint8_t i = start; i <= end; i++) {
 		WRITE_BIT(val, i - start, (get_sticky_sensor_status(i)) ? 1 : 0);
 	}
-			  
+
 	cmd->data[0] = val;
 	return MODBUS_EXC_NONE;
 }

@@ -810,31 +810,34 @@ bool get_is_pump_not_access(uint8_t index)
 
 static uint8_t get_sticky_index(uint8_t sensor_num, uint8_t type)
 {
-    uint8_t idx = 0xFF;
+	uint8_t idx = 0xFF;
 
-    switch (sensor_num) {
-    case SENSOR_NUM_PB_1_PUMP_TACH_RPM:
-        idx = (type == THRESHOLD_STATUS_LCR) ? STICKY_PUMP_1_SPEED_ABNORMAL :
-              (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_1_SPEED_NOT_ACCESS :
-              (type == THRESHOLD_STATUS_UCR) ? STICKY_PUMP_1_SPEED_UCR : 0xFF;
-        break;
-    case SENSOR_NUM_PB_2_PUMP_TACH_RPM:
-        idx = (type == THRESHOLD_STATUS_LCR) ? STICKY_PUMP_2_SPEED_ABNORMAL :
-              (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_2_SPEED_NOT_ACCESS :
-              (type == THRESHOLD_STATUS_UCR) ? STICKY_PUMP_2_SPEED_UCR : 0xFF;
-        break;
+	switch (sensor_num) {
+	case SENSOR_NUM_PB_1_PUMP_TACH_RPM:
+		idx = (type == THRESHOLD_STATUS_LCR)	    ? STICKY_PUMP_1_SPEED_ABNORMAL :
+		      (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_1_SPEED_NOT_ACCESS :
+		      (type == THRESHOLD_STATUS_UCR)	    ? STICKY_PUMP_1_SPEED_UCR :
+							      0xFF;
+		break;
+	case SENSOR_NUM_PB_2_PUMP_TACH_RPM:
+		idx = (type == THRESHOLD_STATUS_LCR)	    ? STICKY_PUMP_2_SPEED_ABNORMAL :
+		      (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_2_SPEED_NOT_ACCESS :
+		      (type == THRESHOLD_STATUS_UCR)	    ? STICKY_PUMP_2_SPEED_UCR :
+							      0xFF;
+		break;
 
-    case SENSOR_NUM_PB_3_PUMP_TACH_RPM:
-        idx = (type == THRESHOLD_STATUS_LCR) ? STICKY_PUMP_3_SPEED_ABNORMAL :
-              (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_3_SPEED_NOT_ACCESS :
-              (type == THRESHOLD_STATUS_UCR) ? STICKY_PUMP_3_SPEED_UCR : 0xFF;
-        break;
-    default:
-        LOG_DBG("Unexpected threshold status");
-        break;
-    }
+	case SENSOR_NUM_PB_3_PUMP_TACH_RPM:
+		idx = (type == THRESHOLD_STATUS_LCR)	    ? STICKY_PUMP_3_SPEED_ABNORMAL :
+		      (type == THRESHOLD_STATUS_NOT_ACCESS) ? STICKY_PUMP_3_SPEED_NOT_ACCESS :
+		      (type == THRESHOLD_STATUS_UCR)	    ? STICKY_PUMP_3_SPEED_UCR :
+							      0xFF;
+		break;
+	default:
+		LOG_DBG("Unexpected threshold status");
+		break;
+	}
 
-    return idx;
+	return idx;
 }
 
 void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
@@ -888,7 +891,7 @@ void pump_failure_do(uint32_t thres_tbl_idx, uint32_t status)
 	case THRESHOLD_STATUS_UCR:
 		set_status_flag(STATUS_FLAG_FAILURE, pump_ucr, 1);
 		LOG_ERR("threshold 0x%02x pump ucr failure", sensor_num);
-		error_log_event(sensor_num_pump_ucr, IS_ABNORMAL_VAL);	
+		error_log_event(sensor_num_pump_ucr, IS_ABNORMAL_VAL);
 		break;
 	case THRESHOLD_STATUS_NORMAL:
 		reset_flow_rate_ready();
