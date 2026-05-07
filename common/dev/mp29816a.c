@@ -1226,6 +1226,7 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 			return SENSOR_FAIL_TO_ACCESS;
 		float sum_val = 0.0f;
 		for (int sample = 0; sample < 45; sample++) {
+			msg.data[0] = cfg->offset;
 			if (i2c_master_read(&msg, retry)) {
 				LOG_WRN("I2C read failed");
 				return SENSOR_FAIL_TO_ACCESS;
@@ -1239,6 +1240,7 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 	} else if (cfg->offset == PMBUS_READ_IOUT) {
 		float sum_val = 0.0f;
 		for (int sample = 0; sample < 45; sample++) {
+			msg.data[0] = cfg->offset;
 			if (i2c_master_read(&msg, retry)) {
 				LOG_WRN("I2C read failed");
 				return SENSOR_FAIL_TO_ACCESS;
