@@ -72,6 +72,7 @@
 #define PWRGD_EVENT_LATCH_6_REG 0xC3
 #define VR_UPDATE_REG 0xC4
 #define MFIO_FOR_RAINBOW 0xA8
+#define CLK_100MHZ_BUF_LOSS_REG 0x31
 
 #define LEVEL_2 2
 #define LEVEL_3 3

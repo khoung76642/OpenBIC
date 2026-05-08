@@ -341,12 +341,18 @@ void read_adc_info()
 	/* read VENDOR_L to determine*/
 	uint8_t value = 0;
 	ad4058_write_reg(0xA8, 0x00, 0);
-	ad4058_read_reg(0x0C, 0, &value);
-	if (value == 0x56) {
-		adc_idx_read = 0;
-	} else {
-		adc_idx_read = 1;
+	k_sleep(K_MSEC(1000));
+	for (int i = 0; i < 3; i++) {
+		ad4058_read_reg(0x0C, 0, &value);
+		if (value == 0x56) {
+			adc_idx_read = 0;
+		} else {
+	 		adc_idx_read = 1;
+	 	}
+	 	LOG_INF("time %d, adc_idx_read: %d", i, adc_idx_read);
+	 	k_sleep(K_MSEC(500));
 	}
+	
 }
 
 uint8_t get_adc_type()

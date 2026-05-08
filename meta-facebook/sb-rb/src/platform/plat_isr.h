@@ -27,4 +27,6 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N();
 void ISR_ASIC_THERMTRIP_TRIGGER();
 void plat_switch_pin_a12(bool use_gpio73);
 bool ubc_en_changed_callback(cpld_info *info, uint8_t *data);
+uint8_t get_test_value(void);
+void set_test_value(uint8_t value);
 #endif

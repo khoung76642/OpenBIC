@@ -26,11 +26,16 @@
 #include "plat_mctp.h"
 #include "shell_plat_power_sequence.h"
 #include "plat_log.h"
+#include "plat_isr.h"
 
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "Hello world!");
+	uint8_t data = strtoul(argv[1], NULL, 16);
+	uint8_t value = get_test_value();
+	set_test_value(data);
+	shell_print(shell, "test value: 0x%02x -> 0x%02x", value, data);
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)
