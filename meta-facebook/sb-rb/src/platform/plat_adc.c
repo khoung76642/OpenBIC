@@ -342,10 +342,16 @@ void read_adc_info()
 	uint8_t value = 0;
 	ad4058_write_reg(0xA8, 0x00, 0);
 	ad4058_read_reg(0x0C, 0, &value);
-	if (value == 0x56) {
-		adc_idx_read = 0;
-	} else {
-		adc_idx_read = 1;
+	k_msleep(10);
+	// retry 10 times
+	for (int i = 0; i < 10; i++) {
+		if (value == 0x56) {
+			adc_idx_read = 0;
+		} else {
+			adc_idx_read = 1;
+		}
+		LOG_WRN("Read ADC type: 0x%02X, determined adc_idx: %d", value, adc_idx_read);
+		k_msleep(1000);
 	}
 }
 
@@ -802,9 +808,9 @@ void adc_rainbow_polling_handler(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		if (!is_mb_dc_on()) {
-			gpio_set(MEDHA0_CNV, 0);
-			gpio_set(MEDHA1_CNV, 0);
-			gpio_set(SPI_ADC_CS1_N, 0);
+			gpio_set(MEDHA0_CNV, 1);
+			gpio_set(MEDHA1_CNV, 1);
+			gpio_set(SPI_ADC_CS1_N, 1);
 			k_msleep(1000);
 			continue;
 		}
