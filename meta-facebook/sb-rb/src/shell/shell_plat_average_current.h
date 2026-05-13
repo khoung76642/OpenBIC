@@ -17,7 +17,7 @@
 #ifndef PLAT_AVERAGE_CUR_H
 #define PLAT_AVERAGE_CURE_H
 
-#define CURRENT_HISTORY_SIZE 20
+#define CURRENT_HISTORY_SIZE 1
 #include <stdint.h>
 typedef struct ubc_vr_current_mapping_sensor {
 	uint8_t index;

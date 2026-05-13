@@ -17,7 +17,7 @@
 #ifndef PLAT_AVERAGE_VOL_H
 #define PLAT_AVERAGE_VOLE_H
 
-#define VOLTAGE_HISTORY_SIZE 4
+#define VOLTAGE_HISTORY_SIZE 1
 #include <stdint.h>
 typedef struct ubc_vr_voltage_mapping_sensor {
     uint8_t index;

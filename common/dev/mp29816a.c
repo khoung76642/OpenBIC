@@ -1193,6 +1193,8 @@ bool mp29816a_get_ovp_2(sensor_cfg *cfg, uint16_t *ovp_2)
 	return true;
 }
 
+#define MP29816A_SAMPLE_CNT 155
+
 uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_UNSPECIFIED_ERROR);
@@ -1224,8 +1226,8 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 		float resolution = mp29816a_get_resolution(cfg, false);
 		if (resolution == 0)
 			return SENSOR_FAIL_TO_ACCESS;
-		float sum_val = 0.0f;
-		for (int sample = 0; sample < 45; sample++) {
+		double sum_val = 0.0f;
+		for (int sample = 0; sample < MP29816A_SAMPLE_CNT; sample++) {
 			msg.data[0] = cfg->offset;
 			if (i2c_master_read(&msg, retry)) {
 				LOG_WRN("I2C read failed");
@@ -1236,10 +1238,10 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 			sum_val += (float)read_value * resolution;
 		}
 
-		val = sum_val / 45.0f;
+		val = (float)sum_val / MP29816A_SAMPLE_CNT;
 	} else if (cfg->offset == PMBUS_READ_IOUT) {
-		float sum_val = 0.0f;
-		for (int sample = 0; sample < 45; sample++) {
+		double sum_val = 0.0f;
+		for (int sample = 0; sample < MP29816A_SAMPLE_CNT; sample++) {
 			msg.data[0] = cfg->offset;
 			if (i2c_master_read(&msg, retry)) {
 				LOG_WRN("I2C read failed");
@@ -1250,8 +1252,22 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 			sum_val += slinear11_to_float(read_value);
 		}
 
-		val = sum_val / 45.0f;
-	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1 || cfg->offset == PMBUS_READ_POUT) {
+		val = (float)sum_val / MP29816A_SAMPLE_CNT;
+	} else if (cfg->offset == PMBUS_READ_POUT) {
+		double sum_val = 0.0f;
+		for (int sample = 0; sample < MP29816A_SAMPLE_CNT; sample++) {
+			msg.data[0] = cfg->offset;
+			if (i2c_master_read(&msg, retry)) {
+				LOG_WRN("I2C read failed");
+				return SENSOR_FAIL_TO_ACCESS;
+			}
+
+			uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
+			sum_val += slinear11_to_float(read_value);
+		}
+
+		val = (float)sum_val / MP29816A_SAMPLE_CNT;
+	} else if (cfg->offset == PMBUS_READ_TEMPERATURE_1) {
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = slinear11_to_float(read_value);
 	} else if (cfg->offset == PMBUS_READ_VIN) {

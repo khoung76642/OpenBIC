@@ -113,8 +113,8 @@ void check_thermal_handler(void *arg1, void *arg2, void *arg3)
 			sensor_cfg *temp_cfg =
 				get_sensor_cfg_by_sensor_id(temp_alert_index_table[i].sensor_id);
 			if (temp_cfg == NULL) {
-				LOG_ERR("sensor id %d not found",
-					temp_alert_index_table[i].sensor_id);
+				// LOG_ERR("sensor id %d not found",
+				// 	temp_alert_index_table[i].sensor_id);
 				continue;
 			}
 			uint8_t status_data;
