@@ -26,11 +26,64 @@
 #include "plat_mctp.h"
 #include "shell_plat_power_sequence.h"
 #include "plat_log.h"
+#include "plat_i2c.h"
 
+bool shell_clk_312_5mhz_read_or_write_reg_value(const struct shell *shell, uint8_t tx_len,
+						uint8_t rx_len, uint8_t hsb_value,
+						uint8_t lsb_value, uint8_t *write_read_value)
+{
+	I2C_MSG i2c_msg = { 0 };
+	uint8_t retry = 5;
+	i2c_msg.bus = I2C_BUS3;
+	i2c_msg.target_addr = 0x8; // 7-bit
+	i2c_msg.tx_len = tx_len;
+	i2c_msg.rx_len = rx_len;
+	i2c_msg.data[0] = hsb_value; //offset HSB
+	i2c_msg.data[1] = lsb_value; //offset LSB
+	if (rx_len > 0) {
+		if (i2c_master_read(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to read clk 312.5MHz reg, offset: 0x%02x%02x",
+				    hsb_value, lsb_value);
+			return false; // return invalid value
+		}
+	} else {
+		for (int i = 2; i < tx_len; i++) {
+			i2c_msg.data[i] = write_read_value[i - 2];
+		}
+		if (i2c_master_write(&i2c_msg, retry)) {
+			shell_error(shell, "Failed to write clk 312.5MHz reg, offset: 0x%02x%02x",
+				    hsb_value, lsb_value);
+			return false; // return invalid value
+		}
+		return true;
+	}
+	// save read back value in *write_read_value
+	memcpy(write_read_value, i2c_msg.data, rx_len);
+	return true;
+}
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "Hello world!");
+	uint8_t tx = strtol(argv[1], NULL, 16);
+	uint8_t rx = strtol(argv[2], NULL, 16);
+	uint8_t hsb = strtol(argv[3], NULL, 16);
+	uint8_t lsb = strtol(argv[4], NULL, 16);
+	shell_print(shell, "argc: 0x%02x, tx: 0x%02x, rx: 0x%02x, hsb: 0x%02x, lsb: 0x%02x", argc,
+		    tx, rx, hsb, lsb);
+	uint8_t write_read_value[10] = { 0 };
+	if (rx == 0) {
+		for (int i = 0; i < argc - 5; i++) {
+			write_read_value[i] = strtol(argv[5 + i], NULL, 16);
+			shell_print(shell, "Write Data[%d]: 0x%02x", i, write_read_value[i]);
+		}
+	}
+
+	if (!shell_clk_312_5mhz_read_or_write_reg_value(shell, tx, rx, hsb, lsb,
+							write_read_value)) {
+		shell_error(shell, "Failed to read clk 312.5MHz reg, offset: 0x%02x%02x", hsb, lsb);
+	}
+	shell_hexdump(shell, write_read_value, rx);
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)
