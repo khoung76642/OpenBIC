@@ -148,6 +148,8 @@ void init_plat_config()
 	plat_read_cpld(CPLD_OFFSET_BOARD_REV_ID, &board_rev_id, 1);
 	// rev id only support 0, 1, 2 bit
 	board_rev_id = board_rev_id & 0x07;
+	//test in fab3
+	board_rev_id = REV_ID_DVT_FAB3;
 	vr_module = (module & 0x01);
 	ubc_module = (module >> 1) & 0x03;
 	uint8_t board_id = 0;

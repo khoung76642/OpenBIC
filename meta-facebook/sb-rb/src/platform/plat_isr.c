@@ -64,9 +64,11 @@ void check_read_100MHz_clock_status()
 
 	lock_status = clk_100mhz_get_lock_status();
 	lock_status = test_input & 0x1; //only for test
+	LOG_INF("100MHz clock lock status: 0x%x", lock_status);
 	if (lock_status == 0) {
 		uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_100MHZ_ERR_IDX;
 		error_log_event(error_code, LOG_ASSERT);
+		LOG_INF("clk 100mhz error, error_code: 0x%x", error_code);
 	}
 end:
 	//write back to 1-byte mode
@@ -82,6 +84,7 @@ void check_read_312_5MHz_clock_status()
 	uint8_t lock_status = 0;
 	lock_status = clk_312_5mhz_get_lock_status();
 	lock_status = test_input & 0x1; //only for test
+	LOG_INF("312.5MHz clock lock status: 0x%x", lock_status);
 	if (lock_status == 0xFF) {
 		// fail to get lock status
 		return;
@@ -89,6 +92,7 @@ void check_read_312_5MHz_clock_status()
 	else if (lock_status == 0) {
 		uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_312_5MHZ_ERR_IDX;
 		error_log_event(error_code, LOG_ASSERT);
+		LOG_INF("clk 312.5mhz error, error_code: 0x%x", error_code);
 	}
 }
 
@@ -106,18 +110,22 @@ void check_clk_buf_loss_status()
 	if bit7 bit6 bit5 is 0 means fail
 	*/
  	clk_buf_loss_status = test_input; //only for test
+	LOG_INF("Clock buffer loss status: 0x%x", clk_buf_loss_status);
 	if ((clk_buf_loss_status & 0xE0) != 0xE0) {
 		if ((clk_buf_loss_status & BIT(7)) == 0) {
 			uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_BUF0_100M_LOSB_PLD;
 			error_log_event(error_code, LOG_ASSERT);
+			LOG_INF("clk buf0 loss, error_code: 0x%x", error_code);
 		}
 		if ((clk_buf_loss_status & BIT(6)) == 0) {
 			uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_BUF1_100M_LOSB_PLD;
 			error_log_event(error_code, LOG_ASSERT);
+			LOG_INF("clk buf1 loss, error_code: 0x%x", error_code);
 		}
 		if ((clk_buf_loss_status & BIT(5)) == 0) {
 			uint16_t error_code = CLOCK_APLL_UNLOCK_EVENT_CAUSE | CLK_BUF2_100M_LOSB_PLD;
 			error_log_event(error_code, LOG_ASSERT);
+			LOG_INF("clk buf2 loss, error_code: 0x%x", error_code);
 		}
 	}
 }
