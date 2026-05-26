@@ -26,11 +26,86 @@
 #include "plat_mctp.h"
 #include "shell_plat_power_sequence.h"
 #include "plat_log.h"
+#include "pldm_monitor.h"
+#include "plat_isr.h"
+#include "plat_iris_smbus.h"
 
-// test command
+void cmd_test2(const struct shell *shell, size_t argc, char **argv)
+{
+	shell_print(shell, "Hello world!");
+
+	// test cper
+	uint8_t eid = 0x08;
+	uint8_t resp_buf[PLDM_MAX_DATA_SIZE];
+	pldm_msg pmsg;
+	mctp *mctp_inst;
+	uint16_t resp_len;
+	bool ret;
+
+	memset(&pmsg, 0, sizeof(pmsg));
+	memset(resp_buf, 0, sizeof(resp_buf));
+
+	/*
+     * Special case:
+     * PlatformEventMessage with CPER payload.
+     * Do NOT use argv for payload to avoid SHELL_ARGC_MAX limit.
+     */
+
+	static const uint8_t cper_record[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	};
+
+	static uint8_t event_buf[sizeof(struct pldm_platform_event_msg) +
+				 sizeof(struct pldm_cper_event_data) + sizeof(cper_record)];
+
+	struct pldm_platform_event_msg *evt = (struct pldm_platform_event_msg *)event_buf;
+	struct pldm_cper_event_data *cper_evt;
+
+	evt->format_version = 0x01;
+	evt->tid = 0x01;
+	evt->event_class = 0x07; /* eventClass = CPEREvent */
+
+	cper_evt = (struct pldm_cper_event_data *)(evt->event_data);
+	cper_evt->cper_format_version = 0x01; /* CPER formatVersion */
+	cper_evt->cper_format_type = 0x01; /* formatType = Single CPER Section */
+	cper_evt->cper_data_length = sizeof(cper_record);
+
+	memcpy(cper_evt->cper_record, cper_record, sizeof(cper_record));
+
+	pmsg.hdr.msg_type = MCTP_MSG_TYPE_PLDM;
+	pmsg.hdr.pldm_type = 0x02;
+	pmsg.hdr.cmd = 0x0A;
+	pmsg.hdr.rq = PLDM_REQUEST;
+
+	pmsg.buf = event_buf;
+	pmsg.len = sizeof(event_buf);
+
+	ret = get_mctp_info_by_eid(eid, &mctp_inst, &pmsg.ext_params);
+	if (!ret) {
+		shell_error(shell, "Failed to get mctp info by eid 0x%x", eid);
+		return;
+	}
+
+	resp_len = mctp_pldm_read(mctp_inst, &pmsg, resp_buf, sizeof(resp_buf));
+	if (!resp_len) {
+		shell_error(shell, "Failed to get mctp-pldm response");
+		return;
+	}
+
+	shell_print(shell, "RESP");
+	shell_hexdump(shell, resp_buf, resp_len);
+}
+
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "Hello world!");
+
+	ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N();
 }
 
 void cmd_read_raw(const struct shell *shell, size_t argc, char **argv)
@@ -203,6 +278,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cpld_cmds, SHELL_CMD(dump, NULL, "cpld dump",
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_test_cmds, SHELL_CMD(test, NULL, "test command", cmd_test),
+	SHELL_CMD(test2, NULL, "test command", cmd_test2),
 	SHELL_CMD(read_raw, NULL, "read raw data test command", cmd_read_raw),
 	SHELL_CMD(read_info, NULL, "read sensor info test command", cmd_read_info),
 	SHELL_CMD(cpld, &sub_cpld_cmds, "cpld commands", NULL),
