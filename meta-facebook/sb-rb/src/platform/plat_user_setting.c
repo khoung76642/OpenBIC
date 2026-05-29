@@ -25,6 +25,7 @@
 #include "plat_cpld.h"
 #include "plat_i2c.h"
 #include "plat_fru.h"
+#include "plat_adc.h"
 #include "plat_user_setting.h"
 #include "sensor.h"
 #include "tmp75.h"
@@ -1246,6 +1247,48 @@ bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading)
 
 	return true;
 }
+
+int pmbus_medha0_pwr = 0;
+int pmbus_medha1_pwr = 0;
+
+static float get_adc_vref(void)
+{
+	uint8_t adc_type = get_adc_type();
+
+	if (adc_type == ADI_AD4058)
+		return get_ad4058_vref();
+
+	if (adc_type == TIC_ADS7066)
+		return get_ads7066_vref();
+
+	LOG_ERR("invalid adc type %d", adc_type);
+	return 0;
+}
+
+static int pack_sensor_reading_from_float(float value)
+{
+	int16_t integer_part = (int16_t)value;
+	int16_t fraction_part = (int16_t)((value - (float)integer_part) * 1000.0f);
+
+	if (integer_part < 0 && fraction_part > 0)
+		fraction_part = -fraction_part;
+
+	return ((uint16_t)fraction_part << 16) | (uint16_t)integer_part;
+}
+
+static void record_power_history(uint8_t sensor_id, int decoded_reading)
+{
+	for (int i = 0; i < UBC_VR_RAIL_E_MAX; i++) {
+		if (sensor_id == ubc_vr_power_table[i].sensor_id) {
+			ubc_vr_power_table[i].power_history[power_index[i]] = decoded_reading;
+			power_index[i] = (power_index[i] + 1) % POWER_HISTORY_SIZE;
+			if (power_count[i] < POWER_HISTORY_SIZE)
+				power_count[i]++;
+			break;
+		}
+	}
+}
+
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
@@ -1292,6 +1335,57 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 	if (sensor_value < 0) {
 		*reading = 0;
 	}
+
+	/* For MPS MEDHA CURR_A: source both current and power from the ADC path so the
+	 * paired MEDHA current/power sensors are updated from the same averaged sample. */
+	if ((get_vr_module() == VR_MODULE_MPS) &&
+	    (cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_CURR_A ||
+	     cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_CURR_A)) {
+		uint8_t adc_idx = (cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_CURR_A) ?
+					  ADC_IDX_MEDHA0_1 :
+					  ADC_IDX_MEDHA1_1;
+		uint8_t pwr_sensor = (cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_CURR_A) ?
+					     SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W :
+					     SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W;
+		float vref = get_adc_vref();
+
+		if (reading != NULL && vref > 0) {
+			float curr_amp = adc_raw_v_to_apms(get_adc_averge_val(adc_idx), vref);
+			float power_watt = get_adc_vr_pwr(adc_idx);
+
+			if (curr_amp < 0)
+				curr_amp = 0;
+
+			if (power_watt < 0)
+				power_watt = 0;
+
+			*reading = pack_sensor_reading_from_float(curr_amp);
+
+			sensor_cfg *pwr_cfg = get_sensor_cfg_by_sensor_id(pwr_sensor);
+			if (pwr_cfg != NULL) {
+				pwr_cfg->cache = pack_sensor_reading_from_float(power_watt);
+				pwr_cfg->cache_status = PLDM_SENSOR_ENABLED;
+				record_power_history(pwr_sensor, (int)(power_watt * 1000.0f));
+				post_sensor_reading_hook_func(pwr_sensor);
+			}
+		}
+	}
+
+	/* For MPS MEDHA PWR_W: keep the hardware reading as-is; power was already updated
+	 * from the paired CURR_A callback above, so just propagate and return */
+	if ((get_vr_module() == VR_MODULE_MPS) &&
+	    (cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W ||
+	     cfg->num == SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W)) {
+		/* Keep previously updated power cache value (from CURR_A callback)
+		 * so this PWR_W polling path does not overwrite it with raw HW 0. */
+		if (cfg->cache_status == PLDM_SENSOR_ENABLED && reading != NULL) {
+			*reading = cfg->cache;
+		}
+		cfg->cache_status = PLDM_SENSOR_ENABLED;
+		post_sensor_reading_hook_func(cfg->num);
+		return true;
+	}
+
 	post_sensor_reading_hook_func(cfg->num);
 
 	if (reading != NULL) {
@@ -1335,19 +1429,6 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 				}
 			}
 		}
-
-		/* TO_DO wait power capping add
-		if (cfg->num == VR_ASIC_P0V85_PVDD_PWR_W) {
-			update_plat_power_capping_table();
-			ath_vdd_power = (int)tmp_reading;
-			ath_vdd_polling_counter++;
-			// LOG_INF("counter:%d/%d", ath_vdd_polling_counter, comparator_counter_max);
-			if (ath_vdd_polling_counter >= comparator_counter_max) {
-				ath_vdd_polling_counter = 0;
-				power_capping_comparator_handler();
-			}
-		}
-		*/
 	}
 
 	return true;

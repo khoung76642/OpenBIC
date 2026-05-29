@@ -107,6 +107,12 @@ void pal_post_init()
 		asic_thermtrip_error_log(LOG_ASSERT);
 	// check clk 312.5Mhz init
 	check_312_5MHz_init_status();
+	//MPS VR workaround(only MPS29816, because this vr can't do average smoothing reading value)
+	if (get_vr_module() == VR_MODULE_MPS) {
+		// set source from ADC
+		LOG_WRN("MPS VR detected, set power capping source to ADC");
+		set_power_capping_source(CAPPING_SOURCE_ADC);
+	}
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
