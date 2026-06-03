@@ -657,6 +657,7 @@ static bool command_reply_data_handle(void *arg)
 #define STAUTUS 0x00
 #define MONITOR_HBM_TEMP 0x8F
 #define RETURN_LEN 10
+#define SVS_CORE_VOLTAGE_REG 0x9B
 	switch (offset)
 	{
 	case MONITOR:
@@ -679,6 +680,13 @@ static bool command_reply_data_handle(void *arg)
 		struct_size = RETURN_LEN;
 		uint8_t reply_data3[RETURN_LEN] = {0, 32, 33, 24, 35, 26, 27, 29, 30, 0};
 		memcpy(data->target_rd_msg.msg, reply_data3, struct_size);
+		break;
+	case SVS_CORE_VOLTAGE_REG:
+		LOG_INF("SVS_CORE_VOLTAGE_REG");
+		//return 6 byte
+		struct_size = 6;
+		uint8_t reply_data4[6] = {0, 0x3F, 0x3, 0x4F, 0x3, 0};
+		memcpy(data->target_rd_msg.msg, reply_data4, struct_size);
 		break;
 	default:
 		break;
