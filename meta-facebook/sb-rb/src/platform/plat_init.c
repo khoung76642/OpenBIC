@@ -107,12 +107,9 @@ void pal_post_init()
 		asic_thermtrip_error_log(LOG_ASSERT);
 	// check clk 312.5Mhz init
 	check_312_5MHz_init_status();
-	if (is_mb_dc_on() == true) {
-		LOG_INF("detect dc on, start to init vr test mode");
-		vr_test_mode_enable(true);
-		if (!set_all_vout_command())
-			LOG_ERR("set all vout command fail!");
-	}
+	// default in VR test mode and svs enable
+	vr_test_mode_enable(true);
+	set_svs_flag(1);
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
