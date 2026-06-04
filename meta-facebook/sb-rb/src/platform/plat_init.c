@@ -108,7 +108,13 @@ void pal_post_init()
 	// check clk 312.5Mhz init
 	check_312_5MHz_init_status();
 	// default in VR test mode and svs enable
-	vr_test_mode_enable(true);
+
+	if (is_mb_dc_on() == true) {
+		LOG_INF("detect dc on, start to init vr test mode");
+		vr_test_mode_enable(true);
+		if (!set_all_vout_command())
+			LOG_ERR("set all vout command fail!");
+	}
 	set_svs_flag(1);
 }
 
