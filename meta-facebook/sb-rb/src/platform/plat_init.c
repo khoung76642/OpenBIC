@@ -116,6 +116,7 @@ void pal_post_init()
 			LOG_ERR("set all vout command fail!");
 	}
 	set_svs_flag(1);
+	vr_vout_offset_get_init();
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
