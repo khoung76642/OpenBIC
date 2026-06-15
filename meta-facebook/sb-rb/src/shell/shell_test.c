@@ -166,6 +166,7 @@ void cmd_info(const struct shell *shell, size_t argc, char **argv)
 		[UBC_MODULE_MPS] = "MPS",
 		[UBC_MODULE_FLEX] = "FLEX",
 		[UBC_MODULE_LUXSHARE] = "LUXSHARE",
+		[UBC_MODULE_RDS] = "REEDSEMI",
 	};
 
 	static const char *const asic_board_id_str[] = {

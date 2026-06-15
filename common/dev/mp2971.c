@@ -834,7 +834,7 @@ float get_resolution(sensor_cfg *cfg)
 			iin_reso = 0.5;
 		} else if (iin_reso_set == 1) {
 			iin_reso = 0.25;
-		} else if (iin_reso_set == 2) {
+		} else if (iin_reso_set == 2 || iin_reso_set == 3) {
 			iin_reso = 0.125;
 		} else {
 			LOG_WRN("iin_reso_set not supported: 0x%x", iin_reso_set);
