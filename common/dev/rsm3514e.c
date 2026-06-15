@@ -90,6 +90,7 @@ uint8_t rsm3514e_read(sensor_cfg *cfg, int *reading)
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = slinear11_to_float(read_value);
 		val = val * RSM3514E_READ_VIN_EXP_VALUE;
+		LOG_INF("vin: read_value: 0x%x, val: %f", read_value, val);
 	} else if (cfg->offset == PMBUS_READ_IOUT) {
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = slinear11_to_float(read_value);
