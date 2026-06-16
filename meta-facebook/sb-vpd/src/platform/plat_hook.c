@@ -39,19 +39,37 @@ LOG_MODULE_REGISTER(plat_hook);
 static struct k_mutex vr_mutex[VR_INDEX_MAX];
 
 vr_pre_proc_arg vr_pre_read_args[] = {
-	{ .mutex = vr_mutex + 0, .vr_page = 0x0 },  { .mutex = vr_mutex + 0, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },  { .mutex = vr_mutex + 1, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 2, .vr_page = 0x0 },  { .mutex = vr_mutex + 2, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 3, .vr_page = 0x0 },  { .mutex = vr_mutex + 3, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 4, .vr_page = 0x0 },  { .mutex = vr_mutex + 4, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 5, .vr_page = 0x0 },  { .mutex = vr_mutex + 5, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 6, .vr_page = 0x0 },  { .mutex = vr_mutex + 6, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },  { .mutex = vr_mutex + 7, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 8, .vr_page = 0x0 },  { .mutex = vr_mutex + 8, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 9, .vr_page = 0x0 },  { .mutex = vr_mutex + 9, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 10, .vr_page = 0x0 }, { .mutex = vr_mutex + 10, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 11, .vr_page = 0x0 }, { .mutex = vr_mutex + 11, .vr_page = 0x1 },
-	{ .mutex = vr_mutex + 12, .vr_page = 0x0 }, { .mutex = vr_mutex + 12, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 0, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 0, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 1, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 1, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 2, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 2, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 3, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 3, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 4, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 4, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 5, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 5, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 6, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 6, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 7, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 7, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 8, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 8, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 9, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 9, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 10, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 10, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 11, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 11, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 12, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 12, .vr_page = 0x1 },
+	//vpd owl_e and hamsa need two new mutex(no need page)
+	{ .mutex = vr_mutex + 13, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 13, .vr_page = 0x1 },
+	{ .mutex = vr_mutex + 14, .vr_page = 0x0 },
+	{ .mutex = vr_mutex + 14, .vr_page = 0x1 },
 };
 
 mp2971_init_arg mp2971_init_args[] = {
@@ -648,8 +666,8 @@ bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm)
 	}
 
 	if (is_perm && rail == VR_RAIL_E_ASIC_P0V8_HAMSA_AVDD_PCIE) {
-		if(!set_user_settings_hamsa_avdd_pcie_to_eeprom(&setting_millivolt,
-			sizeof(setting_millivolt))) {
+		if (!set_user_settings_hamsa_avdd_pcie_to_eeprom(&setting_millivolt,
+								 sizeof(setting_millivolt))) {
 			LOG_ERR("set user settings hamsa avdd pcie to eeprom failed");
 			goto err;
 		}

@@ -60,7 +60,7 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 	set_plat_sensor_polling_enable_flag(false);
 
 	shell_print(shell, "comp_id |rail name                               |version |remain");
-	for (int i = COMPNT_VR_1; i <= COMPNT_VR_3V3; i++) {
+	for (int i = COMPNT_VR_1; i <= COMPNT_VPD_OWL_E_VDD; i++) {
 		uint8_t sensor_id = 0;
 		char sensor_name[MAX_AUX_SENSOR_NAME_LEN] = { 0 };
 
@@ -69,7 +69,8 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 			continue;
 		}
 
-		if (i == COMPNT_HAMSA || i == COMPNT_MEDHA0 || i == COMPNT_MEDHA1)
+		if (i == COMPNT_HAMSA || i == COMPNT_MEDHA0 || i == COMPNT_MEDHA1 ||
+		    i == COMPNT_HAMSA_BOOT1)
 			continue;
 
 		if (i == COMPNT_VR_3V3 && (get_asic_board_id() != ASIC_BOARD_ID_EVB))
