@@ -104,8 +104,8 @@ void init_plat_config()
 	uint8_t module = 0;
 	plat_read_cpld(CPLD_OFFSET_VR_VENDER_TYPE, &module, 1);
 	plat_read_cpld(CPLD_OFFSET_BOARD_REV_ID, &board_rev_id, 1);
-	// rev id only support 0, 1, 2 bit
-	board_rev_id = board_rev_id & 0x07;
+	// rev id only support 0, 1 bit
+	board_rev_id = board_rev_id & 0x03;
 	vr_module = (module & 0x01);
 	ubc_module = (module >> 1) & 0x03;
 	uint8_t board_id = 0;
@@ -172,8 +172,6 @@ void pal_show_board_types(const struct shell *shell)
 			    (board_rev_id == REV_ID_EVT1B) ? "REV_ID_EVT1B" :
 			    (board_rev_id == REV_ID_EVT2)  ? "REV_ID_EVT2" :
 			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
-			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
-			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
 							     "not supported");
 	} else if (asic_board_id == ASIC_BOARD_ID_RAINBOW) {
 		shell_print(shell, "* BOARD_STAGE:   (0x%02X)%s", board_rev_id,
@@ -181,8 +179,6 @@ void pal_show_board_types(const struct shell *shell)
 			    (board_rev_id == REV_ID_EVT1B) ? "REV_ID_EVT1B" :
 			    (board_rev_id == REV_ID_EVT2)  ? "REV_ID_EVT2" :
 			    (board_rev_id == REV_ID_DVT)   ? "REV_ID_DVT" :
-			    (board_rev_id == REV_ID_PVT)   ? "REV_ID_PVT" :
-			    (board_rev_id == REV_ID_MP)	   ? "REV_ID_MP" :
 							     "not supported");
 	}
 
