@@ -190,6 +190,14 @@ uint8_t mpc12109_read(sensor_cfg *cfg, int *reading)
 		uint16_t read_value =
 			((msg.data[1] << 8) | msg.data[0]) & MP2891_READ_TEMPERATURE_1_MASK;
 		val = (float)read_value * MP2891_READ_TEMPERATURE_1_RESOLUTION;
+		// print out value when ubc1/2 is out of range(0~120 degree)
+#define SENSOR_NUM_UBC1_P12V_TEMP_C 0x64
+#define SENSOR_NUM_UBC2_P12V_TEMP_C 0x69
+		if (cfg->num == SENSOR_NUM_UBC1_P12V_TEMP_C || cfg->num == SENSOR_NUM_UBC2_P12V_TEMP_C) {
+			if (val < 0 || val >= 120) {
+				printf("UBC 0x%x P12V temperature out of range: %f \n", cfg->num, val);
+			}
+		}
 	} else if (cfg->offset == PMBUS_READ_VIN) {
 		uint16_t read_value = ((msg.data[1] << 8) | msg.data[0]) & MP2891_READ_VIN_MASK;
 		val = (float)read_value * MP2891_READ_VIN_RESOLUTION;

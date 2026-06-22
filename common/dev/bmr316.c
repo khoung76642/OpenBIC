@@ -176,6 +176,14 @@ uint8_t bmr316_read(sensor_cfg *cfg, int *reading)
 		   cfg->offset == PMBUS_READ_IOUT) {
 		uint16_t read_value = (msg.data[1] << 8) | msg.data[0];
 		val = slinear11_to_float(read_value);
+		// print out value when ubc1/2 is out of range(0~120 degree)
+#define SENSOR_NUM_UBC1_P12V_TEMP_C 0x64
+#define SENSOR_NUM_UBC2_P12V_TEMP_C 0x69
+		if (cfg->num == SENSOR_NUM_UBC1_P12V_TEMP_C || cfg->num == SENSOR_NUM_UBC2_P12V_TEMP_C) {
+			if (val < 0 || val >= 120) {
+				printf("UBC 0x%x P12V temperature out of range: %f \n", cfg->num, val);
+			}
+		}
 	} else if (cfg->offset == PMBUS_READ_POUT) {
 		msg.data[0] = PMBUS_READ_VOUT;
 		if (i2c_master_read(&msg, retry))
