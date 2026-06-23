@@ -1503,6 +1503,20 @@ int get_vr_page(uint8_t rail)
 	return pre_sensor_read_args->vr_page;
 }
 
+int get_sensor_cfg_by_rail(uint8_t rail, sensor_cfg **cfg)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, -1);
+
+	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
+	sensor_cfg *tmp_cfg = get_sensor_cfg_by_sensor_id(sensor_id);
+	if (tmp_cfg == NULL) {
+		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
+		return -1;
+	}
+	*cfg = tmp_cfg;
+	return 0;
+}
+
 int set_vr_mp29816a_reg(uint8_t rail, uint16_t *set_value, uint8_t set_reg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(set_value, false);

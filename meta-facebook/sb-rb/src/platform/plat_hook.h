@@ -310,4 +310,5 @@ bool vr_vout_default_settings_init(void);
 bool plat_get_get_vout_offset(uint8_t rail, uint16_t *vout_offset);
 bool vr_vout_offset_get_init(void);
 bool voltage_offset_get(uint8_t rail, uint16_t *vout_offset);
+int get_sensor_cfg_by_rail(uint8_t rail, sensor_cfg **cfg);
 #endif
