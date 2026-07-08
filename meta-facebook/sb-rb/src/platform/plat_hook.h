@@ -125,6 +125,8 @@ typedef struct vr_mapping_sensor {
 	uint8_t sensor_id;
 	uint8_t *sensor_name;
 	int peak_value;
+	uint8_t sensor_id_for_current;
+	int iout_value;
 } vr_mapping_sensor;
 
 enum PLAT_STRAP_INDEX_E {
@@ -282,6 +284,7 @@ bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt);
 bool plat_set_vout_command(uint8_t rail, uint16_t *millivolt, bool is_perm);
 bool vr_rail_voltage_peak_get(uint8_t *name, int *peak_value);
 bool vr_rail_voltage_peak_clear(uint8_t rail_index);
+bool vr_rail_iout_value_get(uint8_t rail, int *peak_value);
 bool plat_set_vout_range_min(uint8_t rail, uint16_t *millivolt);
 bool plat_set_vout_range_max(uint8_t rail, uint16_t *millivolt);
 void user_settings_init(void);

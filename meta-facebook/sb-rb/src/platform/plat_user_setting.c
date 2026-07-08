@@ -1487,6 +1487,14 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 			}
 		}
 
+		/* record iout */
+		for (int i = 0; i < VR_RAIL_E_MAX; i++) {
+			if (cfg->num == vr_rail_table[i].sensor_id_for_current) {
+				vr_rail_table[i].iout_value = *reading;
+				break;
+			}
+		}
+
 		/* TO_DO wait power capping add
 		if (cfg->num == VR_ASIC_P0V85_PVDD_PWR_W) {
 			update_plat_power_capping_table();
