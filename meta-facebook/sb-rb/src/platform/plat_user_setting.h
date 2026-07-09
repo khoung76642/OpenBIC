@@ -133,6 +133,16 @@ typedef struct temp_threshold_user_settings_struct {
 extern temp_threshold_user_settings_struct temp_threshold_user_settings;
 extern svs_flag_user_settings_struct svs_flag_user_settings;
 
+#define MEDHA_POWER_HISTORY_SIZE 500
+typedef struct medha_power_mapping_sensor {
+	uint8_t index;
+	uint8_t sensor_id;
+	uint8_t *sensor_name;
+	uint32_t current_max_power;
+	uint32_t last_max_power;
+	uint16_t sample_count;
+} medha_power_mapping_sensor;
+
 bool set_thermaltrip_user_settings(bool thermaltrip_enable, bool is_perm);
 bool get_temp_sensor_rail_name(uint8_t rail, uint8_t **name);
 bool get_temp_sensor_rail_enum(uint8_t *name, uint8_t *num);
@@ -163,8 +173,10 @@ bool set_user_settings_vr_vout_to_eeprom(void *user_settings, uint8_t data_lengt
 bool get_user_settings_vr_vout_from_eeprom(void *user_settings, uint8_t data_length);
 bool get_user_settings_svs_flag_from_eeprom(void *thermaltrip_user_settings, uint8_t data_length);
 bool perm_config_clear();
+bool medha_get_max_power_history_by_rail(uint8_t rail, uint32_t *max_power);
 bool get_average_power(uint8_t rail, uint32_t *milliwatt);
 bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading);
+bool medha_rail_name_get(uint8_t rail, uint8_t **name);
 bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name);
 bool ubc_vr_rail_enum_get(uint8_t *name, uint8_t *num);
 void pwr_level_mutex_init(void);

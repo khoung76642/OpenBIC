@@ -1264,6 +1264,26 @@ ubc_vr_power_mapping_sensor ubc_vr_power_table[] = {
 	{ UBC_VR_RAIL_E_P3V3_OSFP, SENSOR_NUM_P3V3_OSFP_PWR_W, "VR_RAIL_E_P3V3_OSFP", { 0 } },
 };
 
+medha_power_mapping_sensor medha_power_table[] = {
+	{ 0, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_TEMP_C, "VR_ASIC_P0V85_MEDHA0_VDD_TEMP_C", 0, 0, 0 },
+	{ 1, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_PWR_W, "VR_ASIC_P0V85_MEDHA0_VDD_PWR_W", 0, 0, 0 },
+	{ 2, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_TEMP_C, "VR_ASIC_P0V85_MEDHA1_VDD_TEMP_C", 0, 0, 0 },
+	{ 3, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_PWR_W, "VR_ASIC_P0V85_MEDHA1_VDD_PWR_W", 0, 0, 0 },
+};
+
+bool medha_rail_name_get(uint8_t rail, uint8_t **name)
+{
+	CHECK_NULL_ARG_WITH_RETURN(name, false);
+
+	if (rail >= UBC_VR_RAIL_E_MAX) {
+		*name = NULL;
+		return false;
+	}
+
+	*name = (uint8_t *)medha_power_table[rail].sensor_name;
+	return true;
+}
+
 bool ubc_vr_rail_name_get(uint8_t rail, uint8_t **name)
 {
 	CHECK_NULL_ARG_WITH_RETURN(name, false);
@@ -1487,6 +1507,31 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 			}
 		}
 
+		for (int i = 0; i < ARRAY_SIZE(medha_power_table); i++) {
+			if (cfg->num != medha_power_table[i].sensor_id)
+				continue;
+
+			if (medha_power_table[i].sample_count == 0) {
+				medha_power_table[i].current_max_power = (uint32_t)decoded_reading;
+
+			} else {
+				medha_power_table[i].current_max_power =
+					MAX(medha_power_table[i].current_max_power,
+					    (uint32_t)decoded_reading);
+			}
+
+			medha_power_table[i].sample_count++;
+
+			if (medha_power_table[i].sample_count >= MEDHA_POWER_HISTORY_SIZE) {
+				medha_power_table[i].last_max_power =
+					medha_power_table[i].current_max_power;
+
+				medha_power_table[i].sample_count = 0;
+			}
+
+			break;
+		}
+
 		/* TO_DO wait power capping add
 		if (cfg->num == VR_ASIC_P0V85_PVDD_PWR_W) {
 			update_plat_power_capping_table();
@@ -1503,6 +1548,49 @@ bool post_vr_read(sensor_cfg *cfg, void *args, int *const reading)
 
 	return true;
 }
+
+bool medha_get_max_power_history_by_rail(uint8_t rail, uint32_t *max_power)
+{
+	CHECK_NULL_ARG_WITH_RETURN(max_power, false);
+
+	uint32_t max;
+
+	for (int i = 0; i < ARRAY_SIZE(medha_power_table); i++) {
+		if (medha_power_table[i].index != rail)
+			continue;
+
+		max = medha_power_table[i].last_max_power;
+
+		uint8_t sensor_id = medha_power_table[rail].sensor_id;
+		float resolution = 0, offset = 0;
+		int cache_reading = 0;
+		int8_t unit_modifier = 0;
+		uint8_t sensor_operational_state = PLDM_SENSOR_STATUSUNKOWN;
+		pldm_sensor_get_info_via_sensor_id(sensor_id, &resolution, &offset, &unit_modifier,
+						   &cache_reading, &sensor_operational_state);
+		if (resolution == 0) {
+			*max_power = 0;
+			LOG_ERR("resolution is 0");
+			return false;
+		}
+
+		float real_power = (max * resolution + offset) / power(10, -unit_modifier);
+
+		int16_t integer_part = (int16_t)real_power;
+		int16_t fraction_part = (int16_t)((real_power - integer_part) * 1000.0);
+
+		if (integer_part < 0 && fraction_part > 0) {
+			fraction_part = -fraction_part;
+		}
+
+		*max_power = ((uint16_t)fraction_part << 16) | (uint16_t)integer_part;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool get_average_power(uint8_t rail, uint32_t *milliwatt)
 {
 	CHECK_NULL_ARG_WITH_RETURN(milliwatt, false);
