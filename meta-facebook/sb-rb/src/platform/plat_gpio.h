@@ -56,7 +56,7 @@ void gpio_int_default();
 #define name_gpio3	\
 	gpio_name_to_num(Reserve_GPIO30) \
 	gpio_name_to_num(Reserve_GPIO31) \
-	gpio_name_to_num(Reserve_GPIO32) \
+	gpio_name_to_num(TEST_GPIO) \
 	gpio_name_to_num(Reserve_GPIO33) \
 	gpio_name_to_num(Reserve_GPIO34) \
 	gpio_name_to_num(Reserve_GPIO35) \

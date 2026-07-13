@@ -41,7 +41,8 @@ uint8_t pwr_capping_pollng_rate_type = 7;
 
 static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = {
 	// thread id, thread name
-	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD" },
+	{ TEMP_SENSOR_THREAD_ID, "TEMP_SENSOR_THREAD", QUICK_POLL_INTERVAL, true,
+	  true },
 	{ VR_SENSOR_THREAD_ID, "VR_PLDM_SENSOR_THREAD" },
 	{ QUICK_VR_SENSOR_THREAD_ID, "QUICK_VR_PLDM_SENSOR_THREAD", QUICK_POLL_INTERVAL, true,
 	  true },
@@ -1011,6 +1012,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1080,6 +1082,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1149,6 +1152,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1218,6 +1222,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1287,6 +1292,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1356,6 +1362,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1425,6 +1432,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1494,6 +1502,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1563,6 +1572,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1632,6 +1642,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1701,6 +1712,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1770,6 +1782,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 	{
 		{
@@ -1839,6 +1852,7 @@ pldm_sensor_info plat_pldm_sensor_temp_table[] = {
 			.cache_status = PLDM_SENSOR_INITIALIZING,
 			.post_sensor_read_hook = post_iris_sensor_read,
 		},
+		.poll_interval_ms = 100,
 	},
 
 };

@@ -26,10 +26,14 @@
 #include "plat_mctp.h"
 #include "shell_plat_power_sequence.h"
 #include "plat_log.h"
+#include "plat_gpio.h"
 
 // test command
 void cmd_test(const struct shell *shell, size_t argc, char **argv)
 {
+	gpio_set(TEST_GPIO, 1);
+	k_sleep(K_MSEC(50));
+	gpio_set(TEST_GPIO, 0);
 	shell_print(shell, "Hello world!");
 }
 
