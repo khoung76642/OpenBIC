@@ -29,7 +29,7 @@ bool iris_smbus_i2c_read(uint8_t bus, uint8_t addr, uint8_t reg, uint8_t *data, 
 	CHECK_NULL_ARG_WITH_RETURN(data, false);
 
 	I2C_MSG i2c_msg = { 0 };
-	uint8_t retry = 5;
+	uint8_t retry = 1;
 	i2c_msg.bus = bus;
 	i2c_msg.target_addr = addr;
 	i2c_msg.tx_len = 1;
