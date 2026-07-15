@@ -37,11 +37,8 @@ bool iris_smbus_i2c_read(uint8_t bus, uint8_t addr, uint8_t reg, uint8_t *data, 
 	i2c_msg.data[0] = reg;
 
 	if (i2c_master_read(&i2c_msg, retry)) {
-		gpio_set(TEST_GPIO, 1);
-		k_sleep(K_MSEC(50));
 		LOG_ERR("Failed to read iris_smbus, bus: %d, addr: 0x%x, reg: 0x%x", bus, addr,
 			reg);
-		gpio_set(TEST_GPIO, 0);
 		return false;
 	}
 

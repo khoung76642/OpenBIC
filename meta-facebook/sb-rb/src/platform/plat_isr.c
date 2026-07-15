@@ -331,30 +331,35 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 
 void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 {
-	uint8_t data[ERROR_CODE_LEN] = { 0 };
+	gpio_set(TEST_GPIO, 1);
 	LOG_INF("smb hamsa mmc lvc33 alert triggered");
-	//i2c_burst_read(smb_hamsa_i2c_dev, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
+	k_sleep(K_MSEC(50));
+	gpio_set(TEST_GPIO, 0);
 
-	// bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len
-	plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
-	plat_asic_error_event asic_event = { 0 };
-	asic_event.event_id_0 = data[1];
-	asic_event.event_id_1 = data[2];
-	asic_event.chip_id = data[3];
-	asic_event.module_id = data[4];
-	plat_asic_error_error_log(LOG_ASSERT, asic_event);
+	// uint8_t data[ERROR_CODE_LEN] = { 0 };
+	// LOG_INF("smb hamsa mmc lvc33 alert triggered");
+	// //i2c_burst_read(smb_hamsa_i2c_dev, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
 
-	struct pldm_addsel_data smb_hamsa_sel_msg = { 0 };
-	smb_hamsa_sel_msg.assert_type = LOG_ASSERT;
-	smb_hamsa_sel_msg.event_type = ASIC_MODULE_ERROR; //ASIC_MODULE_ERROR;
-	smb_hamsa_sel_msg.event_data_1 = HAMSA_SMB_ERR_EVENT_HEADER;
-	smb_hamsa_sel_msg.event_data_2 = data[1]; // 123
-	smb_hamsa_sel_msg.event_data_3 = data[2]; // 124
-	if (send_event_log_to_bmc(smb_hamsa_sel_msg) != PLDM_SUCCESS) {
-		LOG_ERR("Failed to send hamsa smb error code to bmc, event data: 0x%x 0x%x 0x%x\n",
-			smb_hamsa_sel_msg.event_data_1, smb_hamsa_sel_msg.event_data_2,
-			smb_hamsa_sel_msg.event_data_3);
-	}
+	// // bus, uint8_t addr, uint8_t offset, uint8_t *data, uint8_t len
+	// plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ERROR, data, ERROR_CODE_LEN);
+	// plat_asic_error_event asic_event = { 0 };
+	// asic_event.event_id_0 = data[1];
+	// asic_event.event_id_1 = data[2];
+	// asic_event.chip_id = data[3];
+	// asic_event.module_id = data[4];
+	// plat_asic_error_error_log(LOG_ASSERT, asic_event);
+
+	// struct pldm_addsel_data smb_hamsa_sel_msg = { 0 };
+	// smb_hamsa_sel_msg.assert_type = LOG_ASSERT;
+	// smb_hamsa_sel_msg.event_type = ASIC_MODULE_ERROR; //ASIC_MODULE_ERROR;
+	// smb_hamsa_sel_msg.event_data_1 = HAMSA_SMB_ERR_EVENT_HEADER;
+	// smb_hamsa_sel_msg.event_data_2 = data[1]; // 123
+	// smb_hamsa_sel_msg.event_data_3 = data[2]; // 124
+	// if (send_event_log_to_bmc(smb_hamsa_sel_msg) != PLDM_SUCCESS) {
+	// 	LOG_ERR("Failed to send hamsa smb error code to bmc, event data: 0x%x 0x%x 0x%x\n",
+	// 		smb_hamsa_sel_msg.event_data_1, smb_hamsa_sel_msg.event_data_2,
+	// 		smb_hamsa_sel_msg.event_data_3);
+	// }
 }
 
 void ISR_ASIC_THERMTRIP_TRIGGER()
@@ -368,6 +373,7 @@ bool plat_gpio_immediate_int_cb(uint8_t gpio_num)
 
 	switch (gpio_num) {
 	case ALL_VR_PM_ALERT_R_N:
+	case SMB_HAMSA_MMC_LVC33_ALERT_N:
 		ret = true;
 		break;
 	default:
