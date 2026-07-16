@@ -21,6 +21,11 @@
 #include "plat_class.h"
 #include "plat_cpld.h"
 
+typedef struct {
+	uint8_t phase_cnt;
+	uint8_t phase_data[9];
+} rns_phase_cfg_struct;
+
 static int get_vr_reg_to_int(uint8_t vr_rail, uint8_t reg)
 {
 	uint8_t data[2] = { 0 };
@@ -68,10 +73,8 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 			uint8_t cs_low = raw_data & 0xFF; // bit [7:0]
 			uint8_t cs_high = (raw_data >> 8) & 0xFF; // bit [15:8]
 
-			float phase_current_low =
-				((cs_low * 0.0125f) - 1.23f) / 0.005f;
-			float phase_current_high =
-				((cs_high * 0.0125f) - 1.23f) / 0.005f;
+			float phase_current_low = ((cs_low * 0.0125f) - 1.23f) / 0.005f;
+			float phase_current_high = ((cs_high * 0.0125f) - 1.23f) / 0.005f;
 
 			int phase_low = (i * 2) + 1;
 			int phase_high = (i * 2) + 2;
@@ -102,12 +105,26 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 		uint8_t page_data = 0x80;
 		if (!plat_set_vr_reg(rail, 0x00, &page_data, 1)) {
 			shell_error(shell, "vr %d set page fail", rail);
-			return -1;
+			goto exit_polling;
 		}
-		uint8_t start_phase = 0x00;
-		uint8_t phase_cnt = 9;
-		for (int i = 0; i < phase_cnt; i++) {
-			uint8_t phase_set_data = start_phase + i;
+		rns_phase_cfg_struct rns_phase_cfg;
+		if (rail == VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD ||
+		    rail == VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD) {
+			rns_phase_cfg.phase_cnt = 9;
+			uint8_t temp_data[] = {
+				0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07
+			};
+			for (int i = 0; i < 9; i++)
+				rns_phase_cfg.phase_data[i] = temp_data[i];
+		} else {
+			rns_phase_cfg.phase_cnt = 8;
+			uint8_t temp_data[] = { 0x0b, 0x0a, 0x09, 0x08, 0x03, 0x02, 0x01, 0x00 };
+			for (int i = 0; i < 8; i++)
+				rns_phase_cfg.phase_data[i] = temp_data[i];
+		}
+		for (int i = 0; i < rns_phase_cfg.phase_cnt; i++) {
+			uint8_t phase_set_data = rns_phase_cfg.phase_data[i];
+
 			if (!plat_set_vr_reg(rail, 0x04, &phase_set_data, 1)) {
 				shell_error(shell, "vr %d set phase=0x%02X fail", rail,
 					    phase_set_data);
@@ -117,8 +134,8 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 			float phase_current = raw_data * 0.1f;
 
 			shell_print(shell,
-				    "CS%-2d: %8.1f A (phase_set_data=0x%02X, raw_data=0x%04X)",
-				    phase_set_data, phase_current, phase_set_data, raw_data);
+				    "CS%-2d: %8.1f A (phase_set_data=0x%02X, raw_data=0x%04X)", i,
+				    phase_current, phase_set_data, raw_data);
 		}
 	} break;
 	default:
@@ -131,20 +148,17 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 		shell_error(shell, "Invalid rail to get iout value");
 	}
 
-	float sensor_reading = 0, decimal = 0;
+	float decimal = 0;
 	int16_t integer = 0;
 
 	integer = iout_value & 0xffff;
 	decimal = (float)(iout_value >> 16) / 1000.0;
 
-	if (integer >= 0) {
-		sensor_reading = (float)integer + decimal;
-	} else {
-		sensor_reading = (float)integer - decimal;
-	}
+	float sensor_reading = (integer >= 0) ? ((float)integer + decimal) : ((float)integer - decimal);
 
 	shell_print(shell, "%-50s iout: %10.3fA", argv[1], sensor_reading);
 
+exit_polling:
 	/* Start sensor polling */
 	set_plat_sensor_polling_enable_flag(true);
 
