@@ -157,6 +157,9 @@
 
 #define ASIC_ADDR (0x64 >> 1)
 
+#define ASIC_IMON_MEDHA0_VDD_ADDR  (0x00 >> 1)
+#define ASIC_IMON_MEDHA1_VDD_ADDR  (0x00 >> 1)
+
 // sensor number
 /* Define sensors address(7 bit) */
 #define SENSOR_NUM_TOP_INLET_TEMP_C 0x01
@@ -320,7 +323,11 @@
 #define SENSOR_NUM_ASIC_MEDHA0_LOCAL_TEMP_C 0x81
 #define SENSOR_NUM_ASIC_OWL_LOCAL_TEMP_C 0x82
 
-#define SENSOR_NUM_NUMBERS 0x83
+// virtual device sensor
+#define SENSOR_NUM_ASIC_IMON_MEDHA0_VDD_CURR_A  0x83
+#define SENSOR_NUM_ASIC_IMON_MEDHA1_VDD_CURR_A  0x84
+
+#define SENSOR_NUM_NUMBERS 0x85
 
 #define TMP75_TEMP_OFFSET 0x00
 #define UPDATE_INTERVAL_1S 1
