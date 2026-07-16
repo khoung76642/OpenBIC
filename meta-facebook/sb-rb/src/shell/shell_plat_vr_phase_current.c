@@ -20,6 +20,7 @@
 #include "plat_hook.h"
 #include "plat_class.h"
 #include "plat_cpld.h"
+#include "plat_util.h"
 
 typedef struct {
 	uint8_t phase_cnt;
@@ -102,11 +103,22 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 		}
 	} break;
 	case sensor_dev_raa228249: {
-		uint8_t page_data = 0x80;
+		uint8_t page_data = 0x00;
+		if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x00, &page_data, 1)) {
+			shell_error(shell, "vr %d i2c read reg 0x00 fail", rail);
+			goto exit_polling;
+		}
+		shell_print(shell, "page_data: 0x%02X, before", page_data);
+		page_data = 0x80;
 		if (!plat_set_vr_reg(rail, 0x00, &page_data, 1)) {
 			shell_error(shell, "vr %d set page fail", rail);
 			goto exit_polling;
 		}
+		if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x00, &page_data, 1)) {
+			shell_error(shell, "vr %d i2c read reg 0x00 fail", rail);
+			goto exit_polling;
+		}
+		shell_print(shell, "page_data: 0x%02X, after set page 0x80", page_data);
 		rns_phase_cfg_struct rns_phase_cfg;
 		if (rail == VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD ||
 		    rail == VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD) {
@@ -124,19 +136,53 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 		}
 		for (int i = 0; i < rns_phase_cfg.phase_cnt; i++) {
 			uint8_t phase_set_data = rns_phase_cfg.phase_data[i];
-
-			if (!plat_set_vr_reg(rail, 0x04, &phase_set_data, 1)) {
-				shell_error(shell, "vr %d set phase=0x%02X fail", rail,
-					    phase_set_data);
+			if (!plat_i2c_write(cfg->port, cfg->target_addr, 0x04, &phase_set_data,
+					    1)) {
+				shell_error(shell, "vr %d i2c write reg 0x04 data 0x%02X fail",
+					    rail, phase_set_data);
 				continue;
 			}
-			int raw_data = get_vr_reg_to_int(rail, 0xE4);
+
+			uint8_t read_data[2] = { 0 };
+			if (!plat_i2c_read(cfg->port, cfg->target_addr, 0xE4, read_data, 2)) {
+				shell_error(shell, "vr %d i2c read reg 0xE4 fail", rail);
+				continue;
+			}
+
+			uint16_t raw_data = ((uint16_t)read_data[1] << 8) | read_data[0];
 			float phase_current = raw_data * 0.1f;
 
 			shell_print(shell,
 				    "CS%-2d: %8.1f A (phase_set_data=0x%02X, raw_data=0x%04X)", i,
 				    phase_current, phase_set_data, raw_data);
 		}
+		if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x00, &page_data, 1)) {
+			shell_error(shell, "vr %d i2c read reg 0x00 fail", rail);
+			goto exit_polling;
+		}
+		shell_print(shell, "page_data: 0x%02X, after finish", page_data);
+		// shell_print(shell, "======================================================");
+
+		// for (int i = 0; i < rns_phase_cfg.phase_cnt; i++) {
+		// 	uint8_t phase_set_data = rns_phase_cfg.phase_data[i];
+
+		// 	if (!plat_set_vr_reg(rail, 0x04, &phase_set_data, 1)) {
+		// 		shell_error(shell, "vr %d set phase=0x%02X fail", rail,
+		// 			    phase_set_data);
+		// 		continue;
+		// 	}
+		// 	int raw_data = get_vr_reg_to_int(rail, 0xE4);
+		// 	float phase_current = raw_data * 0.1f;
+
+		// 	shell_print(shell,
+		// 		    "CS%-2d: %8.1f A (phase_set_data=0x%02X, raw_data=0x%04X)", i,
+		// 		    phase_current, phase_set_data, raw_data);
+		// }
+		// if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x00, &page_data, 1)) {
+		// 	shell_error(shell, "vr %d i2c read reg 0x00 fail", rail);
+		// 	goto exit_polling;
+		// }
+		// shell_print(shell, "page_data: 0x%02X, after finish", page_data);
 	} break;
 	default:
 		shell_print(shell, "Unsupport VR type(%d)", cfg->type);
@@ -154,7 +200,8 @@ static int cmd_vr_phase_current_get(const struct shell *shell, size_t argc, char
 	integer = iout_value & 0xffff;
 	decimal = (float)(iout_value >> 16) / 1000.0;
 
-	float sensor_reading = (integer >= 0) ? ((float)integer + decimal) : ((float)integer - decimal);
+	float sensor_reading =
+		(integer >= 0) ? ((float)integer + decimal) : ((float)integer - decimal);
 
 	shell_print(shell, "%-50s iout: %10.3fA", argv[1], sensor_reading);
 
