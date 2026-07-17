@@ -7879,7 +7879,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			.port = I2C_BUS1,
 			.target_addr = ASIC_IMON_MEDHA0_VDD_ADDR,
 			.offset = PMBUS_READ_IOUT,
-			.access_checker = is_vr_access,
+			.access_checker = is_adc_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
@@ -7948,7 +7948,7 @@ pldm_sensor_info plat_pldm_sensor_vr_table[] = {
 			.port = I2C_BUS1,
 			.target_addr = ASIC_IMON_MEDHA1_VDD_ADDR,
 			.offset = PMBUS_READ_IOUT,
-			.access_checker = is_vr_access,
+			.access_checker = is_adc_access,
 			.sample_count = SAMPLE_COUNT_DEFAULT,
 			.cache = 0,
 			.cache_status = PLDM_SENSOR_INITIALIZING,
@@ -11996,6 +11996,9 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 			return;
 		// change VR address
 		for (uint8_t j = 0; j < count; j++) {
+			if (table[j].pldm_sensor_cfg.type == sensor_dev_virtual_device)
+				continue;
+
 			if (vr_change_mode == NEW_RNS || vr_change_mode == OLD_RNS)
 				table[j].pldm_sensor_cfg.type = sensor_dev_raa228249;
 
@@ -12114,6 +12117,20 @@ bool is_iris_smbus_access(uint8_t sensor_num)
 bool is_vr_access(uint8_t sensor_num)
 {
 	if (get_vr_module() == VR_MODULE_UNKNOWN)
+		return false;
+	if (get_plat_sensor_one_step_enable_flag() == ONE_STEP_POWER_MAGIC_NUMBER) {
+		return (get_plat_sensor_vr_polling_enable_flag() &&
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+
+	} else {
+		return (is_dc_access(sensor_num) && get_plat_sensor_vr_polling_enable_flag() &&
+			get_plat_sensor_polling_enable_flag() && is_update_state_idle());
+	}
+}
+
+bool is_adc_access(uint8_t sensor_num)
+{
+	if (get_power_capping_source() != CAPPING_SOURCE_ADC)
 		return false;
 	if (get_plat_sensor_one_step_enable_flag() == ONE_STEP_POWER_MAGIC_NUMBER) {
 		return (get_plat_sensor_vr_polling_enable_flag() &&

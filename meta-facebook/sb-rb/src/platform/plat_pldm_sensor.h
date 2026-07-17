@@ -381,6 +381,7 @@ bool is_ubc_access(uint8_t sensor_num);
 bool is_temp_access(uint8_t cfg_idx);
 bool is_vr_access(uint8_t sensor_num);
 bool is_iris_smbus_access(uint8_t sensor_num);
+bool is_adc_access(uint8_t sensor_num);
 size_t char16_strlen(const char16_t *str);
 char16_t *char16_strcpy(char16_t *dest, const char16_t *src);
 char16_t *char16_strcat_char(char16_t *dest, char16_t ch);
