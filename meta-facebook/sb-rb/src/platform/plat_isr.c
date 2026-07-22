@@ -354,6 +354,18 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 
 	plat_asic_error_error_log(LOG_ASSERT, asic_event);
 
+	struct pldm_addsel_data smb_hamsa_sel_msg = { 0 };
+	smb_hamsa_sel_msg.assert_type = LOG_ASSERT;
+	smb_hamsa_sel_msg.event_type = ASIC_MODULE_ERROR; //ASIC_MODULE_ERROR;
+	smb_hamsa_sel_msg.event_data_1 = HAMSA_SMB_ERR_EVENT_HEADER;
+	smb_hamsa_sel_msg.event_data_2 = asic_event.event_id_0; // event_id_0
+	smb_hamsa_sel_msg.event_data_3 = asic_event.event_id_1; // event_id_1
+	if (send_event_log_to_bmc(smb_hamsa_sel_msg) != PLDM_SUCCESS) {
+		LOG_ERR("Failed to send hamsa smb error code to bmc, event data: 0x%x 0x%x 0x%x\n",
+			smb_hamsa_sel_msg.event_data_1, smb_hamsa_sel_msg.event_data_2,
+			smb_hamsa_sel_msg.event_data_3);
+	}
+
 	uint8_t eid = 0x08;
 	uint8_t resp_buf[PLDM_MAX_DATA_SIZE];
 	pldm_msg pmsg;
@@ -380,7 +392,7 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 	cper_evt = (struct pldm_cper_event_data *)(evt->event_data);
 	cper_evt->cper_format_version = CPER_FORMAT_VERSION;
 	cper_evt->cper_format_type = SINGLE_CPER_SECTION;
-	cper_evt ->cper_data_length = sizeof(rec.event_record_data);
+	cper_evt->cper_data_length = sizeof(rec.event_record_data);
 
 	memcpy(cper_evt->cper_record, &rec.event_record_data, sizeof(rec.event_record_data));
 
