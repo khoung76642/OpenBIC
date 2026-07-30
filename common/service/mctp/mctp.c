@@ -363,6 +363,9 @@ static void mctp_tx_task(void *arg, void *dummy0, void *dummy1)
 			(mctp_msg.len / max_msg_size) + ((mctp_msg.len % max_msg_size) ? 1 : 0);
 		LOG_DBG("mctp_msg.len = %d", mctp_msg.len);
 		LOG_DBG("split_pkt_num = %d", split_pkt_num);
+
+		uint8_t test_type = 0;
+		uint8_t test_cmd = 0;
 		for (i = 0; i < split_pkt_num; i++) {
 			uint8_t buf[max_msg_size + MCTP_TRANSPORT_HEADER_SIZE];
 			mctp_hdr *hdr = (mctp_hdr *)buf;
@@ -400,6 +403,18 @@ static void mctp_tx_task(void *arg, void *dummy0, void *dummy1)
 			LOG_DBG("hdr->flags_seq_to_tag = %x", hdr->flags_seq_to_tag);
 			memcpy(buf + MCTP_TRANSPORT_HEADER_SIZE, mctp_msg.buf + i * max_msg_size,
 			       cp_msg_size);
+
+			if (i == 0) {
+				test_type = buf[6];
+				test_cmd = buf[7];
+			}
+			if ((test_type == 0x05) && (test_cmd == 0x01)) {
+				LOG_HEXDUMP_INF(buf, cp_msg_size + MCTP_TRANSPORT_HEADER_SIZE, "I");
+			}
+			if ((test_type == 0x05) && (test_cmd == 0x02)) {
+				LOG_HEXDUMP_INF(buf, cp_msg_size + MCTP_TRANSPORT_HEADER_SIZE, "P");
+			}
+
 			ret = mctp_inst->write_data(mctp_inst, buf,
 						    cp_msg_size + MCTP_TRANSPORT_HEADER_SIZE,
 						    mctp_msg.ext_params);

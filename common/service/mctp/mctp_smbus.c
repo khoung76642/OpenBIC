@@ -222,6 +222,7 @@ static uint16_t mctp_smbus_write(void *mctp_p, uint8_t *buf, uint32_t len,
 			return MCTP_SUCCESS;
 		}
 		LOG_WRN("i2c_master_write attempt %d failed, ret %d", attempt + 1, status);
+		LOG_HEXDUMP_INF(buf, len, "F");
 		k_msleep(10);
 	}
 
