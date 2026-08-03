@@ -1723,6 +1723,7 @@ uint8_t pldm_fw_update_handler_query(uint8_t code, void **ret_fn)
 		load_pldmupdate_comp_config();
 		is_loaded = true;
 	}
+	LOG_INF("FU cmd %02x", code);
 
 	pldm_cmd_proc_fn fn = NULL;
 
