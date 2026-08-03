@@ -39,6 +39,7 @@ bool handler_flag = true;
 const char *temperature_name_table[] = {
 	"ASIC_MEDHA0_SENSOR0", "ASIC_MEDHA0_SENSOR1", "ASIC_OWL_W",	"ASIC_OWL_E",
 	"ASIC_MEDHA1_SENSOR0", "ASIC_MEDHA1_SENSOR1", "ASIC_HAMSA_CRM", "ASIC_HAMSA_LS",
+	"ASIC_MEDHA0_VPD",     "ASIC_MEDHA1_VPD",
 };
 
 typedef struct temp_mapping_sensor_t {
@@ -68,6 +69,10 @@ temp_mapping_sensor_t temp_alert_index_table[] = {
 	  "SB_RB_ASIC_HAMSA_CRM_TEMP", 0, false },
 	{ TEMP_STATUS_INDEX_ASIC_HAMSA_LS, SENSOR_NUM_ASIC_HAMSA_LS_TEMP_C,
 	  "SB_RB_ASIC_HAMSA_LS_TEMP", 0, false },
+	{ TEMP_STATUS_INDEX_ASIC_MEDHA0_VPD, SENSOR_NUM_ASIC_MEDHA0_VPD_TEMP_C,
+	  "SB_RB_ASIC_MEDHA0_VPD_TEMP", 0, false },
+	{ TEMP_STATUS_INDEX_ASIC_MEDHA1_VPD, SENSOR_NUM_ASIC_MEDHA1_VPD_TEMP_C,
+	  "SB_RB_ASIC_MEDHA1_VPD_TEMP", 0, false },
 };
 
 void read_temp_status(uint8_t bus, uint8_t target_addr)
