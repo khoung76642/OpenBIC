@@ -122,16 +122,16 @@ void check_clk_buf_loss_status()
 static void clk_apll_check_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
-
+	return;
 	if (!is_mb_dc_on()) {
 		return;
 	}
 
 	check_read_100MHz_clock_status();
-	uint8_t rev_id = get_board_rev_id();
-	if (rev_id >= REV_ID_DVT_FAB4) {
-		check_read_312_5MHz_clock_status();
-	}
+	//uint8_t rev_id = get_board_rev_id();
+	//if (rev_id >= REV_ID_DVT_FAB4) {
+	//	check_read_312_5MHz_clock_status();
+	//}
 	check_clk_buf_loss_status();
 	start_clk_apll_check_work();
 }

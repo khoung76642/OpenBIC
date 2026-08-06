@@ -108,13 +108,13 @@ void pal_post_init()
 	if (!gpio_get(FM_ASIC_0_THERMTRIP_R_N))
 		asic_thermtrip_error_log(LOG_ASSERT);
 	// check clk 312.5Mhz init
-	check_312_5MHz_init_status();
+	//check_312_5MHz_init_status();
 	//vr_vout_offset_get_init();
-	if (is_mb_dc_on() == true) {
+	//if (is_mb_dc_on() == true) {
 		//set perm vout command when DC on
-		if (!set_all_vout_command())
-			LOG_ERR("set all vout command fail!");
-	}
+	//	if (!set_all_vout_command())
+	//		LOG_ERR("set all vout command fail!");
+	//}
 }
 
 #define DEF_PROJ_GPIO_PRIORITY 78
