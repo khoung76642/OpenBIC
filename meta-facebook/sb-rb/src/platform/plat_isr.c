@@ -174,7 +174,7 @@ void pwr_sequence_event(struct k_work *work)
 		}
 	}
 	//check clock APLL lock status
-	start_clk_apll_check_work();
+	//start_clk_apll_check_work();
 }
 
 uint8_t pwr_steps_on_flag = 0;
@@ -278,7 +278,7 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 {
 	// dc on
 	if (gpio_get(RST_IRIS_PWR_ON_PLD_R1_N)) {
-		set_clock_u87_u88_lphcsl_amp_ctrl_to_1v();
+		//set_clock_u87_u88_lphcsl_amp_ctrl_to_1v();
 		plat_switch_pin_a12(false); /* HIGH -> A12 = SPIP1_CS */
 		ioexp_init();
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {
@@ -287,9 +287,9 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 			init_U200070_IO();
 			power_on_p3v3_osfp();
 		}
-		for (int i = 0; i < CLK_COMPONENT_MAX; i++) {
-			clear_clock_status(NULL, i);
-		}
+		//for (int i = 0; i < CLK_COMPONENT_MAX; i++) {
+		//	clear_clock_status(NULL, i);
+		//}
 		add_sync_oc_warn_to_work();
 		// if board id == EVB , ctrl fan pwm
 		if (get_asic_board_id() == ASIC_BOARD_ID_EVB) {
@@ -303,10 +303,10 @@ void ISR_GPIO_RST_IRIS_PWR_ON_PLD_R1_N()
 		reset_error_log_states(err_type);
 		// re-init adc
 		set_is_adc_init(0);
-		vr_vout_offset_get_init();
+		//vr_vout_offset_get_init();
 		//set perm vout command when DC on
-		if (!set_all_vout_command())
-			LOG_ERR("set all vout command fail!");
+		//if (!set_all_vout_command())
+		//	LOG_ERR("set all vout command fail!");
 	} else {
 		plat_switch_pin_a12(true); /* LOW -> A12 = GPIO73 output low */
 		gpio_conf(SPI_ADC_CS1_N, GPIO_OUTPUT);

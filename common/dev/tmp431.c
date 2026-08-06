@@ -463,7 +463,7 @@ bool tmp432_clear_temp_status(sensor_cfg *cfg)
 uint8_t tmp431_init(sensor_cfg *cfg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_INIT_UNSPECIFIED_ERROR);
-
+	return SENSOR_INIT_SUCCESS;
 	if (cfg->num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}

@@ -765,7 +765,7 @@ uint8_t raa228249_read(sensor_cfg *cfg, int *reading)
 uint8_t raa228249_init(sensor_cfg *cfg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_INIT_UNSPECIFIED_ERROR);
-
+	return SENSOR_INIT_SUCCESS;
 	if (cfg->num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}

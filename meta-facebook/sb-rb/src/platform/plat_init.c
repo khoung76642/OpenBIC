@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(plat_init);
 
 void pal_pre_init()
 {
+	set_plat_sensor_polling_enable_flag(false);
 	// check if dc off
 	if (is_mb_dc_on() == false) {
 		// set pinmux for A12 to default gpio output low
@@ -53,7 +54,7 @@ void pal_pre_init()
 	// if DC on
 	else {
 		plat_switch_pin_a12(false); /* HIGH -> A12 = SPIP1_CS */
-		set_clock_u87_u88_lphcsl_amp_ctrl_to_1v();
+		//set_clock_u87_u88_lphcsl_amp_ctrl_to_1v();
 	}
 
 	/* init i2c target */
@@ -108,7 +109,7 @@ void pal_post_init()
 		asic_thermtrip_error_log(LOG_ASSERT);
 	// check clk 312.5Mhz init
 	check_312_5MHz_init_status();
-	vr_vout_offset_get_init();
+	//vr_vout_offset_get_init();
 	if (is_mb_dc_on() == true) {
 		//set perm vout command when DC on
 		if (!set_all_vout_command())

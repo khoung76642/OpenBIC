@@ -1596,8 +1596,8 @@ bool strap_name_get(uint8_t rail, uint8_t **name)
 void plat_pldm_sensor_post_load_init(int thread_id)
 {
 	if (thread_id == TEMP_SENSOR_THREAD_ID) {
-		temp_threshold_default_settings_init();
-		temp_threshold_user_settings_init();
+		//temp_threshold_default_settings_init();
+		//temp_threshold_user_settings_init();
 	}
 	LOG_INF("plat_pldm_sensor_post_load init done");
 }

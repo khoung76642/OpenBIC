@@ -1246,7 +1246,7 @@ uint8_t mp29816a_read(sensor_cfg *cfg, int *reading)
 uint8_t mp29816a_init(sensor_cfg *cfg)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_INIT_UNSPECIFIED_ERROR);
-
+	return SENSOR_INIT_SUCCESS;
 	if (cfg->num > SENSOR_NUM_MAX) {
 		return SENSOR_INIT_UNSPECIFIED_ERROR;
 	}
