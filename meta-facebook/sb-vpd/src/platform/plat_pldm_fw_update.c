@@ -714,7 +714,8 @@ pldm_fw_update_info_t PLDMUPDATE_FW_CONFIG_TABLE[] = {
 		.self_apply_work_func = NULL,
 		.comp_version_str = NULL,
 	},
-	VR_COMPONENT_DEF(COMPNT_VR_3V3),
+	VR_COMPONENT_DEF(COMPNT_VPD_HAMSA_VDD),
+	VR_COMPONENT_DEF(COMPNT_VPD_OWL_E_VDD),
 };
 
 uint8_t plat_pldm_query_device_identifiers(const uint8_t *buf, uint16_t len, uint8_t *resp,
