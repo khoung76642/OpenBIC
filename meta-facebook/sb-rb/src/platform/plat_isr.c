@@ -368,6 +368,15 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 		return;
 	}
 
+	// read from SMB_CMD_ID
+	if (!plat_i2c_read(I2C_BUS12, HAMSA_BOOT1_ADDR, SMBUS_ASIC_ID, data,
+			   sizeof(struct smb_cmd_id))) {
+		LOG_ERR("Read ASIC offset 0x%x fail", SMBUS_ASIC_ID);
+		return;
+	}
+	struct smb_cmd_id smb_cmd_id = { 0 };
+	memcpy(&smb_cmd_id, data, sizeof(smb_cmd_id));
+
 	plat_asic_error_event asic_event = { 0 };
 	asic_event.event_id_0 = rec.event_record_data.common.event_id & 0xFF;
 	asic_event.event_id_1 = (rec.event_record_data.common.event_id >> 8) & 0xFF;
@@ -402,7 +411,9 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 	pmsg.hdr.rq = PLDM_REQUEST;
 
 	uint8_t event_buf[sizeof(struct pldm_platform_event_msg) +
-			  sizeof(struct pldm_cper_event_data) + sizeof(rec.event_record_data)];
+			  sizeof(struct pldm_cper_event_data) + sizeof(struct mtia_oem_cper_event)];
+
+	memset(event_buf, 0, sizeof(event_buf));
 
 	struct pldm_platform_event_msg *evt = (struct pldm_platform_event_msg *)event_buf;
 	struct pldm_cper_event_data *cper_evt;
@@ -413,10 +424,75 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 
 	cper_evt = (struct pldm_cper_event_data *)(evt->event_data);
 	cper_evt->cper_format_version = CPER_FORMAT_VERSION;
-	cper_evt->cper_format_type = SINGLE_CPER_SECTION;
-	cper_evt->cper_data_length = sizeof(rec.event_record_data);
+	cper_evt->cper_format_type = FULL_CPER_SECTION;
+	cper_evt->cper_data_length =
+		sizeof(struct cper_record_header) + sizeof(struct cper_section_descriptor) +
+		sizeof(struct mtia_oem_cper_section_header) + sizeof(rec.event_record_data);
 
-	memcpy(cper_evt->cper_record, &rec.event_record_data, sizeof(rec.event_record_data));
+	/* Refer to CPER format and MTIA Event Records Encapsulation in CPER
+	 * Record Header
+	 * Signature Start: “CPER” (0x43,0x50,0x45,0x52)
+	 * Revision: 0x0101
+	 * Signature End: 0xFFFFFFFF
+	 * Error Severity: read from ASIC
+	 * Validation Bits: TimeStamp valid 0x00000002
+	 * Creator ID: Sideband (MMC): 2f577f6c-dd8a-4885-99fd-0b66e8aca03f
+	 * Notification Type: MTIA Component GUID - bec0097c-5545-4824-901a-d96c8c9ecc2d
+	 *
+	 * Section Descriptor
+	 * Revision: 0x0100
+	 * Validation Bits: 0
+	 * Flags: 0
+	 * Section Type: MTIA_OEM_CPER_SECTION_GUID - c8f67ddf-e784-471d-a05f-7c70a7a11ad6
+	 * Section Severity: read from ASIC
+	 *
+	 * Section Header
+	 * version: 0x0100
+	 * Device ID: read from ASIC
+	 * Device Serial Number: read from ASIC
+	 * */
+
+	// clang-format off
+	uint8_t guid_mmc[16] = {0x6c,0x7f,0x57,0x2f, 0x8a,0xdd, 0x85,0x48, 0xfd,0x99, 0x3f,0xa0,0xac,0xe8,0x66,0x0b};
+	uint8_t guid_mtia_header[16] = {0x7c,0x09,0xc0,0xbe, 0x45,0x55, 0x24,0x48, 0x1a,0x90, 0x2d,0xcc,0x9e,0x8c,0x6c,0xd9};
+	uint8_t guid_mtia_section[16] = {0xdf,0x7d,0xf6,0xc8, 0x84,0xe7, 0x1d,0x47, 0x5f,0xa0, 0x7c,0x70,0xa7,0xa1,0x1a,0xd6};
+	// clang-format on
+
+	struct event_record_common *asic_event_data = &rec.event_record_data.common;
+	struct mtia_oem_cper_event *mtia_oem_cper_event;
+	mtia_oem_cper_event = (struct mtia_oem_cper_event *)(cper_evt->cper_record);
+
+	mtia_oem_cper_event->record_header.signatureStart = 0x52455043;
+	mtia_oem_cper_event->record_header.Revision = 0x0101;
+	mtia_oem_cper_event->record_header.SignatureEnd = 0xFFFFFFFF;
+	mtia_oem_cper_event->record_header.SectionCount = 1;
+	mtia_oem_cper_event->record_header.ErrorSeverity = asic_event_data->severity;
+	mtia_oem_cper_event->record_header.ValidationBits = 0x02;
+	mtia_oem_cper_event->record_header.RecordLength = sizeof(struct mtia_oem_cper_event);
+	mtia_oem_cper_event->record_header.Timestamp = asic_event_data->timestamp;
+	memcpy(&mtia_oem_cper_event->record_header.CreatorID, guid_mmc, sizeof(guid_mmc));
+	memcpy(&mtia_oem_cper_event->record_header.NotificationType, guid_mtia_header,
+	       sizeof(guid_mtia_header));
+
+	mtia_oem_cper_event->section_descriptor.sectionOffset =
+		sizeof(struct cper_record_header) + sizeof(struct cper_section_descriptor);
+	mtia_oem_cper_event->section_descriptor.sectionLength =
+		sizeof(struct mtia_oem_cper_section_header) + sizeof(event_record);
+	mtia_oem_cper_event->section_descriptor.revision = 0x0100;
+	mtia_oem_cper_event->section_descriptor.validationBits = 0;
+	mtia_oem_cper_event->section_descriptor.flags = 0;
+	memcpy(&mtia_oem_cper_event->section_descriptor.sectionType, guid_mtia_section,
+	       sizeof(guid_mtia_section));
+	mtia_oem_cper_event->section_descriptor.sectionSeverity = asic_event_data->severity;
+
+	mtia_oem_cper_event->section_header.version = 0x0100;
+	mtia_oem_cper_event->section_header.record_size = sizeof(event_record);
+	mtia_oem_cper_event->section_header.device_id.vendor_id = smb_cmd_id.pcie_vendor_id;
+	memcpy(&mtia_oem_cper_event->section_header.device_serial_number,
+	       &smb_cmd_id.asic_serial_number, sizeof(smb_cmd_id.asic_serial_number));
+
+	memcpy(&mtia_oem_cper_event->section_data, &rec.event_record_data,
+	       sizeof(rec.event_record_data));
 
 	pmsg.len = sizeof(event_buf);
 	pmsg.buf = event_buf;
