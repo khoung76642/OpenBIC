@@ -53,6 +53,7 @@ static struct pldm_sensor_thread pal_pldm_sensor_thread[MAX_SENSOR_THREAD_ID] = 
 };
 
 extern vr_pre_proc_arg vr_pre_read_args[];
+extern mp2985_init_arg mp2985_init_args[];
 extern mpc12109_init_arg mpc12109_init_args[];
 uint8_t ioe_init_flag = 0;
 
@@ -12247,6 +12248,56 @@ static vr_pre_proc_arg *get_vpd_vr_pre_read_args(uint8_t sensor_num)
 	return NULL;
 }
 
+static void check_vr_type(sensor_cfg *cfg)
+{
+	/*
+	MFR_MODEL (9Ah)
+	MFR_REVISION (9Bh)
+	uart:~$ i2c read I2C_1 0x60 0x9a 3
+	00000000: 02 85 01                                         |...              |
+	uart:~$ i2c read I2C_1 0x60 0x9b 3
+	00000000: 02 00 00  
+	*/
+	static const uint8_t mp2985_mfr_model[] = { 0x02, 0x85, 0x01 };
+	static const uint8_t mp2985_mfr_revision[] = { 0x02, 0x00, 0x00 };
+	uint8_t mfr_id[ARRAY_SIZE(mp2985_mfr_model)];
+	uint8_t mfr_rev[ARRAY_SIZE(mp2985_mfr_revision)];
+
+	if (cfg->type != sensor_dev_mp29816a)
+		return;
+
+	if (!((cfg->num >= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_TEMP_C &&
+	       cfg->num <= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W) ||
+	      (cfg->num >= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_TEMP_C &&
+	       cfg->num <= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W)))
+		return;
+	//check 0x9a and 0x9b
+	if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x9a, mfr_id, sizeof(mfr_id))) {
+		LOG_ERR("0x%02x VR type check failed", cfg->num);
+		return;
+	}
+	LOG_WRN("num 0x%02x 0x9a data: %02x %02x %02x", cfg->num, mfr_id[0], mfr_id[1], mfr_id[2]);
+	if (!plat_i2c_read(cfg->port, cfg->target_addr, 0x9b, mfr_rev, sizeof(mfr_rev))) {
+		LOG_ERR("0x%02x VR type check failed", cfg->num);
+		return;
+	}
+	LOG_WRN("num 0x%02x 0x9b data: %02x %02x %02x", cfg->num, mfr_rev[0], mfr_rev[1],
+		mfr_rev[2]);
+
+	if (memcmp(mfr_id, mp2985_mfr_model, sizeof(mfr_id)) == 0 &&
+	    memcmp(mfr_rev, mp2985_mfr_revision, sizeof(mfr_rev)) == 0) {
+		cfg->type = sensor_dev_mp2985;
+		if ((cfg->num >= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_TEMP_C &&
+		     cfg->num <= SENSOR_NUM_ASIC_P0V85_HAMSA_VDD_PWR_W))
+			cfg->init_args = &mp2985_init_args[0];
+		if ((cfg->num >= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_TEMP_C &&
+		     cfg->num <= SENSOR_NUM_ASIC_P0V75_OWL_E_VDD_PWR_W))
+			cfg->init_args = &mp2985_init_args[1];
+
+		LOG_INF("0x%02x VR type changed to MP2985", cfg->num);
+	}
+}
+
 void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_module,
 		       uint8_t board_rev_id)
 {
@@ -12305,6 +12356,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 				VPD change:
 				HAMSA_VDD : bus 2a, 0x62(main), 0x63(second, unused)
 				OWL_E_VDD : bus 2a, 0x60(main), 0x61(second, unused)
+				check vr type is mp29816c or mp2985
 			*/
 			if (vr_change_mode == NEW_MPS) {
 				// HAMSA VDD sensors
@@ -12328,6 +12380,7 @@ void change_sensor_cfg(uint8_t asic_board_id, uint8_t vr_module, uint8_t ubc_mod
 						vpd_pre_read_args;
 				}
 			}
+			check_vr_type(&table[j].pldm_sensor_cfg);
 
 			LOG_INF("change VR sensors 0x%x address to 0x%x",
 				table[j].pldm_sensor_cfg.num, table[j].pldm_sensor_cfg.target_addr);

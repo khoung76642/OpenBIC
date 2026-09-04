@@ -27,6 +27,7 @@
 #include "plat_class.h"
 #include "plat_i2c.h"
 #include "shell_iris_power.h"
+#include "mp2985.h"
 
 LOG_MODULE_REGISTER(shell_fw_version);
 
@@ -110,6 +111,17 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 				continue;
 			}
 			break;
+		case sensor_dev_mp2985: {
+			uint8_t checksum[4] = { 0 };
+
+			if (!mp2985_get_checksum(cfg->port, cfg->target_addr, checksum)) {
+				shell_print(shell, "The VR MPS2985 version reading failed");
+				continue;
+			}
+			version = ((uint32_t)checksum[0] << 24) | ((uint32_t)checksum[1] << 16) |
+				  ((uint32_t)checksum[2] << 8) | checksum[3];
+			break;
+		}
 		default:
 			shell_print(shell, "Unsupport VR type(%d)", i);
 			return;
@@ -122,6 +134,8 @@ void cmd_get_fw_version_vr(const struct shell *shell, size_t argc, char **argv)
 		if (cfg->type == sensor_dev_mp2891 || cfg->type == sensor_dev_mp29816a)
 			shell_print(shell, "%-8x|%-40s|    %04x|%04x", i, sensor_name, version,
 				    remain);
+		else if (cfg->type == sensor_dev_mp2985)
+			shell_print(shell, "%-8x|%-40s|%08x|%04x", i, sensor_name, version, remain);
 		else if (cfg->type == sensor_dev_isl69259 || cfg->type == sensor_dev_raa228238 ||
 			 cfg->type == sensor_dev_raa228249 || cfg->type == sensor_dev_mp2971)
 			shell_print(shell, "%-8x|%-40s|%08x|%04x", i, sensor_name, version, remain);

@@ -25,6 +25,7 @@
 #define VR_MUTEX_LOCK_TIMEOUT_MS 1000
 
 extern mp2971_init_arg mp2971_init_args[];
+extern mp2985_init_arg mp2985_init_args[];
 
 enum VR_INDEX_E {
 	VR_INDEX_E_1 = 0,

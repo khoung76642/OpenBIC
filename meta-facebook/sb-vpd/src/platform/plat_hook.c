@@ -23,6 +23,9 @@
 #include "plat_gpio.h"
 #include "plat_pldm_sensor.h"
 #include "mp2971.h"
+#include "mp2985.h"
+#include "mp29816a.h"
+#include "raa228249.h"
 #include "plat_user_setting.h"
 #include "plat_fru.h"
 #include "plat_class.h"
@@ -75,6 +78,11 @@ vr_pre_proc_arg vr_pre_read_args[] = {
 
 mp2971_init_arg mp2971_init_args[] = {
 	[0] = { .vout_scale_enable = true },
+};
+
+mp2985_init_arg mp2985_init_args[] = {
+	[0] = { .is_init = false },
+	[1] = { .is_init = false },
 };
 
 mpc12109_init_arg mpc12109_init_args[] = {
@@ -669,6 +677,12 @@ bool plat_get_vr_status(uint8_t rail, uint8_t vr_status_rail, uint16_t *vr_statu
 			goto err;
 		}
 		break;
+	case sensor_dev_mp2985:
+		if (!mp2985_get_vr_status(cfg, pre_proc_args->vr_page, pmbus_reg_id, vr_status)) {
+			LOG_ERR("The VR MP2985 vr status reading failed");
+			goto err;
+		}
+		break;
 	default:
 		LOG_ERR("Unsupport VR type(%x)", cfg->type);
 		goto err;
@@ -777,6 +791,13 @@ bool plat_get_vout_command(uint8_t rail, uint16_t *millivolt)
 	case sensor_dev_raa228249:
 		if (!raa228249_get_vout_command(cfg, pre_proc_args->vr_page, millivolt)) {
 			LOG_ERR("The VR RAA228249 vout reading failed");
+			goto err;
+		}
+		break;
+	case sensor_dev_mp2985:
+		//need to be page 0
+		if (!mp2985_get_vout_command(cfg, 0, millivolt)) {
+			LOG_ERR("The VR MPS2985 vout reading failed");
 			goto err;
 		}
 		break;
@@ -2149,11 +2170,11 @@ bool plat_get_get_vout_offset(uint8_t rail, uint16_t *vout_offset)
 	bool ret = false;
 	uint8_t sensor_id = vr_rail_table[rail].sensor_id;
 	sensor_cfg *cfg = get_sensor_cfg_by_sensor_id(sensor_id);
-	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)cfg->pre_sensor_read_args;
 	if (cfg == NULL) {
 		LOG_ERR("Failed to get sensor config for sensor 0x%x", sensor_id);
 		return false;
 	}
+	vr_pre_proc_arg *pre_proc_args = (vr_pre_proc_arg *)cfg->pre_sensor_read_args;
 
 	if (cfg->pre_sensor_read_hook) {
 		if (!cfg->pre_sensor_read_hook(cfg, cfg->pre_sensor_read_args)) {
@@ -2178,6 +2199,12 @@ bool plat_get_get_vout_offset(uint8_t rail, uint16_t *vout_offset)
 	case sensor_dev_raa228249:
 		if (!raa228249_get_vout_offset(cfg, vout_offset)) {
 			LOG_ERR("The VR RAA228249 vout setting failed");
+			goto err;
+		}
+		break;
+	case sensor_dev_mp2985:
+		if (!mp2985_get_vout_offset(cfg, pre_proc_args->vr_page, vout_offset)) {
+			LOG_ERR("The VR MP2985 vout offset reading failed");
 			goto err;
 		}
 		break;
