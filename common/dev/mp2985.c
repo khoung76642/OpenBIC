@@ -43,6 +43,9 @@ LOG_MODULE_REGISTER(mp2985);
 #define MP2985_CRC_CHECK_START_TAG "CRC_CHECK_START"
 #define MP2985_PRODUCT_ID "MP2985H"
 
+#define MP2985_VOUT_RESOLUTION_R1 0x0D
+#define MP2985_VOUT_RESOLUTION_R2 0x1D
+
 enum MP2985_REG {
 	MP2985_MFR_DEBUG = 0x04,
 	MP2985_PAGE_PLUS_WRITE = 0x05,
@@ -806,6 +809,173 @@ bool mp2985_get_checksum(uint8_t bus, uint8_t addr, uint8_t *checksum)
 	return true;
 }
 
+static bool mp2985_get_vid_step(sensor_cfg *cfg, uint8_t rail, uint16_t *vid_step_mv)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(vid_step_mv, false);
+
+	uint8_t retry = 5;
+	I2C_MSG msg = { 0 };
+	uint8_t resolution_reg;
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.tx_len = 1;
+	msg.rx_len = 2;
+
+	if (pmbus_set_page(cfg->port, cfg->target_addr, PMBUS_PAGE_2)) {
+		LOG_ERR("Failed to set page 2, bus: 0x%x, addr: 0x%x", cfg->port, cfg->target_addr);
+		return false;
+	}
+	resolution_reg = (rail == 1) ? MP2985_VOUT_RESOLUTION_R2 : MP2985_VOUT_RESOLUTION_R1;
+	msg.data[0] = resolution_reg;
+
+	if (i2c_master_read(&msg, retry) != 0) {
+		LOG_ERR("Failed to read VID resolution, bus: 0x%x, addr: 0x%x", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	*vid_step_mv = (msg.data[0] & BIT(4)) ? 5 : 10;
+	return true;
+}
+
+static bool mp2985_get_current_page(sensor_cfg *cfg, uint8_t *page)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(page, false);
+
+	uint8_t retry = 5;
+	I2C_MSG msg = { 0 };
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.tx_len = 1;
+	msg.rx_len = 1;
+	msg.data[0] = PMBUS_PAGE;
+
+	if (i2c_master_read(&msg, retry) != 0) {
+		LOG_ERR("Failed to read current page, bus: 0x%x, addr: 0x%x", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	*page = msg.data[0];
+	return true;
+}
+
+bool mp2985_get_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(millivolt, false);
+
+	uint8_t retry = 5;
+	I2C_MSG msg = { 0 };
+	uint16_t vid_step_mv;
+	if (!mp2985_get_vid_step(cfg, rail, &vid_step_mv))
+		return false;
+
+	if (pmbus_set_page(cfg->port, cfg->target_addr, rail)) {
+		LOG_ERR("Failed to set page %u, bus: 0x%x, addr: 0x%x", rail, cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.tx_len = 1;
+	msg.rx_len = 2;
+	msg.data[0] = PMBUS_VOUT_COMMAND;
+	if (i2c_master_read(&msg, retry) != 0) {
+		LOG_ERR("Failed to read VOUT command, bus: 0x%x, addr: 0x%x", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	uint16_t vid = ((uint16_t)(msg.data[1] & 0x01) << 8) | msg.data[0];
+	if (vid_step_mv == 10) {
+		*millivolt = (uint16_t)(490 + vid * vid_step_mv);
+	} else if (vid_step_mv == 5) {
+		*millivolt = (uint16_t)(245 + vid * vid_step_mv);
+	}
+
+	return true;
+}
+
+bool mp2985_get_vout_offset(sensor_cfg *cfg, uint8_t rail, uint16_t *vout_offset)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(vout_offset, false);
+
+	uint8_t retry = 5;
+	I2C_MSG msg = { 0 };
+	uint16_t vid_step_mv;
+	if (!mp2985_get_vid_step(cfg, rail, &vid_step_mv))
+		return false;
+
+	if (pmbus_set_page(cfg->port, cfg->target_addr, rail)) {
+		LOG_ERR("Failed to set page %u, bus: 0x%x, addr: 0x%x", rail, cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	msg.bus = cfg->port;
+	msg.target_addr = cfg->target_addr;
+	msg.tx_len = 1;
+	msg.rx_len = 1;
+	msg.data[0] = PMBUS_VOUT_TRIM;
+	if (i2c_master_read(&msg, retry) != 0) {
+		LOG_ERR("Failed to read VOUT offset, bus: 0x%x, addr: 0x%x", cfg->port,
+			cfg->target_addr);
+		return false;
+	}
+
+	*vout_offset = (uint16_t)((int16_t)(int8_t)msg.data[0] * vid_step_mv);
+	return true;
+}
+
+bool mp2985_get_vr_status(sensor_cfg *cfg, uint8_t rail, uint8_t vr_status_rail,
+			  uint16_t *vr_status)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	CHECK_NULL_ARG_WITH_RETURN(vr_status, false);
+	ARG_UNUSED(rail);
+
+	uint8_t retry = 5;
+	uint8_t data_len = 1;
+	I2C_MSG msg = { 0 };
+
+	switch (vr_status_rail) {
+	case PMBUS_STATUS_BYTE:
+	case PMBUS_STATUS_VOUT:
+	case PMBUS_STATUS_IOUT:
+	case PMBUS_STATUS_TEMPERATURE:
+		break;
+	case PMBUS_STATUS_WORD:
+		data_len = 2;
+		break;
+	case PMBUS_STATUS_INPUT:
+	case PMBUS_STATUS_CML:
+		if (pmbus_set_page(cfg->port, cfg->target_addr, PMBUS_PAGE_0) != 0) {
+			LOG_ERR("Failed to set page 0 for VR status, bus: 0x%x, addr: 0x%x",
+				cfg->port, cfg->target_addr);
+			return false;
+		}
+		break;
+	default:
+		LOG_ERR("VR[0x%x] not support vr status:0x%x.", cfg->num, vr_status_rail);
+		return false;
+	}
+
+	msg = construct_i2c_message(cfg->port, cfg->target_addr, 1, &vr_status_rail, data_len);
+	if (i2c_master_read(&msg, retry) != 0) {
+		LOG_ERR("Failed to read VR status 0x%x, bus: 0x%x, addr: 0x%x", vr_status_rail,
+			cfg->port, cfg->target_addr);
+		return false;
+	}
+
+	*vr_status = data_len == 2 ? ((uint16_t)msg.data[1] << 8) | msg.data[0] : msg.data[0];
+	return true;
+}
+
 uint8_t mp2985_read(sensor_cfg *cfg, int *reading)
 {
 	CHECK_NULL_ARG_WITH_RETURN(cfg, SENSOR_UNSPECIFIED_ERROR);
@@ -821,6 +991,21 @@ uint8_t mp2985_read(sensor_cfg *cfg, int *reading)
 	if (!init_arg->is_init) {
 		LOG_ERR("device isn't initialized");
 		return SENSOR_UNSPECIFIED_ERROR;
+	}
+
+	if (cfg->offset == PMBUS_READ_VOUT) {
+		uint8_t page;
+		uint16_t millivolt;
+		sensor_val *sval = (sensor_val *)reading;
+
+		if (!mp2985_get_current_page(cfg, &page) ||
+		    !mp2985_get_vout_command(cfg, page, &millivolt))
+			return SENSOR_FAIL_TO_ACCESS;
+
+		memset(sval, 0, sizeof(sensor_val));
+		sval->integer = millivolt / 1000;
+		sval->fraction = millivolt % 1000;
+		return SENSOR_READ_SUCCESS;
 	}
 
 	uint8_t i2c_max_retry = 5;

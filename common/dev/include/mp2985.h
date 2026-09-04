@@ -17,6 +17,12 @@
 #ifndef MP2985H_H
 #define MP2985H_H
 
+#include "sensor.h"
+
+bool mp2985_get_vr_status(sensor_cfg *cfg, uint8_t rail, uint8_t vr_status_rail,
+			  uint16_t *vr_status);
+bool mp2985_get_vout_command(sensor_cfg *cfg, uint8_t rail, uint16_t *millivolt);
+bool mp2985_get_vout_offset(sensor_cfg *cfg, uint8_t rail, uint16_t *vout_offset);
 int mp2985_set_power_regular_mode(uint8_t bus, uint8_t addr);
 bool mp2985_get_checksum(uint8_t bus, uint8_t addr, uint8_t *checksum);
 bool mp2985_fwupdate(uint8_t bus, uint8_t addr, uint8_t *img_buff, uint32_t img_size);
