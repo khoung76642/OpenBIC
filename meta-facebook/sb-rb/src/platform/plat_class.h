@@ -86,6 +86,13 @@ enum REV_ID {
 	MAX_REV_ID,
 };
 
+enum ASIC_HBM_ID {
+	ASIC_HBM_ID_MICRON,
+	ASIC_HBM_ID_SAMSUNG,
+	ASIC_HBM_ID_SKHYNIX,
+	ASIC_HBM_ID_RSVD,
+};
+
 void init_plat_config();
 uint8_t get_vr_module();
 uint8_t get_ubc_module();

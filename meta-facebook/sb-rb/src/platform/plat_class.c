@@ -39,6 +39,7 @@ static uint8_t tray_location = 0;
 static uint8_t board_rev_id = 0;
 static uint8_t tmp_type = TMP_TYPE_UNKNOWN;
 static uint8_t asic_type = ASIC_TYPE_UNKNOWN;
+static uint8_t asic_hbm_id = 0;
 
 bool plat_cpld_eerprom_read(uint8_t *data, uint16_t offset, uint8_t len)
 {
@@ -183,6 +184,9 @@ void init_plat_config()
 	asic_board_id = board_id & 0x03;
 	init_vr_vendor_module();
 	change_sensor_cfg(asic_board_id, vr_module, ubc_module, board_rev_id);
+	uint8_t hbm_id = 0;
+	plat_read_cpld(CPLD_OFFSET_ASIC_HBM_ID, &hbm_id, 1);
+	asic_hbm_id = hbm_id & 0x03;
 	// check temp sensor
 	init_tmp_type();
 	check_temp_sensor(tmp_type);
@@ -232,6 +236,11 @@ uint8_t get_tray_location()
 uint8_t get_asic_type()
 {
 	return asic_type;
+}
+
+uint8_t get_asic_hbm_id()
+{
+	return asic_hbm_id;
 }
 
 // clang-format off
@@ -302,6 +311,11 @@ void pal_show_board_types(const struct shell *shell)
 		    (asic_type == ASIC_TYPE_QCP1) ? "ASIC_TYPE_QCP1" :
 		    (asic_type == ASIC_TYPE_QCP2) ? "ASIC_TYPE_QCP2" :
 			(asic_type == ASIC_TYPE_QCP3) ? "ASIC_TYPE_QCP3" : "not supported");
+
+	shell_print(shell, "* ASIC_HBM_ID:   (0x%02X)%s", asic_hbm_id,
+		    (asic_hbm_id == ASIC_HBM_ID_MICRON) ? "Micron" :
+		    (asic_hbm_id == ASIC_HBM_ID_SAMSUNG) ? "Samsung" :
+			(asic_hbm_id == ASIC_HBM_ID_SKHYNIX) ? "SK Hynix" : "not supported");
 	
 	shell_print(shell, "* I2C connection for MEDHA0/1 to MMC: Enable");
 	return;
