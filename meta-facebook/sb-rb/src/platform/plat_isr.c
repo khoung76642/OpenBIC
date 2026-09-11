@@ -486,7 +486,8 @@ void ISR_GPIO_SMB_HAMSA_MMC_LVC33_ALERT_N()
 	mtia_oem_cper_event->section_descriptor.sectionSeverity = asic_event_data->severity;
 
 	mtia_oem_cper_event->section_header.version = 0x0100;
-	mtia_oem_cper_event->section_header.record_size = sizeof(event_record);
+	mtia_oem_cper_event->section_header.record_size =
+		sizeof(struct mtia_oem_cper_section_header) + sizeof(event_record);
 	mtia_oem_cper_event->section_header.device_id.vendor_id = smb_cmd_id.pcie_vendor_id;
 	memcpy(&mtia_oem_cper_event->section_header.device_serial_number,
 	       &smb_cmd_id.asic_serial_number, sizeof(smb_cmd_id.asic_serial_number));
