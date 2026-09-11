@@ -99,6 +99,7 @@ static const asic_mifo_pin_map_t mfio_list[] = {
 	{ "MEDHA1_MFIO12", 0xB9, 2, 0xBB, 2, 0x1E, 2 },
 	{ "MEDHA1_MFIO13", 0xB9, 1, 0xBB, 1, 0x1E, 1 },
 	{ "MEDHA1_MFIO14", 0xB9, 0, 0xBB, 0, 0x1E, 0 },
+	{ "HAMSA_MFIO25", 0xB8, 3, 0xA8, 4, 0x18, 4 },
 };
 
 static int cmd_mfio_get_all(const struct shell *shell, size_t argc, char **argv)
