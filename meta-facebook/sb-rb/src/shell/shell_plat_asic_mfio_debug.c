@@ -90,7 +90,6 @@ typedef struct {
 
 // name, config reg, config bit, input reg, input bit, output reg, output bit
 static const asic_mifo_pin_map_t mfio_list[] = {
-	{ "HAMSA_MFIO12", 0xB8, 2, 0xBA, 2, 0x17, 7 },
 	{ "HAMSA_MFIO13", 0xB8, 1, 0xBA, 1, 0x17, 6 },
 	{ "HAMSA_MFIO14", 0xB8, 0, 0xBA, 0, 0x17, 5 },
 	{ "MEDHA0_MFIO12", 0xB9, 5, 0xBB, 5, 0x1E, 5 },
@@ -100,11 +99,12 @@ static const asic_mifo_pin_map_t mfio_list[] = {
 	{ "MEDHA1_MFIO13", 0xB9, 1, 0xBB, 1, 0x1E, 1 },
 	{ "MEDHA1_MFIO14", 0xB9, 0, 0xBB, 0, 0x1E, 0 },
 	{ "HAMSA_MFIO25", 0xB8, 3, 0xA8, 4, 0x18, 4 },
+	{ "PCIE_P0_connect_status", 0xC8, 0, 0xC8, 0, 0xC8, 0 },
 };
 
 static int cmd_mfio_get_all(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_print(shell, "%-20s|%-15s|%-25s", "MFIO name", "Input/Output", "value");
+	shell_print(shell, "%-25s|%-20s|%-25s", "MFIO name", "Input/Output", "value");
 
 	uint8_t config = 0;
 	uint8_t config_value = 0;
@@ -128,11 +128,15 @@ static int cmd_mfio_get_all(const struct shell *shell, size_t argc, char **argv)
 				return -1;
 			}
 		}
-		if ((config_value & BIT(mfio_list[i].config_bit)) == 0)
-			shell_print(shell, "%-20s|%-15s|%-10d", mfio_list[i].name, "Input",
+		if (!strcmp(mfio_list[i].name, "PCIE_P0_connect_status"))
+			shell_print(shell, "%-25s|%-20s|%-10d", mfio_list[i].name,
+				    "Output (read only)",
+				    (output_value >> mfio_list[i].output_bit) & 1);
+		else if ((config_value & BIT(mfio_list[i].config_bit)) == 0)
+			shell_print(shell, "%-25s|%-20s|%-10d", mfio_list[i].name, "Input",
 				    (input_value >> mfio_list[i].input_bit) & 1);
 		else
-			shell_print(shell, "%-20s|%-15s|%-10d", mfio_list[i].name, "Output",
+			shell_print(shell, "%-25s|%-20s|%-10d", mfio_list[i].name, "Output",
 				    (output_value >> mfio_list[i].output_bit) & 1);
 	}
 
@@ -177,6 +181,10 @@ static int cmd_set_mfio_io(const struct shell *shell, size_t argc, char **argv)
 
 	for (int i = 0; i < ARRAY_SIZE(mfio_list); i++) {
 		if (!strcmp(mfio_list[i].name, argv[1])) {
+			if (!strcmp(mfio_list[i].name, "PCIE_P0_connect_status")) {
+				shell_error(shell, "%s is read-only", mfio_list[i].name);
+				return -1;
+			}
 			if (!set_cpld_bit(mfio_list[i].config_reg, mfio_list[i].config_bit,
 					  set_value)) {
 				shell_error(shell, "write MFIO config to CPLD failed");
@@ -217,6 +225,10 @@ static int cmd_set_mfio_value(const struct shell *shell, size_t argc, char **arg
 
 	for (int i = 0; i < ARRAY_SIZE(mfio_list); i++) {
 		if (!strcmp(mfio_list[i].name, argv[1])) {
+			if (!strcmp(mfio_list[i].name, "PCIE_P0_connect_status")) {
+				shell_error(shell, "%s is read-only", mfio_list[i].name);
+				return -1;
+			}
 			if (!plat_read_cpld(mfio_list[i].config_reg, &config_value, 1)) {
 				shell_error(shell, "read MFIO config from CPLD failed");
 				return -1;
