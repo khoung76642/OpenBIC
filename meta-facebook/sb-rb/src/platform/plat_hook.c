@@ -1604,6 +1604,7 @@ bool strap_name_get(uint8_t rail, uint8_t **name)
 void plat_pldm_sensor_post_load_init(int thread_id)
 {
 	if (thread_id == TEMP_SENSOR_THREAD_ID) {
+		init_temp_limit(); // Must run after PLDM sensor init and before saving defaults.
 		temp_threshold_default_settings_init();
 		temp_threshold_user_settings_init();
 	}

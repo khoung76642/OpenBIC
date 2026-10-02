@@ -117,6 +117,19 @@ void check_thermal_handler(void *arg1, void *arg2, void *arg3)
 					temp_alert_index_table[i].sensor_id);
 				continue;
 			}
+			//need to skip these 4 sensors
+			/*
+			ASIC_MEDHA0_SENSOR0_TEMP_C
+			ASIC_MEDHA0_SENSOR1_TEMP_C
+			ASIC_MEDHA1_SENSOR0_TEMP_C
+			ASIC_MEDHA1_SENSOR1_TEMP_C
+			*/
+			if (temp_alert_index_table[i].sensor_id == SENSOR_NUM_ASIC_MEDHA0_SENSOR0_TEMP_C ||
+			    temp_alert_index_table[i].sensor_id == SENSOR_NUM_ASIC_MEDHA0_SENSOR1_TEMP_C ||
+			    temp_alert_index_table[i].sensor_id == SENSOR_NUM_ASIC_MEDHA1_SENSOR0_TEMP_C ||
+			    temp_alert_index_table[i].sensor_id == SENSOR_NUM_ASIC_MEDHA1_SENSOR1_TEMP_C) {
+				continue;
+			}
 			uint8_t status_data;
 			uint8_t remote_bit = 0;
 			//idx will base on 3
