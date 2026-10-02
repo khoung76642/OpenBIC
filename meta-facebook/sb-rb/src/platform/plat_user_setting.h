@@ -154,6 +154,7 @@ bool set_plat_temp_threshold(uint8_t temp_index_threshold_type, uint32_t *millid
 			     bool is_default, bool is_perm);
 bool plat_clear_temp_status(uint8_t rail);
 void user_settings_init(void);
+void init_temp_limit(void);
 bool temp_threshold_user_settings_init(void);
 bool temp_threshold_default_settings_init(void);
 void set_uart_power_event_is_enable(bool is_enable);
