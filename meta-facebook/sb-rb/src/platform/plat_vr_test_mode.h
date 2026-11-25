@@ -30,6 +30,10 @@
 #define VR_OVP_0_DMA_ADDR 0xEA3E
 #define VR_OVP_1_DMA_ADDR 0xEABE
 
+#define DMA_VOUT_MAX 0xE62A
+#define DMA_VOUT_MIN 0xE62B
+#define DMA_IOUT_MAX 0xE62C
+
 #define NO_USE 0xFF //VR_UVP_THRESHOLD_GAIN_NO_USE
 #define NO_ACTION 0 // ovp2 threshold no action
 #define LATCH_OFF 1 // ovp2 threshold latch off
@@ -64,15 +68,24 @@ typedef struct {
 	uint16_t uvp;
 } mps_vr_test_mode_setting_t;
 
+typedef struct vr_vi_limit_sensor {
+	uint8_t index;
+	uint8_t sensor_id;
+	uint8_t *sensor_name;
+	uint16_t dma_reg;
+} vr_vi_limit_sensor;
+
 extern const vr_test_mode_setting_t vr_test_mode_table[];
 extern const vr_test_mode_setting_t vr_test_mode_table_default[];
 extern const uint8_t vr_test_mode_table_size;
 extern const uint8_t vr_test_mode_table_dafault_size;
+extern const uint8_t vr_vi_limit_rail_table_size;
 
 extern const mps_vr_test_mode_setting_t vr_mps_test_mode_table[];
 extern const mps_vr_test_mode_setting_t vr_mps_normal_mode_table[];
 extern const uint8_t vr_mps_test_mode_table_size;
 extern const uint8_t vr_mps_normal_mode_table_size;
+extern const vr_vi_limit_sensor vr_vi_limit_rail_table[];
 
 bool update_vr_reg(uint8_t rail, uint8_t reg, uint16_t val);
 bool get_vr_test_mode_flag(void);
@@ -84,4 +97,5 @@ bool get_vr_offset_uvp_ovp(uint8_t rail, uint16_t *uvp, uint16_t *ovp);
 bool use_offset_uvp_ovp(uint8_t rail);
 bool get_vr_fixed_uvp_ovp_enable(uint8_t rail);
 bool set_vr_fixed_uvp_ovp_enable(uint8_t rail, uint8_t enable);
+bool plat_get_vi_limit_value(uint8_t idx, uint16_t *val);
 #endif /* _PLAT_VR_TEST_MODE_H_ */

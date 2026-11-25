@@ -34,6 +34,7 @@
 #include "plat_util.h"
 #include "iris_smbus.h"
 #include "plat_adc.h"
+#include "plat_vr_test_mode.h"
 
 LOG_MODULE_REGISTER(plat_hook);
 
@@ -117,6 +118,65 @@ bool post_common_sensor_read(sensor_cfg *cfg, void *args, int *const reading)
 	uint8_t sensor_number = cfg->num;
 	if (!post_sensor_reading_hook_func(sensor_number))
 		return false;
+	return true;
+}
+
+bool post_max_sensor_read(sensor_cfg *cfg, void *args, int *const reading)
+{
+	CHECK_NULL_ARG_WITH_RETURN(cfg, false);
+	ARG_UNUSED(args);
+
+	if (get_vr_module() == VR_MODULE_MPS) {
+		cfg->cache_status = PLDM_SENSOR_UNAVAILABLE;
+		return false;
+	}
+
+	uint16_t val = 0;
+	bool is_current = false;
+
+	switch (cfg->num) {
+	case SENSOR_NUM_ASIC_P0V85_MEDHA0_VMAX_VOLT_V:
+		if (!plat_get_vi_limit_value(0, &val))
+			return false;
+		break;
+	case SENSOR_NUM_ASIC_P0V85_MEDHA0_VMIN_VOLT_V:
+		if (!plat_get_vi_limit_value(1, &val))
+			return false;
+		break;
+	case SENSOR_NUM_ASIC_P0V85_MEDHA0_IMAX_CURR_A:
+		if (!plat_get_vi_limit_value(2, &val))
+			return false;
+		is_current = true;
+		break;
+	case SENSOR_NUM_ASIC_P0V85_MEDHA1_VMAX_VOLT_V:
+		if (!plat_get_vi_limit_value(3, &val))
+			return false;
+		break;
+	case SENSOR_NUM_ASIC_P0V85_MEDHA1_VMIN_VOLT_V:
+		if (!plat_get_vi_limit_value(4, &val))
+			return false;
+		break;
+	case SENSOR_NUM_ASIC_P0V85_MEDHA1_IMAX_CURR_A:
+		if (!plat_get_vi_limit_value(5, &val))
+			return false;
+		is_current = true;
+		break;
+	default:
+		*reading = 0;
+		return false;
+	}
+
+	sensor_val *sval = (sensor_val *)reading;
+	if (is_current) {
+		/* val unit = 0.01A */
+		sval->integer = (val * 100) / 1000;
+		sval->fraction = (val * 100) % 1000;
+	} else {
+		/* val unit = mV */
+		sval->integer = val / 1000;
+		sval->fraction = val % 1000;
+	}
+
 	return true;
 }
 

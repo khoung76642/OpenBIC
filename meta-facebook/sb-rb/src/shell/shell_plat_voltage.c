@@ -487,6 +487,18 @@ static int cmd_svs_voltage_range_set(const struct shell *shell, size_t argc, cha
 	uint16_t set_value_min = strtol(argv[2], NULL, 10);
 	uint16_t set_value_max = strtol(argv[3], NULL, 10);
 
+	if (set_value_min < SVS_VOLTAGE_RANGE_MIN) {
+		set_value_min = SVS_VOLTAGE_RANGE_MIN;
+		shell_info(shell, "set_value_min < %d, so set_value_min = %d",
+			   SVS_VOLTAGE_RANGE_MIN, set_value_min);
+	}
+
+	if (set_value_max > SVS_VOLTAGE_RANGE_MAX) {
+		set_value_max = SVS_VOLTAGE_RANGE_MAX;
+		shell_info(shell, "set_value_max > %d, so set_value_max = %d",
+			   SVS_VOLTAGE_RANGE_MAX, set_value_max);
+	}
+
 	if (set_value_min > set_value_max) {
 		shell_error(shell, "min value should be less than max value");
 		return -1;

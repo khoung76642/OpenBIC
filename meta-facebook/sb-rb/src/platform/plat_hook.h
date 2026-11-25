@@ -305,6 +305,7 @@ bool strap_enum_get(uint8_t *name, uint8_t *num);
 bool get_bootstrap_change_drive_level(int rail, int *drive_level);
 bool find_bootstrap_by_rail(uint8_t rail, bootstrap_mapping_register *result);
 bool post_common_sensor_read(sensor_cfg *cfg, void *args, int *const reading);
+bool post_max_sensor_read(sensor_cfg *cfg, void *args, int *const reading);
 bool voltage_command_setting_get(uint8_t rail, uint16_t *vout);
 bool post_sensor_reading_hook_func(uint8_t sensor_number);
 bool post_ubc_read(sensor_cfg *cfg, void *args, int *reading);

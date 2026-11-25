@@ -1331,19 +1331,17 @@ void plat_master_write_thread_handler()
 						svs_voltage_range_command_get.vout_max[rail];
 					if (sensor_data->set_value <
 					    svs_voltage_range_command_get.vout_min[rail]) {
-						LOG_INF("Set voltage out of range: %d mV(%d ~ %d), set to %d mV",
+						sensor_data->set_value = 800;
+						LOG_INF("Set svs_voltage out of range: %d mV(%d ~ %d), set to %d mV",
 							sensor_data->set_value, svs_voltage_min,
 							svs_voltage_max, svs_voltage_min);
-						sensor_data->set_value =
-							svs_voltage_range_command_get.vout_min[rail];
 					}
 					if (sensor_data->set_value >
 					    svs_voltage_range_command_get.vout_max[rail]) {
-						LOG_INF("Set voltage out of range: %d mV(%d ~ %d), set to %d mV",
+						sensor_data->set_value = 850;
+						LOG_INF("Set svs_voltage out of range: %d mV(%d ~ %d), set to %d mV",
 							sensor_data->set_value, svs_voltage_min,
 							svs_voltage_max, svs_voltage_max);
-						sensor_data->set_value =
-							svs_voltage_range_command_get.vout_max[rail];
 					}
 				} else {
 					uint16_t vout_max_millivolt =

@@ -205,11 +205,51 @@ const mps_vr_test_mode_setting_t vr_mps_normal_mode_table[] = {
 	  795, 580 },
 };
 //clang-format on
+
+const vr_vi_limit_sensor vr_vi_limit_rail_table[] = {
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA0_VDD_VMAX", DMA_VOUT_MAX },
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA0_VDD_VMIN", DMA_VOUT_MIN },
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA0_VDD_IMAX", DMA_IOUT_MAX },
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA1_VDD_VMAX", DMA_VOUT_MAX },
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA1_VDD_VMIN", DMA_VOUT_MIN },
+	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
+	  "ASIC_P0V85_MEDHA1_VDD_IMAX", DMA_IOUT_MAX },
+};
+
 const uint8_t vr_test_mode_table_size = ARRAY_SIZE(vr_test_mode_table);
 const uint8_t vr_test_mode_table_dafault_size = ARRAY_SIZE(vr_test_mode_table_default);
 
 const uint8_t vr_mps_test_mode_table_size = ARRAY_SIZE(vr_mps_test_mode_table);
 const uint8_t vr_mps_normal_mode_table_size = ARRAY_SIZE(vr_mps_normal_mode_table);
+const uint8_t vr_vi_limit_rail_table_size = ARRAY_SIZE(vr_vi_limit_rail_table);
+
+bool plat_get_vi_limit_value(uint8_t idx, uint16_t *val)
+{
+	if (val == NULL) {
+		return false;
+	}
+
+	if (idx >= ARRAY_SIZE(vr_vi_limit_rail_table)) {
+		return false;
+	}
+
+	uint8_t data[2];
+
+	if (!dma_read_vr(vr_vi_limit_rail_table[idx].index,
+			 vr_vi_limit_rail_table[idx].dma_reg,
+			 data, 2)) {
+		return false;
+	}
+
+	*val = ((uint16_t)data[1] << 8) | data[0];
+
+	return true;
+}
 
 bool update_vr_reg(uint8_t rail, uint8_t reg, uint16_t val)
 {

@@ -1006,8 +1006,8 @@ bool vr_voffset_mmc_user_settings_init(void)
 bool svs_voltage_range_default_settings_init(void)
 {
 	for (int i = 0; i <= VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD; i++) {
-		svs_voltage_range_command_get.vout_max[i] = 850;
-		svs_voltage_range_command_get.vout_min[i] = 750;
+		svs_voltage_range_command_get.vout_max[i] = SVS_VOLTAGE_RANGE_MAX;
+		svs_voltage_range_command_get.vout_min[i] = SVS_VOLTAGE_RANGE_MIN;
 	}
 	return true;
 }

@@ -21,32 +21,6 @@
 #include "plat_cpld.h"
 #include "plat_vr_test_mode.h"
 
-#define DMA_VOUT_MAX 0xE62A
-#define DMA_VOUT_MIN 0xE62B
-#define DMA_IOUT_MAX 0xE62C
-
-typedef struct vr_vi_limit_sensor {
-	uint8_t index;
-	uint8_t sensor_id;
-	uint8_t *sensor_name;
-	uint16_t dma_reg;
-} vr_vi_limit_sensor;
-
-vr_vi_limit_sensor vr_vi_limit_rail_table[] = {
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA0_VDD_VMAX", DMA_VOUT_MAX },
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA0_VDD_VMIN", DMA_VOUT_MIN },
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA0_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA0_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA0_VDD_IMAX", DMA_IOUT_MAX },
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA1_VDD_VMAX", DMA_VOUT_MAX },
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA1_VDD_VMIN", DMA_VOUT_MIN },
-	{ VR_RAIL_E_ASIC_P0V85_MEDHA1_VDD, SENSOR_NUM_ASIC_P0V85_MEDHA1_VDD_VOLT_V,
-	  "ASIC_P0V85_MEDHA1_VDD_IMAX", DMA_IOUT_MAX },
-};
-
 void cmd_max_sensor_get(const struct shell *shell, size_t argc, char **argv)
 {
 	if (get_vr_module() == VR_MODULE_MPS) {
@@ -59,22 +33,29 @@ void cmd_max_sensor_get(const struct shell *shell, size_t argc, char **argv)
 		return;
 	}
 
-	for (int i = 0; i < sizeof(vr_vi_limit_rail_table) / sizeof(vr_vi_limit_sensor); i++) {
-		uint8_t data[2];
-		if (!dma_read_vr(vr_vi_limit_rail_table[i].index, vr_vi_limit_rail_table[i].dma_reg,
-				 data, 2)) {
-			shell_error(shell, "Failed to dms read %s, reg: 0x%04x",
+	for (int i = 0; i < vr_vi_limit_rail_table_size; i++) {
+		uint16_t val;
+
+		if (!plat_get_vi_limit_value(i, &val)) {
+			shell_error(shell, "Failed to dma read %s, reg: 0x%04x",
 				    vr_vi_limit_rail_table[i].sensor_name,
 				    vr_vi_limit_rail_table[i].dma_reg);
 			return;
 		}
-		uint16_t val = (data[1] << 8) | data[0];
-		if (vr_vi_limit_rail_table[i].dma_reg == DMA_VOUT_MAX ||
-		    vr_vi_limit_rail_table[i].dma_reg == DMA_VOUT_MIN) {
+
+		switch (vr_vi_limit_rail_table[i].dma_reg) {
+		case DMA_VOUT_MAX:
+		case DMA_VOUT_MIN:
 			shell_print(shell, "%s: %dmV", vr_vi_limit_rail_table[i].sensor_name, val);
-		} else if (vr_vi_limit_rail_table[i].dma_reg == DMA_IOUT_MAX) {
+			break;
+
+		case DMA_IOUT_MAX:
 			shell_print(shell, "%s: %d.%03dA", vr_vi_limit_rail_table[i].sensor_name,
 				    (val * 100) / 1000, (val * 100) % 1000);
+			break;
+
+		default:
+			break;
 		}
 	}
 }
